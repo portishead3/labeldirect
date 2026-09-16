@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounts — LABELDIRECT</title>
+    <meta name="description" content="LABELDIRECT Accounts — Aged FedEx &amp; UPS business accounts.">
+    <meta name="theme-color" content="#12141a">
+    <meta property="og:title" content="Accounts — LABELDIRECT">
+    <meta property="og:description" content="Aged FedEx &amp; UPS business accounts.">
+    <meta property="og:image" content="logo.jpeg">
+    <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="logo.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+        height: 100%;
+      }
+
+      body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Jost', sans-serif;
+        font-weight: 400;
+        line-height: 1.7;
+        overflow-x: hidden;
+        min-height: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-family: inherit;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 12px;
+        top: -48px;
+        z-index: 10000;
+        background: var(--accent);
+        color: #050010;
+        font-weight: 700;
+        padding: 10px 16px;
+        border-radius: 6px;
+      }
+
+      .skip-link:focus {
+        top: 12px;
+      }
+
+      :root {
+        --bg-primary: #12141a;
+        --bg-card: #181b22;
+        --bg-surface: #1e222b;
+        --accent: #9b7ec8;
+        --accent-light: #cfc6de;
+        --text-primary: #e4e2ea;
+        --text-secondary: #9a96a8;
+        --border-accent: rgba(155, 126, 200, 0.18);
+        --row-alt: #1a1d26;
+        --row-hover: rgba(155, 126, 200, 0.08);
+        --hairline: rgba(255, 255, 255, 0.06);
+        --font-heading: 'Jost', sans-serif;
+        --font-body: 'Jost', sans-serif;
+        --nav-h: 64px;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(18, 20, 26, 0.96);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--hairline);
+        padding: 0 20px;
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        flex-shrink: 0;
+      }
+
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid var(--border-accent);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .navbar__primary,
+      .navbar__actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .navbar__actions {
+        gap: 6px;
+      }
+
+      .navbar__sep {
+        width: 1px;
+        height: 26px;
+        background: var(--hairline);
+        flex-shrink: 0;
+        margin: 0 2px;
+      }
+
+      .navbar__link {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 8px 10px;
+        border-radius: 6px;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .navbar__link--active {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.16);
+        box-shadow: inset 0 -2px 0 var(--accent);
+      }
+
+      .navbar__link--accounts {
+        padding: 7px 14px;
+        border-radius: 6px;
+        letter-spacing: 0.1em;
+      }
+
+      .navbar__brand-text {
+        white-space: nowrap;
+      }
+
+      .navbar__cta {
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+
+      .navbar__cta:hover {
+        background: rgba(155, 126, 200, 0.16);
+        border-color: var(--accent);
+      }
+
+      .navbar__logout {
+        color: var(--text-secondary);
+        background: transparent;
+        border: 1px solid var(--hairline);
+      }
+
+      .navbar__logout:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.12);
+        border-color: var(--accent);
+      }
+
+      .navbar__balance {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+        padding: 6px 12px 6px 6px;
+        border-radius: 999px;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+
+      .navbar__balance:hover {
+        background: rgba(155, 126, 200, 0.16);
+        border-color: var(--accent);
+      }
+
+      .navbar__balance-plus {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(155, 126, 200, 0.22);
+        border: 1px solid var(--border-accent);
+        color: var(--accent-light);
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .navbar__balance-label {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        line-height: 1.15;
+        min-width: 0;
+      }
+
+      .navbar__balance-caption {
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .navbar__balance-amount {
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: none;
+      }
+
+      .accounts-shell {
+        display: flex;
+        min-height: 100vh;
+        padding-top: var(--nav-h);
+      }
+
+      .accounts-sidebar {
+        width: 240px;
+        flex-shrink: 0;
+        background: var(--bg-card);
+        border-right: 1px solid var(--hairline);
+        padding: 28px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .accounts-sidebar__label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 0 12px 12px;
+      }
+
+      .carrier-tab {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        border-left: 2px solid transparent;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      }
+
+      .carrier-tab:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .carrier-tab.is-active {
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border-left-color: var(--accent);
+      }
+
+      .carrier-tab__dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(154, 150, 168, 0.45);
+        flex-shrink: 0;
+      }
+
+      .carrier-tab.is-active .carrier-tab__dot {
+        background: var(--accent);
+      }
+
+      .accounts-main {
+        flex: 1;
+        min-width: 0;
+        padding: 28px 24px 40px;
+        background: var(--bg-primary);
+      }
+
+      .accounts-panel {
+        display: none;
+      }
+
+      .accounts-panel.is-active {
+        display: block;
+      }
+
+      .accounts-panel__header {
+        margin-bottom: 22px;
+      }
+
+      .accounts-panel__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.25rem, 2.4vw, 1.55rem);
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: var(--text-primary);
+      }
+
+      .accounts-panel__meta {
+        margin-top: 6px;
+        font-size: 0.92rem;
+        color: var(--text-secondary);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        background: var(--bg-surface);
+      }
+
+      .accounts-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+
+      .accounts-table th,
+      .accounts-table td {
+        padding: 14px 16px;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .accounts-table thead th {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--hairline);
+      }
+
+      .accounts-table tbody td {
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--hairline);
+      }
+
+      .accounts-table tbody tr:nth-child(even) td {
+        background: var(--row-alt);
+      }
+
+      .accounts-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .accounts-table tbody tr:hover td {
+        background: var(--row-hover);
+      }
+
+      .empty-state {
+        border: 1px dashed var(--hairline);
+        border-radius: 10px;
+        padding: 56px 24px;
+        text-align: center;
+        background: var(--bg-card);
+      }
+
+      .empty-state p {
+        color: var(--text-secondary);
+        font-size: 1rem;
+      }
+
+      .page-status {
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        border: 1px solid var(--hairline);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+      }
+
+      .page-status.is-error {
+        color: #f0c4c4;
+        border-color: rgba(220, 90, 90, 0.35);
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--bg-primary);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(154, 150, 168, 0.35);
+        border-radius: 3px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(154, 150, 168, 0.5);
+      }
+
+      @media (max-width: 599px) {
+        .navbar {
+          padding: 0 12px;
+          height: 60px;
+        }
+
+        :root {
+          --nav-h: 60px;
+        }
+
+        .navbar__brand {
+          font-size: 0.95rem;
+        }
+
+        .navbar__brand-text {
+          display: none;
+        }
+
+        .navbar__link {
+          display: none;
+        }
+
+        .navbar__link--product {
+          display: inline-flex;
+          font-size: 0.72rem;
+          padding: 7px 8px;
+        }
+
+        .navbar__link--accounts {
+          padding: 6px 12px;
+        }
+
+        .navbar__balance-caption {
+          display: none;
+        }
+
+        .navbar__balance {
+          padding: 5px 10px 5px 5px;
+          gap: 6px;
+        }
+
+        .navbar__balance-plus {
+          width: 24px;
+          height: 24px;
+          font-size: 0.95rem;
+        }
+
+        .navbar__sep {
+          display: none;
+        }
+
+        .navbar__logout {
+          padding: 7px 10px;
+          font-size: 0.72rem;
+        }
+
+        .accounts-shell {
+          flex-direction: column;
+        }
+
+        .accounts-sidebar {
+          width: 100%;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+          border-right: none;
+          border-bottom: 1px solid var(--border-accent);
+          padding: 14px 12px;
+        }
+
+        .accounts-sidebar__label {
+          width: 100%;
+          padding: 0 4px 4px;
+        }
+
+        .carrier-tab {
+          flex: 1;
+          justify-content: center;
+        }
+
+        .accounts-main {
+          padding: 18px 12px 32px;
+        }
+      }
+
+      @media (min-width: 768px) {
+        :root {
+          --nav-h: 72px;
+        }
+
+        .navbar {
+          padding: 0 40px;
+          height: 72px;
+        }
+      }
+
+      @media (min-width: 1200px) {
+        .navbar {
+          padding: 0 60px;
+        }
+
+        .accounts-main {
+          padding: 36px 48px 48px;
+        }
+      }
+    </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="navbar__brand">
+      <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+      <span class="navbar__brand-text">LABELDIRECT</span>
+    </a>
+    <div class="navbar__links">
+      <div class="navbar__primary">
+        <a href="index.html" class="navbar__link navbar__link--product">Labels</a>
+        <a href="accounts.html" class="navbar__link navbar__link--product navbar__link--accounts navbar__link--active" aria-current="page">Accounts</a>
+      </div>
+      <span class="navbar__sep" aria-hidden="true"></span>
+      <div class="navbar__actions">
+        <a href="payments.html" class="navbar__balance" data-balance-control aria-label="Balance $0.00, add funds">
+          <span class="navbar__balance-plus" aria-hidden="true">+</span>
+          <span class="navbar__balance-label">
+            <span class="navbar__balance-caption">Balance</span>
+            <span class="navbar__balance-amount" data-balance-display>$0.00</span>
+          </span>
+        </a>
+        <button type="button" class="navbar__cta navbar__logout" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="accounts-shell">
+    <aside class="accounts-sidebar" aria-label="Carrier accounts">
+      <p class="accounts-sidebar__label">Choose account</p>
+      <button class="carrier-tab" type="button" data-carrier="ups" aria-pressed="false">
+        <span class="carrier-tab__dot" aria-hidden="true"></span>
+        UPS
+      </button>
+      <button class="carrier-tab is-active" type="button" data-carrier="fedex" aria-pressed="true">
+        <span class="carrier-tab__dot" aria-hidden="true"></span>
+        FedEx
+      </button>
+    </aside>
+
+    <main id="main" class="accounts-main">
+      <p id="page-status" class="page-status" hidden></p>
+
+      <section class="accounts-panel" id="panel-ups" data-panel="ups" hidden>
+        <div class="accounts-panel__header">
+          <h1 class="accounts-panel__title">UPS</h1>
+          <p class="accounts-panel__meta">Select UPS to browse available accounts.</p>
+        </div>
+        <div class="empty-state">
+          <p>No UPS accounts listed yet.</p>
+        </div>
+        <div class="table-wrap" hidden>
+          <table class="accounts-table">
+            <thead>
+              <tr>
+                <th scope="col">Login</th>
+                <th scope="col">Country</th>
+                <th scope="col">State</th>
+                <th scope="col">Outbound</th>
+                <th scope="col">Inbound</th>
+                <th scope="col">Cardnumber</th>
+                <th scope="col">Expiry</th>
+                <th scope="col">Price</th>
+                <th scope="col">Base</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="accounts-panel is-active" id="panel-fedex" data-panel="fedex">
+        <div class="accounts-panel__header">
+          <h1 class="accounts-panel__title">FedEx</h1>
+          <p class="accounts-panel__meta">Available FedEx accounts</p>
+        </div>
+        <div class="empty-state">
+          <p>No FedEx accounts listed yet.</p>
+        </div>
+        <div class="table-wrap" hidden>
+          <table class="accounts-table">
+            <thead>
+              <tr>
+                <th scope="col">Login</th>
+                <th scope="col">Country</th>
+                <th scope="col">State</th>
+                <th scope="col">Outbound</th>
+                <th scope="col">Inbound</th>
+                <th scope="col">Cardnumber</th>
+                <th scope="col">Expiry</th>
+                <th scope="col">Price</th>
+                <th scope="col">Base</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="listings.js?v=token"></script>
+  <script>
+    if (!ListingsApp.getAccountsSession()) {
+      window.location.replace("login.html");
+    } else {
+    var tabs = document.querySelectorAll('.carrier-tab');
+    var panels = document.querySelectorAll('.accounts-panel');
+    var statusEl = document.getElementById('page-status');
+    var logoutBtn = document.getElementById('logout-btn');
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var carrier = tab.getAttribute('data-carrier');
+
+        tabs.forEach(function (other) {
+          var on = other === tab;
+          other.classList.toggle('is-active', on);
+          other.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+
+        panels.forEach(function (panel) {
+          var on = panel.getAttribute('data-panel') === carrier;
+          panel.classList.toggle('is-active', on);
+          if (on) {
+            panel.removeAttribute('hidden');
+          } else {
+            panel.setAttribute('hidden', '');
+          }
+        });
+      });
+    });
+
+    function showStatus(message, isError) {
+      ListingsApp.setStatus(statusEl, message, isError ? 'error' : '');
+    }
+
+    function bounceToLogin() {
+      ListingsApp.clearAccountsSession();
+      window.location.replace("login.html");
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function () {
+        bounceToLogin();
+      });
+    }
+
+    ListingsApp.loadBalanceDisplays();
+
+    if (!ListingsApp.isApiConfigured()) {
+      showStatus('Set LABELDIRECT_API.baseUrl in config.js and run the backend (npm start in backend/).', true);
+    } else {
+      showStatus('Loading accounts…');
+      ListingsApp.fetchAccountsFromApi()
+        .then(function (rows) {
+          ListingsApp.renderAccounts(rows);
+          showStatus('');
+        })
+        .catch(function (err) {
+          if (err && err.status === 401) {
+            bounceToLogin();
+            return;
+          }
+          showStatus(err.message || 'Could not load accounts.', true);
+        });
+    }
+    }
+  </script>
+</body>
+</html>

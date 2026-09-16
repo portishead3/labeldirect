@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounts login — LABELDIRECT</title>
+    <meta name="description" content="Sign in with your LABELDIRECT access token to view available FedEx and UPS accounts.">
+    <meta name="theme-color" content="#050010">
+    <meta property="og:title" content="Accounts login — LABELDIRECT">
+    <meta property="og:description" content="Sign in with your access token to view available accounts.">
+    <meta property="og:image" content="logo.jpeg">
+    <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="logo.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+        height: 100%;
+      }
+
+      body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Jost', sans-serif;
+        font-weight: 400;
+        line-height: 1.7;
+        overflow-x: hidden;
+        min-height: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      button,
+      input {
+        font-family: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 12px;
+        top: -48px;
+        z-index: 10000;
+        background: var(--accent);
+        color: #050010;
+        font-weight: 700;
+        padding: 10px 16px;
+        border-radius: 6px;
+      }
+
+      .skip-link:focus {
+        top: 12px;
+      }
+
+      :root {
+        --bg-primary: #050010;
+        --bg-card: #0c0718;
+        --bg-surface: #161022;
+        --accent: #c56cff;
+        --accent-light: #eddcff;
+        --text-primary: #f7f4ff;
+        --text-secondary: #d8d0ee;
+        --border-accent: rgba(197, 108, 255, 0.28);
+        --font-heading: 'Jost', sans-serif;
+        --font-body: 'Jost', sans-serif;
+        --glow: 0 0 22px rgba(197, 108, 255, 0.45);
+      }
+
+      .noise-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.02;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px 256px;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(5, 0, 16, 0.92);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border-accent);
+        padding: 0 20px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        flex-shrink: 0;
+      }
+
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid rgba(197, 108, 255, 0.45);
+        box-shadow: 0 0 12px rgba(197, 108, 255, 0.35);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .navbar__primary {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .navbar__link {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 8px 10px;
+        border-radius: 6px;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.1);
+      }
+
+      .navbar__link--accounts {
+        color: #c8f4ff;
+        background: rgba(0, 190, 255, 0.12);
+        border: 1px solid rgba(130, 220, 255, 0.55);
+        padding: 7px 14px;
+        border-radius: 999px;
+        letter-spacing: 0.1em;
+        box-shadow: 0 0 14px rgba(70, 200, 255, 0.28);
+      }
+
+      .navbar__link--accounts:hover,
+      .navbar__link--accounts.navbar__link--active {
+        color: #041018;
+        background: linear-gradient(135deg, #d4f6ff, #4ec8f0);
+        border-color: #9ae8ff;
+        box-shadow: 0 0 18px rgba(80, 210, 255, 0.5);
+      }
+
+      .navbar__brand-text {
+        white-space: nowrap;
+      }
+
+      .navbar__cta {
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #050010;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        border: 1px solid var(--accent);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+
+      .navbar__cta:hover {
+        box-shadow: var(--glow);
+      }
+
+      .login-page {
+        min-height: 100vh;
+        padding: 120px 20px 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .login-page::before {
+        content: '';
+        position: absolute;
+        top: 28%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120%;
+        height: 70%;
+        background: radial-gradient(ellipse at center, rgba(197, 108, 255, 0.16) 0%, rgba(0, 190, 255, 0.06) 42%, transparent 70%);
+        pointer-events: none;
+      }
+
+      .login-card {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        background: rgba(12, 7, 24, 0.88);
+        border: 1px solid var(--border-accent);
+        border-radius: 18px;
+        padding: 36px 28px 32px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 48px rgba(197, 108, 255, 0.12);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .login-card__eyebrow {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #c8f4ff;
+        text-shadow: 0 0 14px rgba(70, 200, 255, 0.45);
+        margin-bottom: 10px;
+      }
+
+      .login-card__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.7rem, 4vw, 2.15rem);
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        margin-bottom: 10px;
+      }
+
+      .login-card__copy {
+        color: var(--text-secondary);
+        font-size: 0.98rem;
+        line-height: 1.7;
+        margin-bottom: 26px;
+      }
+
+      .login-form label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+
+      .login-form input {
+        width: 100%;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid rgba(197, 108, 255, 0.22);
+        border-radius: 10px;
+        padding: 13px 14px;
+        font-size: 1rem;
+        margin-bottom: 18px;
+      }
+
+      .login-form input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(197, 108, 255, 0.18);
+        outline: none;
+      }
+
+      .login-status {
+        margin: 0 0 16px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        border: 1px solid rgba(220, 90, 90, 0.35);
+        background: rgba(90, 24, 40, 0.35);
+        color: #f0c4c4;
+      }
+
+      .btn--glass {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        font-family: var(--font-body);
+        font-size: 0.83rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #050010;
+        padding: 15px 40px;
+        border-radius: 10px;
+        border: 1.5px solid var(--accent);
+        background: linear-gradient(135deg, #e8d0ff, var(--accent));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        overflow: hidden;
+        box-shadow: 0 0 28px rgba(197, 108, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      .btn--glass::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+        animation: shimmer 3s ease-in-out infinite;
+      }
+
+      @keyframes shimmer {
+        0% { left: -100%; }
+        50% { left: 100%; }
+        100% { left: 100%; }
+      }
+
+      .btn--glass:hover {
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        box-shadow: 0 8px 44px rgba(184, 77, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+      }
+
+      .btn--glass:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn--glass-ghost {
+        margin-top: 12px;
+        color: var(--accent-light);
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.08), rgba(184, 77, 255, 0.03));
+        border-color: rgba(184, 77, 255, 0.4);
+        box-shadow: 0 4px 28px rgba(184, 77, 255, 0.18), inset 0 1px 0 rgba(184, 77, 255, 0.15);
+      }
+
+      .btn--glass-ghost:hover {
+        color: #ffffff;
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.15), rgba(184, 77, 255, 0.06));
+        box-shadow: 0 8px 40px rgba(184, 77, 255, 0.38), inset 0 1px 0 rgba(184, 77, 255, 0.25);
+      }
+
+      .login-hint {
+        margin-top: 14px;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        text-align: center;
+        line-height: 1.55;
+      }
+
+      .login-back {
+        display: block;
+        text-align: center;
+        margin-top: 18px;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+      }
+
+      .login-back a {
+        color: var(--accent-light);
+        font-weight: 600;
+      }
+
+      .login-back a:hover {
+        text-decoration: underline;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 599px) {
+        .navbar {
+          padding: 0 12px;
+          height: 60px;
+        }
+
+        .navbar__brand {
+          font-size: 0.95rem;
+        }
+
+        .navbar__brand-text {
+          display: none;
+        }
+
+        .navbar__link {
+          display: none;
+        }
+
+        .navbar__link--product {
+          display: inline-flex;
+          font-size: 0.72rem;
+          padding: 7px 8px;
+        }
+
+        .navbar__link--accounts {
+          padding: 6px 12px;
+        }
+
+        .login-page {
+          padding: 100px 16px 48px;
+        }
+
+        .login-card {
+          padding: 28px 20px 24px;
+        }
+      }
+
+      @media (min-width: 768px) {
+        .navbar {
+          padding: 0 40px;
+          height: 72px;
+        }
+
+        .login-page {
+          padding: 140px 40px 72px;
+        }
+      }
+
+      @media (min-width: 1200px) {
+        .navbar {
+          padding: 0 60px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn--glass::before {
+          animation: none;
+        }
+
+        .btn--glass {
+          transition: none;
+        }
+      }
+    </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="navbar__brand">
+      <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+      <span class="navbar__brand-text">LABELDIRECT</span>
+    </a>
+    <div class="navbar__links">
+      <div class="navbar__primary">
+        <a href="index.html" class="navbar__link navbar__link--product">Labels</a>
+        <a href="index.html#how-to-order" class="navbar__link">How to order</a>
+        <a href="index.html#faq" class="navbar__link">FAQ</a>
+      </div>
+      <a href="login.html" class="navbar__link navbar__link--product navbar__link--accounts navbar__link--active" aria-current="page">Accounts</a>
+    </div>
+  </nav>
+
+  <main id="main" class="login-page">
+    <section class="login-card">
+      
+      
+      <p class="login-card__copy">Enter your client token to continue.</p>
+      <p id="login-status" class="login-status" hidden></p>
+      <form class="login-form" id="login-form">
+        <label for="access-token">Access token</label>
+        <input id="access-token" name="token" type="password" autocomplete="current-password" required>
+        <button class="btn--glass" type="submit" id="login-submit">Continue</button>
+      </form>
+      <a class="btn--glass btn--glass-ghost" id="generate-token" href="https://t.me/LABELDIRECT_bot?start=access" target="_blank" rel="noopener noreferrer">Generate token</a>
+      
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="listings.js?v=token"></script>
+  <script>
+    if (ListingsApp.getAccountsSession()) {
+      window.location.replace("accounts.html");
+    } else {
+      var gen = document.getElementById("generate-token");
+      var tg = window.LABELDIRECT_TELEGRAM || {};
+      if (gen && tg.bot) {
+        gen.href = "https://t.me/" + String(tg.bot).replace(/^@/, "") + "?start=access";
+      }
+    var form = document.getElementById("login-form");
+    var input = document.getElementById("access-token");
+    var submit = document.getElementById("login-submit");
+    var statusEl = document.getElementById("login-status");
+
+    function showError(message) {
+      statusEl.textContent = message || "";
+      statusEl.hidden = !message;
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      showError("");
+
+      if (!ListingsApp.isApiConfigured()) {
+        showError("Set LABELDIRECT_API.baseUrl in config.js and run the backend.");
+        return;
+      }
+
+      submit.disabled = true;
+      ListingsApp.loginWithToken(input.value)
+        .then(function () {
+          window.location.replace("accounts.html");
+        })
+        .catch(function (err) {
+          submit.disabled = false;
+          if (err && err.status === 401) {
+            showError("That token didn’t work. Check it and try again.");
+            return;
+          }
+          showError((err && err.message) || "Could not sign in. Try again.");
+        });
+    });
+    }
+  </script>
+</body>
+</html>

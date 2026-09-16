@@ -1,0 +1,112 @@
+import { getSupabaseAdmin } from "../supabaseAdmin.js";
+
+export const WALLET_MIN_DEPOSIT_USD = 10;
+
+export async function ensureWallet(ownerKey) {
+  const key = String(ownerKey || "").trim();
+  if (!key) throw new Error("Wallet owner is required.");
+  const client = getSupabaseAdmin();
+  const { data: existing, error: selectError } = await client
+    .from("wallets")
+    .select("id, owner_key, balance_cents")
+    .eq("owner_key", key)
+    .maybeSingle();
+  if (selectError) throw selectError;
+  if (existing) return existing;
+
+  const { data: inserted, error: insertError } = await client
+    .from("wallets")
+    .insert({ owner_key: key })
+    .select("id, owner_key, balance_cents")
+    .single();
+  if (insertError) throw insertError;
+  return inserted;
+}
+
+export async function getWalletByOwnerKey(ownerKey) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("wallets")
+    .select("id, owner_key, balance_cents")
+    .eq("owner_key", String(ownerKey))
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export function parseDepositAmount(input) {
+  const raw = String(input == null ? "" : input).trim().replace(/,/g, "");
+  if (!raw) return { ok: false, error: "Enter an amount." };
+  if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
+    return { ok: false, error: "Use up to two decimal places (e.g. 50 or 50.00)." };
+  }
+  const dollars = Number(raw);
+  if (!Number.isFinite(dollars) || dollars <= 0) {
+    return { ok: false, error: "Enter a positive amount." };
+  }
+  if (dollars < WALLET_MIN_DEPOSIT_USD) {
+    return {
+      ok: false,
+      error: `Minimum deposit is $${WALLET_MIN_DEPOSIT_USD.toFixed(2)}.`,
+    };
+  }
+  return { ok: true, dollars: Math.round(dollars * 100) / 100 };
+}
+
+export function dollarsFromCents(cents) {
+  return Math.round(Number(cents) || 0) / 100;
+}
+
+export function centsFromDollars(dollars) {
+  return Math.round(Number(dollars) * 100);
+}
+
+const CREDIT_STATUSES = new Set(["finished", "confirmed"]);
+
+export function shouldCreditDeposit(paymentStatus) {
+  return CREDIT_STATUSES.has(String(paymentStatus || "").toLowerCase());
+}
+
+export async function applyDepositCredit(depositId) {
+  const client = getSupabaseAdmin();
+  const { data: deposit, error: depError } = await client
+    .from("deposits")
+    .select("id, wallet_id, amount_usd, credited_at, payment_status")
+    .eq("id", depositId)
+    .maybeSingle();
+  if (depError) throw depError;
+  if (!deposit || deposit.credited_at) return { credited: false };
+
+  if (!shouldCreditDeposit(deposit.payment_status)) {
+    return { credited: false };
+  }
+
+  const addCents = centsFromDollars(deposit.amount_usd);
+  const now = new Date().toISOString();
+
+  const { data: wallet, error: walletError } = await client
+    .from("wallets")
+    .select("balance_cents")
+    .eq("id", deposit.wallet_id)
+    .single();
+  if (walletError) throw walletError;
+
+  const newBalance = Number(wallet.balance_cents) + addCents;
+
+  const { data: marked, error: markError } = await client
+    .from("deposits")
+    .update({ credited_at: now, updated_at: now })
+    .eq("id", depositId)
+    .is("credited_at", null)
+    .select("id")
+    .maybeSingle();
+  if (markError) throw markError;
+  if (!marked) return { credited: false };
+
+  const { error: balanceError } = await client
+    .from("wallets")
+    .update({ balance_cents: newBalance, updated_at: now })
+    .eq("id", deposit.wallet_id);
+  if (balanceError) throw balanceError;
+
+  return { credited: true, addCents };
+}

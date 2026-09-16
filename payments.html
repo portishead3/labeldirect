@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add funds — LABELDIRECT</title>
+    <meta name="description" content="Add funds to your LABELDIRECT balance.">
+    <meta name="theme-color" content="#12141a">
+    <meta property="og:title" content="Add funds — LABELDIRECT">
+    <meta property="og:description" content="Top up your account balance.">
+    <meta property="og:image" content="logo.jpeg">
+    <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="logo.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+        height: 100%;
+      }
+
+      body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Jost', sans-serif;
+        font-weight: 400;
+        line-height: 1.7;
+        overflow-x: hidden;
+        min-height: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-family: inherit;
+      }
+
+      input {
+        font-family: inherit;
+      }
+
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 12px;
+        top: -48px;
+        z-index: 10000;
+        background: var(--accent);
+        color: #050010;
+        font-weight: 700;
+        padding: 10px 16px;
+        border-radius: 6px;
+      }
+
+      .skip-link:focus {
+        top: 12px;
+      }
+
+      :root {
+        --bg-primary: #12141a;
+        --bg-card: #181b22;
+        --bg-surface: #1e222b;
+        --accent: #9b7ec8;
+        --accent-light: #cfc6de;
+        --text-primary: #e4e2ea;
+        --text-secondary: #9a96a8;
+        --border-accent: rgba(155, 126, 200, 0.18);
+        --hairline: rgba(255, 255, 255, 0.06);
+        --font-heading: 'Jost', sans-serif;
+        --font-body: 'Jost', sans-serif;
+        --nav-h: 64px;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(18, 20, 26, 0.96);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--hairline);
+        padding: 0 20px;
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        flex-shrink: 0;
+      }
+
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid var(--border-accent);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .navbar__primary,
+      .navbar__actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .navbar__actions {
+        gap: 6px;
+      }
+
+      .navbar__sep {
+        width: 1px;
+        height: 26px;
+        background: var(--hairline);
+        flex-shrink: 0;
+        margin: 0 2px;
+      }
+
+      .navbar__link {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 8px 10px;
+        border-radius: 6px;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .navbar__link--active {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.16);
+        box-shadow: inset 0 -2px 0 var(--accent);
+      }
+
+      .navbar__link--accounts {
+        padding: 7px 14px;
+        border-radius: 6px;
+        letter-spacing: 0.1em;
+      }
+
+      .navbar__brand-text {
+        white-space: nowrap;
+      }
+
+      .navbar__cta {
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+
+      .navbar__cta:hover {
+        background: rgba(155, 126, 200, 0.16);
+        border-color: var(--accent);
+      }
+
+      .navbar__logout {
+        color: var(--text-secondary);
+        background: transparent;
+        border: 1px solid var(--hairline);
+      }
+
+      .navbar__logout:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.12);
+        border-color: var(--accent);
+      }
+
+      .navbar__balance {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.16);
+        border: 1px solid var(--accent);
+        padding: 6px 12px 6px 6px;
+        border-radius: 999px;
+      }
+
+      .navbar__balance-plus {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(155, 126, 200, 0.35);
+        border: 1px solid var(--border-accent);
+        color: var(--accent-light);
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .navbar__balance-label {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        line-height: 1.15;
+        min-width: 0;
+      }
+
+      .navbar__balance-caption {
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .navbar__balance-amount {
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: none;
+      }
+
+      .payments-page {
+        min-height: 100vh;
+        padding: calc(var(--nav-h) + 32px) 20px 48px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .payments-card {
+        width: 100%;
+        max-width: 440px;
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 12px;
+        padding: 28px 24px 32px;
+      }
+
+      .payments-card__eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+
+      .payments-card__title {
+        font-family: var(--font-heading);
+        font-size: 1.55rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        margin-bottom: 6px;
+      }
+
+      .payments-card__lead {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+      }
+
+      .balance-panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
+        border-radius: 10px;
+        background: var(--bg-surface);
+        border: 1px solid var(--hairline);
+        margin-bottom: 28px;
+      }
+
+      .balance-panel__label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .balance-panel__amount {
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .field {
+        margin-bottom: 20px;
+      }
+
+      .field__label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+
+      .field__input-wrap {
+        display: flex;
+        align-items: stretch;
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        background: var(--bg-surface);
+        overflow: hidden;
+        transition: border-color 0.2s ease;
+      }
+
+      .field__input-wrap:focus-within {
+        border-color: var(--accent);
+      }
+
+      .field__prefix {
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        background: var(--bg-card);
+        border-right: 1px solid var(--hairline);
+      }
+
+      .field__input {
+        flex: 1;
+        min-width: 0;
+        padding: 14px 16px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: transparent;
+        border: none;
+        outline: none;
+      }
+
+      .field__hint {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .payments-submit {
+        width: 100%;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #050010;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        border: 1px solid var(--accent);
+        padding: 14px 20px;
+        border-radius: 8px;
+        transition: opacity 0.2s ease, transform 0.15s ease;
+      }
+
+      .payments-submit:hover {
+        opacity: 0.95;
+      }
+
+      .payments-submit:active {
+        transform: scale(0.99);
+      }
+
+      .payments-back {
+        display: inline-block;
+        margin-top: 20px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--accent-light);
+      }
+
+      .payments-back:hover {
+        text-decoration: underline;
+      }
+
+      .page-status {
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        border: 1px solid var(--hairline);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+      }
+
+      .page-status.is-error {
+        color: #f0c4c4;
+        border-color: rgba(220, 90, 90, 0.35);
+      }
+
+      .page-status.is-info {
+        color: var(--accent-light);
+        border-color: var(--border-accent);
+      }
+
+      @media (max-width: 599px) {
+        .navbar {
+          padding: 0 12px;
+          height: 60px;
+        }
+
+        :root {
+          --nav-h: 60px;
+        }
+
+        .navbar__brand {
+          font-size: 0.95rem;
+        }
+
+        .navbar__brand-text {
+          display: none;
+        }
+
+        .navbar__link {
+          display: none;
+        }
+
+        .navbar__link--product {
+          display: inline-flex;
+          font-size: 0.72rem;
+          padding: 7px 8px;
+        }
+
+        .navbar__link--accounts {
+          padding: 6px 12px;
+        }
+
+        .navbar__balance-caption {
+          display: none;
+        }
+
+        .navbar__balance {
+          padding: 5px 10px 5px 5px;
+          gap: 6px;
+        }
+
+        .navbar__balance-plus {
+          width: 24px;
+          height: 24px;
+          font-size: 0.95rem;
+        }
+
+        .navbar__sep {
+          display: none;
+        }
+
+        .navbar__logout {
+          padding: 7px 10px;
+          font-size: 0.72rem;
+        }
+
+        .payments-page {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+
+        .payments-card {
+          padding: 22px 18px 28px;
+        }
+      }
+
+      @media (min-width: 768px) {
+        :root {
+          --nav-h: 72px;
+        }
+
+        .navbar {
+          padding: 0 40px;
+          height: 72px;
+        }
+      }
+
+      @media (min-width: 1200px) {
+        .navbar {
+          padding: 0 60px;
+        }
+      }
+    </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="navbar__brand">
+      <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+      <span class="navbar__brand-text">LABELDIRECT</span>
+    </a>
+    <div class="navbar__links">
+      <div class="navbar__primary">
+        <a href="index.html" class="navbar__link navbar__link--product">Labels</a>
+        <a href="accounts.html" class="navbar__link navbar__link--product navbar__link--accounts">Accounts</a>
+      </div>
+      <span class="navbar__sep" aria-hidden="true"></span>
+      <div class="navbar__actions">
+        <span class="navbar__balance is-current" data-balance-control aria-current="page" aria-label="Balance $0.00, add funds">
+          <span class="navbar__balance-plus" aria-hidden="true">+</span>
+          <span class="navbar__balance-label">
+            <span class="navbar__balance-caption">Balance</span>
+            <span class="navbar__balance-amount" data-balance-display>$0.00</span>
+          </span>
+        </span>
+        <button type="button" class="navbar__cta navbar__logout" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main" class="payments-page">
+    <div class="payments-card">
+      <p class="payments-card__eyebrow">Wallet</p>
+      <h1 class="payments-card__title">Add funds</h1>
+      <p class="payments-card__lead">Top up your balance with crypto via NOWPayments. Your balance updates after the payment is confirmed on the network.</p>
+
+      <div class="balance-panel">
+        <span class="balance-panel__label">Current balance</span>
+        <span class="balance-panel__amount" data-balance-display>$0.00</span>
+      </div>
+
+      <p id="page-status" class="page-status" hidden></p>
+
+      <form id="deposit-form" novalidate>
+        <div class="field">
+          <label class="field__label" for="deposit-amount">Deposit amount (USD)</label>
+          <div class="field__input-wrap">
+            <span class="field__prefix" aria-hidden="true">$</span>
+            <input class="field__input" type="text" id="deposit-amount" name="amount" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-describedby="deposit-hint">
+          </div>
+          <p class="field__hint" id="deposit-hint">Minimum <span id="min-deposit-label">$10.00</span>.</p>
+        </div>
+        <button type="submit" class="payments-submit" id="deposit-submit">Continue to payment</button>
+      </form>
+
+      <a href="accounts.html" class="payments-back">← Back to accounts</a>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="listings.js?v=wallet"></script>
+  <script>
+    if (!ListingsApp.getAccountsSession()) {
+      window.location.replace("login.html");
+    } else {
+    var statusEl = document.getElementById("page-status");
+    var logoutBtn = document.getElementById("logout-btn");
+    var form = document.getElementById("deposit-form");
+    var amountInput = document.getElementById("deposit-amount");
+    var minLabel = document.getElementById("min-deposit-label");
+    var submitBtn = document.getElementById("deposit-submit");
+    var balancePollTimer = null;
+
+    function showStatus(message, kind) {
+      ListingsApp.setStatus(statusEl, message, kind === "error" ? "error" : "");
+      statusEl.classList.toggle("is-info", kind === "info");
+    }
+
+    function bounceToLogin() {
+      ListingsApp.clearAccountsSession();
+      window.location.replace("login.html");
+    }
+
+    function refreshBalance() {
+      return ListingsApp.loadBalanceDisplays().catch(function (err) {
+        if (err && err.status === 401) {
+          bounceToLogin();
+          return;
+        }
+        throw err;
+      });
+    }
+
+    function startBalancePoll() {
+      if (balancePollTimer) return;
+      var attempts = 0;
+      balancePollTimer = window.setInterval(function () {
+        attempts += 1;
+        refreshBalance();
+        if (attempts >= 24) {
+          window.clearInterval(balancePollTimer);
+          balancePollTimer = null;
+        }
+      }, 5000);
+    }
+
+    if (minLabel) {
+      minLabel.textContent = ListingsApp.formatUsd(ListingsApp.WALLET_MIN_DEPOSIT_USD);
+    }
+
+    refreshBalance();
+
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("deposit") === "success") {
+      showStatus("Payment submitted. Your balance will update after NOWPayments confirms the transaction (this can take a few minutes).", "info");
+      startBalancePoll();
+    } else if (params.get("deposit") === "cancel") {
+      showStatus("Payment was cancelled. You can try again when ready.", "info");
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", function () {
+        bounceToLogin();
+      });
+    }
+
+    if (form && amountInput) {
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        showStatus("");
+        if (!ListingsApp.isApiConfigured()) {
+          showStatus("Set LABELDIRECT_API.baseUrl in config.js and run the backend.", "error");
+          return;
+        }
+        var parsed = ListingsApp.parseDepositAmount(amountInput.value);
+        if (!parsed.ok) {
+          showStatus(parsed.error, "error");
+          amountInput.focus();
+          return;
+        }
+        if (submitBtn) submitBtn.disabled = true;
+        ListingsApp.createDeposit(parsed.dollars)
+          .then(function (data) {
+            if (!data || !data.invoiceUrl) {
+              throw new Error("Could not start checkout.");
+            }
+            window.location.href = data.invoiceUrl;
+          })
+          .catch(function (err) {
+            if (submitBtn) submitBtn.disabled = false;
+            if (err && err.status === 401) {
+              bounceToLogin();
+              return;
+            }
+            showStatus((err && err.message) || "Could not start payment.", "error");
+          });
+      });
+    }
+    }
+  </script>
+</body>
+</html>

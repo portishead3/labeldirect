@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — LABELDIRECT</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#12141a">
+    <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        background: #12141a;
+        color: #e4e2ea;
+        font-family: 'Jost', sans-serif;
+        line-height: 1.6;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select {
+        font-family: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid #cfc6de;
+        outline-offset: 3px;
+      }
+
+      :root {
+        --bg-primary: #12141a;
+        --bg-card: #181b22;
+        --bg-surface: #1e222b;
+        --accent: #9b7ec8;
+        --text-primary: #e4e2ea;
+        --text-secondary: #9a96a8;
+        --border-accent: rgba(155, 126, 200, 0.18);
+        --hairline: rgba(255, 255, 255, 0.06);
+        --nav-h: 64px;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(18, 20, 26, 0.96);
+        border-bottom: 1px solid var(--hairline);
+        padding: 0 20px;
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+      }
+
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid var(--border-accent);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .navbar__link,
+      .navbar__cta {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 8px 14px;
+        border-radius: 6px;
+      }
+
+      .navbar__link {
+        color: var(--text-secondary);
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .navbar__cta {
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: calc(var(--nav-h) + 28px) 20px 48px;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .lede {
+        color: var(--text-secondary);
+        margin-bottom: 22px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        padding: 22px;
+        margin-bottom: 20px;
+      }
+
+      .card h2 {
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+
+      .status {
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        border: 1px solid var(--hairline);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+      }
+
+      .status.is-error {
+        color: #f0c4c4;
+        border-color: rgba(220, 90, 90, 0.35);
+      }
+
+      .status.is-ok {
+        color: #c6e4c9;
+        border-color: rgba(90, 180, 110, 0.35);
+      }
+
+      label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        margin-bottom: 14px;
+      }
+
+      textarea {
+        min-height: 180px;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.8rem;
+        line-height: 1.45;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0 16px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .btn {
+        background: var(--accent);
+        color: #12141a;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        padding: 10px 16px;
+        border-radius: 8px;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn--ghost {
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-accent);
+      }
+
+      .btn--danger,
+      .btn--compact {
+        padding: 6px 10px;
+        font-size: 0.72rem;
+      }
+
+      .btn--danger {
+        background: transparent;
+        color: #f0c4c4;
+        border: 1px solid rgba(220, 90, 90, 0.4);
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 12px 10px;
+        border-bottom: 1px solid var(--hairline);
+        white-space: nowrap;
+        font-size: 0.9rem;
+      }
+
+      th {
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .empty {
+        color: var(--text-secondary);
+        padding: 12px 0 0;
+      }
+
+      #saved-lists-wrap,
+      #users-wrap {
+        margin-top: 16px;
+      }
+
+      #saved-lists-wrap table,
+      #users-wrap table {
+        min-width: 640px;
+      }
+
+      #notify-message {
+        font-family: inherit;
+        font-size: 0.95rem;
+        min-height: 140px;
+      }
+
+      .process-status {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .process-status.is-processing {
+        color: #d8c8f0;
+      }
+
+      .process-status.is-ready {
+        color: #c6e4c9;
+      }
+
+      .process-status.is-error {
+        color: #f0c4c4;
+      }
+
+      tr.list-row-open {
+        cursor: pointer;
+      }
+
+      tr.list-row-open:hover td {
+        background: rgba(155, 126, 200, 0.08);
+      }
+
+      .row-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      tr.list-row-open:focus-visible {
+        outline: 2px solid #cfc6de;
+        outline-offset: -2px;
+      }
+
+      .admin-shell {
+        display: grid;
+        gap: 20px;
+        align-items: start;
+      }
+
+      .admin-sidebar {
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .admin-sidebar h2 {
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+      }
+
+      .admin-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .admin-nav__btn {
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+      }
+
+      .admin-nav__btn:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .admin-nav__btn.is-active {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.16);
+      }
+
+      .dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(8, 10, 14, 0.72);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 72px 16px 24px;
+        overflow: auto;
+      }
+
+      .dialog {
+        width: min(720px, 100%);
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 12px;
+        padding: 22px;
+      }
+
+      .dialog--confirm {
+        width: min(440px, 100%);
+        margin-top: 40px;
+      }
+
+      .dialog .btn--danger {
+        padding: 10px 16px;
+        font-size: 0.78rem;
+      }
+
+      .dialog__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .dialog__header h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      .dialog__close {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        margin: -6px -6px 0 0;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-size: 1.45rem;
+        line-height: 1;
+      }
+
+      .dialog__close:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .muted {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        margin-bottom: 14px;
+      }
+
+      .paste-source-bar {
+        margin-bottom: 18px;
+      }
+
+      .paste-source-bar > label {
+        margin-bottom: 8px;
+      }
+
+      .paste-segment {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+        padding: 5px;
+        background: var(--bg-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+      }
+
+      .paste-segment__option {
+        position: relative;
+        margin: 0;
+        cursor: pointer;
+      }
+
+      .paste-segment__option input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+        pointer-events: none;
+      }
+
+      .paste-segment__option span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 14px;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        border: 1px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .paste-segment__option:hover span {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.08);
+      }
+
+      .paste-segment__option:has(input:checked) span {
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border-color: var(--border-accent);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+
+      .paste-segment__option:has(input:focus-visible) span {
+        outline: 2px solid #cfc6de;
+        outline-offset: 2px;
+      }
+
+      .paste-content-panel {
+        padding-top: 2px;
+      }
+
+      .file-field {
+        margin-bottom: 14px;
+      }
+
+      .file-field input[type="file"] {
+        font-size: 0.88rem;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+
+      .file-meta {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        margin-top: -8px;
+        margin-bottom: 14px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (min-width: 768px) {
+        :root { --nav-h: 72px; }
+        .navbar { padding: 0 40px; height: 72px; }
+        .grid { grid-template-columns: 1fr 1fr; }
+        .admin-shell { grid-template-columns: 220px minmax(0, 1fr); }
+        .admin-nav { flex-direction: column; flex-wrap: nowrap; }
+      }
+    </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="navbar__brand">
+      <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+      <span>LABELDIRECT</span>
+    </a>
+    <div class="navbar__links">
+      <a href="accounts.html" class="navbar__link">Accounts</a>
+      <button type="button" class="navbar__cta" id="logout-btn" hidden>Log out</button>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <h1>Admin</h1>
+    <p class="lede">Add accounts shown on the Accounts page, or message registered clients on Telegram.</p>
+    <p id="page-status" class="status" hidden></p>
+
+    <section class="card" id="login-card">
+      <h2>Sign in</h2>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <div class="toolbar">
+          <button class="btn" type="submit" id="login-submit">Sign in</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="dashboard" class="admin-shell" hidden>
+      <aside class="admin-sidebar" aria-label="Admin actions">
+        <h2>Actions</h2>
+        <nav class="admin-nav">
+          <button type="button" class="admin-nav__btn is-active" data-admin-view="add">Add accounts</button>
+          <button type="button" class="admin-nav__btn" data-admin-view="notify">Send notification</button>
+        </nav>
+      </aside>
+
+      <div class="admin-main">
+      <section class="card" data-view-panel="add">
+        <h2>Add accounts</h2>
+        <p class="muted">Paste a list or upload a file. The list is saved immediately; accounts import in the background. Duplicate lines are skipped and reported.</p>
+        <div class="toolbar">
+          <button class="btn" type="button" id="open-paste-dialog">Import accounts</button>
+          <button class="btn btn--ghost" type="button" id="open-full-list">Full list</button>
+        </div>
+        <p class="empty" id="saved-lists-empty">No saved lists yet.</p>
+        <div class="table-wrap" id="saved-lists-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th>Created</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="saved-lists-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" data-view-panel="notify" hidden>
+        <h2>Send notification</h2>
+        <p class="muted">Clients who generated a token with the Telegram bot. Messages are sent as DMs from the bot.</p>
+        <div class="toolbar">
+          <button class="btn" type="button" id="open-notify-all">Message all users</button>
+        </div>
+        <p class="empty" id="users-empty">No registered users yet.</p>
+        <div class="table-wrap" id="users-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Telegram ID</th>
+                <th>Token issued</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="dialog-backdrop" id="paste-dialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="paste-dialog-title">
+      <div class="dialog__header">
+        <h2 id="paste-dialog-title">Import accounts</h2>
+        <button type="button" class="dialog__close" id="paste-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted">One account per line. Start each line with email:password then pipe-separated fields. Name a new list or attach this import to an existing one.</p>
+      <p id="paste-status" class="status" hidden role="alert"></p>
+      <form id="paste-form">
+        <label for="list-target">Save to</label>
+        <select id="list-target">
+          <option value="">New list</option>
+        </select>
+        <div id="new-list-name-wrap">
+          <label for="list-name">List name</label>
+          <input id="list-name" type="text" autocomplete="off" placeholder="e.g. FedEx batch 8 Sep">
+        </div>
+        <label for="list-price">Price</label>
+        <input id="list-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 50" required>
+        <div class="paste-source-bar">
+          <label id="paste-source-label">How to add</label>
+          <div class="paste-segment" role="radiogroup" aria-labelledby="paste-source-label">
+            <label class="paste-segment__option">
+              <input type="radio" name="paste-source" value="manual" checked>
+              <span>Type or paste</span>
+            </label>
+            <label class="paste-segment__option">
+              <input type="radio" name="paste-source" value="file">
+              <span>Upload file</span>
+            </label>
+          </div>
+        </div>
+        <div class="paste-content-panel">
+          <div id="paste-manual-wrap">
+            <label for="list-paste">List</label>
+            <textarea id="list-paste" spellcheck="false"></textarea>
+          </div>
+          <div id="paste-file-wrap" hidden>
+            <label for="list-file">Text file</label>
+            <div class="file-field">
+              <input id="list-file" type="file" accept=".txt,text/plain,.csv">
+            </div>
+            <p class="file-meta" id="list-file-meta" hidden></p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" type="submit" id="paste-submit">Import</button>
+          <button class="btn btn--ghost" type="button" id="paste-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="notify-dialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="notify-dialog-title">
+      <div class="dialog__header">
+        <h2 id="notify-dialog-title">Message all users</h2>
+        <button type="button" class="dialog__close" id="notify-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted" id="notify-dialog-copy">This will be sent as a Telegram DM from the bot to every registered client.</p>
+      <p id="notify-status" class="status" hidden role="alert"></p>
+      <form id="notify-form">
+        <label for="notify-message">Message</label>
+        <textarea id="notify-message" maxlength="4096" required placeholder="Type the message to send…"></textarea>
+        <div class="toolbar">
+          <button class="btn" type="submit" id="notify-submit">Send</button>
+          <button class="btn btn--ghost" type="button" id="notify-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="confirm-dialog" hidden>
+    <div class="dialog dialog--confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+      <div class="dialog__header">
+        <h2 id="confirm-dialog-title">Delete</h2>
+        <button type="button" class="dialog__close" id="confirm-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted" id="confirm-dialog-message"></p>
+      <div class="toolbar">
+        <button class="btn btn--danger" type="button" id="confirm-ok">Delete</button>
+        <button class="btn btn--ghost" type="button" id="confirm-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="listings.js?v=price"></script>
+  <script>
+    var statusEl = document.getElementById("page-status");
+    var loginCard = document.getElementById("login-card");
+    var dashboard = document.getElementById("dashboard");
+    var logoutBtn = document.getElementById("logout-btn");
+    var loginForm = document.getElementById("login-form");
+    var tbody = document.getElementById("users-tbody");
+    var emptyEl = document.getElementById("users-empty");
+    var loginSubmit = document.getElementById("login-submit");
+    var listWrap = document.getElementById("users-wrap");
+    var pasteDialog = document.getElementById("paste-dialog");
+    var notifyDialog = document.getElementById("notify-dialog");
+    var notifyForm = document.getElementById("notify-form");
+    var notifyTitle = document.getElementById("notify-dialog-title");
+    var notifyCopy = document.getElementById("notify-dialog-copy");
+    var notifyMessage = document.getElementById("notify-message");
+    var notifySubmit = document.getElementById("notify-submit");
+    var notifyStatusEl = document.getElementById("notify-status");
+    var notifyAllBtn = document.getElementById("open-notify-all");
+    var notifyTarget = null;
+    var confirmDialog = document.getElementById("confirm-dialog");
+    var confirmTitle = document.getElementById("confirm-dialog-title");
+    var confirmMessage = document.getElementById("confirm-dialog-message");
+    var confirmOk = document.getElementById("confirm-ok");
+    var confirmResolve = null;
+    var pasteForm = document.getElementById("paste-form");
+    var pasteSubmit = document.getElementById("paste-submit");
+    var listTarget = document.getElementById("list-target");
+    var listName = document.getElementById("list-name");
+    var listPrice = document.getElementById("list-price");
+    var listPaste = document.getElementById("list-paste");
+    var listFile = document.getElementById("list-file");
+    var listFileMeta = document.getElementById("list-file-meta");
+    var pasteManualWrap = document.getElementById("paste-manual-wrap");
+    var pasteFileWrap = document.getElementById("paste-file-wrap");
+    var newListNameWrap = document.getElementById("new-list-name-wrap");
+    var pasteStatusEl = document.getElementById("paste-status");
+    var savedListsEmpty = document.getElementById("saved-lists-empty");
+    var savedListsWrap = document.getElementById("saved-lists-wrap");
+    var savedListsTbody = document.getElementById("saved-lists-tbody");
+    var client = null;
+    var accessToken = null;
+    var savedLists = [];
+    var pendingAnnounce = {};
+    var listsPollTimer = null;
+    var MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+
+    function note(message, kind) {
+      ListingsApp.setStatus(statusEl, message, kind || "");
+    }
+
+    function pasteNote(message, kind) {
+      ListingsApp.setStatus(pasteStatusEl, message, kind || "");
+    }
+
+    function notifyNote(message, kind) {
+      ListingsApp.setStatus(notifyStatusEl, message, kind || "");
+    }
+
+    function formatTime(value) {
+      if (!value) return "—";
+      var date = new Date(value);
+      if (isNaN(date.getTime())) return String(value);
+      return date.toLocaleString();
+    }
+
+    function setView(name) {
+      document.querySelectorAll("[data-admin-view]").forEach(function (btn) {
+        btn.classList.toggle("is-active", btn.getAttribute("data-admin-view") === name);
+      });
+      document.querySelectorAll("[data-view-panel]").forEach(function (panel) {
+        panel.hidden = panel.getAttribute("data-view-panel") !== name;
+      });
+      if (!accessToken) return;
+      if (name === "notify") {
+        refreshUsers().catch(function (err) {
+          note(err.message || "Could not load users.", "error");
+        });
+      }
+    }
+
+    function showLoggedOut() {
+      loginCard.hidden = false;
+      dashboard.hidden = true;
+      logoutBtn.hidden = true;
+      pasteDialog.hidden = true;
+      closeNotifyDialog();
+      closeConfirmDialog(false);
+      pendingAnnounce = {};
+      if (listsPollTimer) {
+        clearTimeout(listsPollTimer);
+        listsPollTimer = null;
+      }
+    }
+
+    function showLoggedIn() {
+      var firstOpen = dashboard.hidden;
+      loginCard.hidden = true;
+      dashboard.hidden = false;
+      logoutBtn.hidden = false;
+      if (firstOpen) setView("add");
+      loadSavedLists().catch(function (err) {
+        note(err.message || "Could not load existing lists.", "error");
+      });
+    }
+
+    function displayName(row) {
+      var parts = [row.telegram_first_name, row.telegram_last_name].filter(Boolean);
+      return parts.length ? parts.join(" ") : "";
+    }
+
+    function usernameLabel(row) {
+      var username = String((row && row.telegram_username) || "").replace(/^@/, "").trim();
+      return username ? "@" + username : "";
+    }
+
+    function renderUserRows(rows) {
+      tbody.textContent = "";
+      emptyEl.hidden = rows.length > 0;
+      listWrap.hidden = rows.length === 0;
+      notifyAllBtn.disabled = rows.length === 0;
+      rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        var username = document.createElement("td");
+        username.textContent = usernameLabel(row) || "—";
+        tr.appendChild(username);
+        var name = document.createElement("td");
+        name.textContent = displayName(row) || "—";
+        tr.appendChild(name);
+        var telegramId = document.createElement("td");
+        telegramId.textContent = row.telegram_user_id == null ? "—" : String(row.telegram_user_id);
+        tr.appendChild(telegramId);
+        var issued = document.createElement("td");
+        issued.textContent = formatTime(row.updated_at);
+        tr.appendChild(issued);
+        var action = document.createElement("td");
+        var send = document.createElement("button");
+        send.type = "button";
+        send.className = "btn btn--compact";
+        send.textContent = "Send";
+        send.addEventListener("click", function () {
+          openNotifyDialog(row);
+        });
+        action.appendChild(send);
+        tr.appendChild(action);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function refreshUsers() {
+      return ListingsApp.adminRequest(accessToken, "/api/admin/users").then(function (rows) {
+        renderUserRows(Array.isArray(rows) ? rows : []);
+      });
+    }
+
+    function closeNotifyDialog() {
+      notifyDialog.hidden = true;
+      notifyTarget = null;
+      notifyNote("");
+      if (notifySubmit) notifySubmit.disabled = false;
+    }
+
+    function openNotifyDialog(row) {
+      notifyTarget = row || null;
+      notifyForm.reset();
+      notifyNote("");
+      notifySubmit.disabled = false;
+      if (notifyTarget) {
+        var who = usernameLabel(notifyTarget) || displayName(notifyTarget) || "this user";
+        notifyTitle.textContent = "Send notification";
+        notifyCopy.textContent = "This will be sent as a Telegram DM from the bot to " + who + ".";
+      } else {
+        notifyTitle.textContent = "Message all users";
+        notifyCopy.textContent = "This will be sent as a Telegram DM from the bot to every registered client.";
+      }
+      notifyDialog.hidden = false;
+      notifyMessage.focus();
+    }
+
+    function closeConfirmDialog(ok) {
+      confirmDialog.hidden = true;
+      var resolve = confirmResolve;
+      confirmResolve = null;
+      if (resolve) resolve(Boolean(ok));
+    }
+
+    function askToDelete(title, message) {
+      if (confirmResolve) closeConfirmDialog(false);
+      confirmTitle.textContent = title;
+      confirmMessage.textContent = message;
+      confirmDialog.hidden = false;
+      confirmOk.focus();
+      return new Promise(function (resolve) {
+        confirmResolve = resolve;
+      });
+    }
+
+    function formatBytes(n) {
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+      return (n / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function formatStatsMessage(result) {
+      var stats = (result && result.stats) || {};
+      var listLabel = result && result.list && result.list.name
+        ? ' into "' + result.list.name + '"'
+        : "";
+      return (
+        "Imported accounts" + listLabel + ". Parsed " + (stats.parsed || 0) +
+        ", added " + (stats.inserted || 0) +
+        ", updated " + (stats.updated || 0) +
+        ", duplicates skipped " + (stats.duped || 0) + "."
+      );
+    }
+
+    function processStatusLabel(row) {
+      var status = row && row.process_status;
+      if (status === "processing") return "Processing";
+      if (status === "ready") return "Ready";
+      if (status === "error") return "Error";
+      return "—";
+    }
+
+    function announceFinishedLists(rows) {
+      (rows || []).forEach(function (row) {
+        if (!pendingAnnounce[row.id]) return;
+        if (row.process_status === "processing") return;
+        delete pendingAnnounce[row.id];
+        if (row.process_status === "error") {
+          note(row.process_error || "Could not import accounts.", "error");
+          return;
+        }
+        note(formatStatsMessage({ list: row, stats: row.process_stats }), "ok");
+      });
+    }
+
+    function scheduleListsPoll() {
+      if (listsPollTimer) {
+        clearTimeout(listsPollTimer);
+        listsPollTimer = null;
+      }
+      if (!accessToken) return;
+      var busy = savedLists.some(function (row) {
+        return row.process_status === "processing";
+      });
+      if (!busy) return;
+      listsPollTimer = setTimeout(function () {
+        loadSavedLists().catch(function () {
+          scheduleListsPoll();
+        });
+      }, 1500);
+    }
+
+    function fillListTarget() {
+      var current = listTarget.value;
+      listTarget.textContent = "";
+      var fresh = document.createElement("option");
+      fresh.value = "";
+      fresh.textContent = "New list";
+      listTarget.appendChild(fresh);
+      savedLists.forEach(function (row) {
+        var opt = document.createElement("option");
+        opt.value = row.id;
+        opt.textContent = row.name || "Untitled list";
+        listTarget.appendChild(opt);
+      });
+      if (current && savedLists.some(function (row) { return row.id === current; })) {
+        listTarget.value = current;
+      } else {
+        listTarget.value = "";
+      }
+      newListNameWrap.hidden = Boolean(listTarget.value);
+    }
+
+    function renderSavedLists() {
+      savedListsTbody.textContent = "";
+      savedListsEmpty.hidden = savedLists.length > 0;
+      savedListsWrap.hidden = savedLists.length === 0;
+      savedLists.forEach(function (row) {
+        var tr = document.createElement("tr");
+        tr.className = "list-row-open";
+        tr.tabIndex = 0;
+        tr.setAttribute("role", "link");
+        tr.setAttribute("aria-label", "Open list " + (row.name || "Untitled list") + " in new tab");
+
+        function openListDetail() {
+          window.open(
+            "admin-list.html?id=" + encodeURIComponent(row.id),
+            "_blank",
+            "noopener,noreferrer"
+          );
+        }
+
+        tr.addEventListener("click", function (event) {
+          if (event.target.closest("button")) return;
+          openListDetail();
+        });
+        tr.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openListDetail();
+          }
+        });
+
+        var name = document.createElement("td");
+        name.textContent = row.name || "Untitled list";
+        var status = document.createElement("td");
+        var statusEl = document.createElement("span");
+        statusEl.className = "process-status";
+        if (row.process_status === "processing") statusEl.classList.add("is-processing");
+        if (row.process_status === "ready") statusEl.classList.add("is-ready");
+        if (row.process_status === "error") statusEl.classList.add("is-error");
+        statusEl.textContent = processStatusLabel(row);
+        if (row.process_status === "error" && row.process_error) {
+          statusEl.title = row.process_error;
+        }
+        status.appendChild(statusEl);
+        var updated = document.createElement("td");
+        updated.textContent = formatTime(row.updated_at);
+        var created = document.createElement("td");
+        created.textContent = formatTime(row.created_at);
+        var action = document.createElement("td");
+        var actions = document.createElement("div");
+        actions.className = "row-actions";
+        var copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn btn--ghost";
+        copyBtn.textContent = "Copy";
+        copyBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          copyList(row);
+        });
+        copyBtn.addEventListener("mousedown", function (event) {
+          event.stopPropagation();
+        });
+        var deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "btn btn--danger";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          deleteList(row);
+        });
+        deleteBtn.addEventListener("mousedown", function (event) {
+          event.stopPropagation();
+        });
+        actions.appendChild(copyBtn);
+        actions.appendChild(deleteBtn);
+        action.appendChild(actions);
+        tr.appendChild(name);
+        tr.appendChild(status);
+        tr.appendChild(updated);
+        tr.appendChild(created);
+        tr.appendChild(action);
+        savedListsTbody.appendChild(tr);
+      });
+    }
+
+    function deleteList(row) {
+      var label = row.name || "Untitled list";
+      askToDelete(
+        "Delete list",
+        "Delete list “" + label + "”? This cannot be undone."
+      ).then(function (ok) {
+        if (!ok) return;
+        note("Deleting…");
+        ListingsApp.adminRequest(accessToken, "/api/admin/lists/" + encodeURIComponent(row.id), { method: "DELETE" })
+          .then(function () {
+            return loadSavedLists();
+          })
+          .then(function () {
+            note("Deleted list “" + label + "”.", "ok");
+          })
+          .catch(function (err) {
+            note(err.message || "Could not delete list.", "error");
+          });
+      });
+    }
+
+    function copyList(row) {
+      ListingsApp.adminRequest(accessToken, "/api/admin/lists/" + encodeURIComponent(row.id))
+        .then(function (full) {
+          var text = (full && full.content) || "";
+          var done = navigator.clipboard && navigator.clipboard.writeText
+            ? navigator.clipboard.writeText(text)
+            : Promise.reject(new Error("Clipboard unavailable"));
+          return done.then(function () {
+            note("Copied list “" + (row.name || "Untitled list") + "”.", "ok");
+          }).catch(function () {
+            window.prompt("Copy this list:", text);
+          });
+        })
+        .catch(function (err) {
+          note(err.message || "Could not copy list.", "error");
+        });
+    }
+
+    function loadSavedLists() {
+      if (!accessToken) return Promise.resolve();
+      return ListingsApp.adminRequest(accessToken, "/api/admin/lists").then(function (rows) {
+        savedLists = rows || [];
+        fillListTarget();
+        renderSavedLists();
+        announceFinishedLists(savedLists);
+        scheduleListsPoll();
+      });
+    }
+
+    function pasteDestination() {
+      return {
+        attachListId: listTarget.value || null,
+        listName: (listName.value || "").trim()
+      };
+    }
+
+    function requireListDestination() {
+      var dest = pasteDestination();
+      if (!dest.attachListId && !dest.listName) {
+        pasteNote("Give this list a name, or attach it to an existing one.", "error");
+        listName.focus();
+        return null;
+      }
+      return dest;
+    }
+
+    function readImportPrice() {
+      var raw = (listPrice.value || "").trim();
+      if (!raw) {
+        pasteNote("Enter a price for this import.", "error");
+        listPrice.focus();
+        return null;
+      }
+      var n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) {
+        pasteNote("Enter a valid price of 0 or more.", "error");
+        listPrice.focus();
+        return null;
+      }
+      return Math.round(n * 100) / 100;
+    }
+
+    function isPasteFromFile() {
+      var picked = pasteForm.querySelector('input[name="paste-source"]:checked');
+      return picked && picked.value === "file";
+    }
+
+    function setPasteSource(mode) {
+      var fromFile = mode === "file";
+      pasteManualWrap.hidden = fromFile;
+      pasteFileWrap.hidden = !fromFile;
+      if (fromFile) {
+        listFile.focus();
+      } else {
+        listPaste.focus();
+      }
+    }
+
+    function resetFilePreview() {
+      listFileMeta.hidden = true;
+      listFileMeta.textContent = "";
+    }
+
+    function clearFileSelection() {
+      resetFilePreview();
+      listFile.value = "";
+    }
+
+    function suggestListNameFromFileName(fileName) {
+      if (listTarget.value) return;
+      if (listName.value.trim()) return;
+      var base = String(fileName || "").replace(/\.[^.]+$/, "").trim();
+      if (base) listName.value = base;
+    }
+
+    function openPasteDialog() {
+      pasteForm.reset();
+      pasteNote("");
+      clearFileSelection();
+      setPasteSource("manual");
+      fillListTarget();
+      pasteDialog.hidden = false;
+      loadSavedLists()
+        .catch(function (err) {
+          pasteNote(err.message || "Could not load existing lists.", "error");
+        })
+        .then(function () {
+          if (listTarget.value) listPaste.focus();
+          else listName.focus();
+        });
+    }
+
+    function closePasteDialog() {
+      pasteDialog.hidden = true;
+      pasteNote("");
+    }
+
+    if (!ListingsApp.isAuthConfigured() || !ListingsApp.isApiConfigured()) {
+      showLoggedOut();
+      loginForm.querySelectorAll("input, button").forEach(function (el) { el.disabled = true; });
+      note("Set LABELDIRECT_API.baseUrl in config.js, add backend/.env, and run npm start in backend/.", "error");
+    } else {
+      client = ListingsApp.getClient();
+
+      client.auth.onAuthStateChange(function (_event, session) {
+        accessToken = session && session.access_token ? session.access_token : null;
+        if (session) {
+          showLoggedIn();
+        } else {
+          showLoggedOut();
+        }
+      });
+
+      document.querySelectorAll("[data-admin-view]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setView(btn.getAttribute("data-admin-view"));
+        });
+      });
+
+      document.getElementById("open-paste-dialog").addEventListener("click", openPasteDialog);
+      document.getElementById("open-full-list").addEventListener("click", function () {
+        window.open("admin-full.html", "_blank", "noopener,noreferrer");
+      });
+      notifyAllBtn.addEventListener("click", function () {
+        openNotifyDialog(null);
+      });
+      document.getElementById("notify-cancel").addEventListener("click", closeNotifyDialog);
+      document.getElementById("notify-close").addEventListener("click", closeNotifyDialog);
+      notifyDialog.addEventListener("click", function (event) {
+        if (event.target === notifyDialog) closeNotifyDialog();
+      });
+      document.getElementById("paste-cancel").addEventListener("click", closePasteDialog);
+      document.getElementById("paste-close").addEventListener("click", closePasteDialog);
+      pasteDialog.addEventListener("click", function (event) {
+        if (event.target === pasteDialog) closePasteDialog();
+      });
+      document.getElementById("confirm-ok").addEventListener("click", function () {
+        closeConfirmDialog(true);
+      });
+      document.getElementById("confirm-cancel").addEventListener("click", function () {
+        closeConfirmDialog(false);
+      });
+      document.getElementById("confirm-close").addEventListener("click", function () {
+        closeConfirmDialog(false);
+      });
+      confirmDialog.addEventListener("click", function (event) {
+        if (event.target === confirmDialog) closeConfirmDialog(false);
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        if (!confirmDialog.hidden) {
+          closeConfirmDialog(false);
+          return;
+        }
+        if (!notifyDialog.hidden) {
+          closeNotifyDialog();
+          return;
+        }
+        if (!pasteDialog.hidden) closePasteDialog();
+      });
+      pasteForm.querySelectorAll('input[name="paste-source"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          setPasteSource(radio.value);
+        });
+      });
+
+      listTarget.addEventListener("change", function () {
+        newListNameWrap.hidden = Boolean(listTarget.value);
+        if (listTarget.value || listName.value.trim()) pasteNote("");
+      });
+      listName.addEventListener("input", function () {
+        if (listName.value.trim()) pasteNote("");
+      });
+
+      listFile.addEventListener("change", function () {
+        resetFilePreview();
+        var file = listFile.files && listFile.files[0];
+        if (!file) return;
+        if (file.size > MAX_UPLOAD_BYTES) {
+          pasteNote("File is too large. Maximum is 50 MB.", "error");
+          listFile.value = "";
+          return;
+        }
+        listFileMeta.hidden = false;
+        listFileMeta.textContent = file.name + " — " + formatBytes(file.size) + " ready to upload.";
+        suggestListNameFromFileName(file.name);
+      });
+
+      loginForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        loginSubmit.disabled = true;
+        note("Signing in…");
+        client.auth.signInWithPassword({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        }).then(function (res) {
+          loginSubmit.disabled = false;
+          if (res.error) throw res.error;
+          note("Signed in.", "ok");
+          loginForm.reset();
+        }).catch(function (err) {
+          loginSubmit.disabled = false;
+          note(err.message || "Sign in failed.", "error");
+        });
+      });
+
+      logoutBtn.addEventListener("click", function () {
+        client.auth.signOut().then(function () {
+          note("Signed out.", "ok");
+        });
+      });
+
+      notifyForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (!accessToken) {
+          notifyNote("Sign in first.", "error");
+          return;
+        }
+        var message = (notifyMessage.value || "").trim();
+        if (!message) {
+          notifyNote("Enter a message.", "error");
+          notifyMessage.focus();
+          return;
+        }
+        if (message.length > 4096) {
+          notifyNote("Message is too long. Telegram allows 4096 characters.", "error");
+          notifyMessage.focus();
+          return;
+        }
+        var body = { message: message };
+        if (notifyTarget && notifyTarget.telegram_user_id != null) {
+          body.telegramUserId = notifyTarget.telegram_user_id;
+        }
+        notifySubmit.disabled = true;
+        notifyNote("Sending…");
+        ListingsApp.adminRequest(accessToken, "/api/admin/notify", {
+          method: "POST",
+          body: body
+        })
+          .then(function (result) {
+            notifySubmit.disabled = false;
+            closeNotifyDialog();
+            var sent = result && result.sent ? result.sent : 0;
+            var total = result && result.total ? result.total : 0;
+            var failed = result && result.failed ? result.failed : 0;
+            var summary = "Sent to " + sent + " of " + total + " user" + (total === 1 ? "" : "s") + ".";
+            if (failed) summary += " " + failed + " failed.";
+            note(summary, failed && !sent ? "error" : "ok");
+          })
+          .catch(function (err) {
+            notifySubmit.disabled = false;
+            notifyNote(err.message || "Could not send message.", "error");
+          });
+      });
+
+      pasteForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (!accessToken) {
+          pasteNote("Sign in first.", "error");
+          return;
+        }
+        var dest = requireListDestination();
+        if (!dest) return;
+        var price = readImportPrice();
+        if (price == null) return;
+
+        function afterImport(result) {
+          pasteSubmit.disabled = false;
+          closePasteDialog();
+          var list = result && result.list;
+          var label = list && list.name ? ' "' + list.name + '"' : "";
+          if (list && list.id) pendingAnnounce[list.id] = true;
+          note("Saved list" + label + ". Importing accounts ....", "ok");
+          loadSavedLists().catch(function () {});
+        }
+
+        if (isPasteFromFile()) {
+          var file = listFile.files && listFile.files[0];
+          if (!file) {
+            pasteNote("Choose a text file with list content.", "error");
+            return;
+          }
+          if (file.size > MAX_UPLOAD_BYTES) {
+            pasteNote("File is too large. Maximum is 50 MB.", "error");
+            return;
+          }
+          var form = new FormData();
+          form.append("file", file);
+          form.append("listName", dest.listName);
+          form.append("price", String(price));
+          if (dest.attachListId) form.append("attachListId", dest.attachListId);
+          pasteSubmit.disabled = true;
+          pasteNote("Uploading…");
+          ListingsApp.adminRequest(accessToken, "/api/admin/paste/upload", {
+            method: "POST",
+            body: form
+          })
+            .then(afterImport)
+            .catch(function (err) {
+              pasteSubmit.disabled = false;
+              pasteNote(err.message || "Could not import accounts.", "error");
+            });
+          return;
+        }
+
+        var raw = (listPaste.value || "").trim();
+        if (!raw) {
+          pasteNote("Paste or type list content first.", "error");
+          return;
+        }
+        pasteSubmit.disabled = true;
+        pasteNote("Saving list…");
+        ListingsApp.adminRequest(accessToken, "/api/admin/paste", {
+          method: "POST",
+          body: {
+            rawText: raw,
+            listName: dest.listName,
+            attachListId: dest.attachListId,
+            price: price
+          }
+        })
+          .then(afterImport)
+          .catch(function (err) {
+            pasteSubmit.disabled = false;
+            pasteNote(err.message || "Could not import accounts.", "error");
+          });
+      });
+    }
+  </script>
+</body>
+</html>

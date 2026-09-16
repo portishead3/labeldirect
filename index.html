@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Labels — LABELDIRECT</title>
+    <meta name="description" content="LABELDIRECT Shipping Labels — Professional FedEx &amp; UPS labels using premium aged business accounts. Fast 30-40 min turnaround, 24/7 service.">
+    <meta name="theme-color" content="#050010">
+    <meta property="og:title" content="Shipping Labels — LABELDIRECT">
+    <meta property="og:description" content="Professional FedEx &amp; UPS labels. 30–40 min turnaround, 24/7 service.">
+    <meta property="og:image" content="logo.jpeg">
+    <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="logo.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <style>
+      /* ===== RESET & BASE ===== */
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+  
+      html {
+        scroll-behavior: smooth;
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+      }
+  
+      body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Jost', sans-serif;
+        font-weight: 400;
+        line-height: 1.7;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+  
+      img {
+        max-width: 100%;
+        display: block;
+      }
+  
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+  
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-family: inherit;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 12px;
+        top: -48px;
+        z-index: 10000;
+        background: var(--accent);
+        color: #050010;
+        font-weight: 700;
+        padding: 10px 16px;
+        border-radius: 6px;
+      }
+
+      .skip-link:focus {
+        top: 12px;
+      }
+  
+      /* ===== CSS VARIABLES ===== */
+      :root {
+        --bg-primary: #050010;
+        --bg-card: #0c0718;
+        --bg-surface: #161022;
+        --accent: #c56cff;
+        --accent-light: #eddcff;
+        --text-primary: #f7f4ff;
+        --text-secondary: #d8d0ee;
+        --border-accent: rgba(197, 108, 255, 0.28);
+        --font-heading: 'Jost', sans-serif;
+        --font-body: 'Jost', sans-serif;
+        --glow: 0 0 22px rgba(197, 108, 255, 0.45);
+      }
+  
+      /* ===== NOISE OVERLAY ===== */
+      .noise-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.02;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px 256px;
+      }
+  
+      /* ===== SCROLL REVEAL ===== */
+      .reveal {
+        opacity: 1;
+        transform: none;
+      }
+  
+      .reveal.visible {
+        opacity: 1;
+        transform: none;
+      }
+  
+      .reveal-delay-1 {
+        transition-delay: 0.1s;
+      }
+  
+      .reveal-delay-2 {
+        transition-delay: 0.2s;
+      }
+  
+      .reveal-delay-3 {
+        transition-delay: 0.3s;
+      }
+  
+      .reveal-delay-4 {
+        transition-delay: 0.4s;
+      }
+  
+      /* ===== NAVBAR ===== */
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(5, 0, 16, 0.92);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border-accent);
+        padding: 0 20px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+  
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        flex-shrink: 0;
+      }
+  
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid rgba(197, 108, 255, 0.45);
+        box-shadow: 0 0 12px rgba(197, 108, 255, 0.35);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .navbar__primary {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .navbar__link {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 8px 10px;
+        border-radius: 6px;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.1);
+      }
+
+      .navbar__link--active {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.2);
+        box-shadow: inset 0 0 0 1px rgba(237, 220, 255, 0.4);
+      }
+
+      .navbar__link--accounts {
+        color: #c8f4ff;
+        background: rgba(0, 190, 255, 0.12);
+        border: 1px solid rgba(130, 220, 255, 0.55);
+        padding: 7px 14px;
+        border-radius: 999px;
+        letter-spacing: 0.1em;
+        box-shadow: 0 0 14px rgba(70, 200, 255, 0.28);
+      }
+
+      .navbar__link--accounts:hover {
+        color: #ffffff;
+        background: rgba(0, 200, 255, 0.22);
+        border-color: #9ae8ff;
+        box-shadow: 0 0 18px rgba(90, 220, 255, 0.4);
+      }
+
+      .navbar__link--accounts.navbar__link--active {
+        color: #041018;
+        background: linear-gradient(135deg, #d4f6ff, #4ec8f0);
+        border-color: #9ae8ff;
+        box-shadow: 0 0 18px rgba(80, 210, 255, 0.5);
+      }
+
+      .navbar__brand-text {
+        white-space: nowrap;
+      }
+  
+      .navbar__cta {
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #050010;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        border: 1px solid var(--accent);
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+  
+      .navbar__cta:hover {
+        box-shadow: var(--glow);
+      }
+  
+      /* ===== HERO BANNER ===== */
+      .labels-hero {
+        padding: 130px 20px 70px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        background: var(--bg-primary);
+      }
+  
+      .labels-hero::before {
+        content: '';
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120%;
+        height: 80%;
+        background: radial-gradient(ellipse at center, rgba(197, 108, 255, 0.14) 0%, rgba(197, 108, 255, 0.04) 40%, transparent 68%);
+        pointer-events: none;
+      }
+  
+      .labels-hero__eyebrow {
+        font-family: var(--font-body);
+        font-size: clamp(1rem, 2.4vw, 1.25rem);
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #ff3df5;
+        text-shadow:
+          0 0 14px rgba(255, 61, 245, 0.8),
+          0 0 32px rgba(197, 108, 255, 0.55);
+        margin-bottom: 18px;
+        position: relative;
+      }
+  
+      .labels-hero__title {
+        font-family: var(--font-heading);
+        font-weight: 800;
+        font-style: normal;
+        font-size: clamp(2.8rem, 10vw, 5.5rem);
+        line-height: 1.05;
+        letter-spacing: 0.02em;
+        color: #ffffff;
+        text-shadow: 0 0 28px rgba(255, 255, 255, 0.35);
+        margin-bottom: 24px;
+        position: relative;
+      }
+  
+      .labels-hero__title span {
+        display: block;
+        font-style: italic;
+        color: #ff3df5;
+        text-shadow:
+          0 0 18px rgba(255, 61, 245, 0.85),
+          0 0 42px rgba(197, 108, 255, 0.65);
+      }
+  
+      .labels-hero__tagline {
+        font-family: var(--font-body);
+        font-style: normal;
+        font-weight: 400;
+        font-size: clamp(1.05rem, 2.8vw, 1.2rem);
+        color: var(--text-secondary);
+        max-width: 620px;
+        margin: 0 auto 36px;
+        line-height: 1.9;
+        letter-spacing: 0.02em;
+        position: relative;
+      }
+  
+      .labels-hero__badges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 40px;
+        position: relative;
+      }
+  
+      .labels-hero__badge {
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+        background: rgba(197, 108, 255, 0.12);
+        border: 1px solid rgba(197, 108, 255, 0.35);
+        padding: 7px 16px;
+        border-radius: 50px;
+      }
+  
+      .labels-hero__cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        justify-content: center;
+        position: relative;
+      }
+  
+      /* Accent divider line */
+      .section-divider {
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        margin: 0 auto 50px;
+        border-radius: 2px;
+      }
+  
+      /* ===== GLASS BUTTON ===== */
+      .btn--glass {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-family: var(--font-body);
+        font-size: 0.83rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+        padding: 15px 40px;
+        border-radius: 10px;
+        border: 1.5px solid rgba(184, 77, 255, 0.4);
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.08), rgba(184, 77, 255, 0.03));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        overflow: hidden;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        box-shadow: 0 4px 28px rgba(184, 77, 255, 0.18), inset 0 1px 0 rgba(184, 77, 255, 0.15);
+      }
+  
+      .btn--glass::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(184, 77, 255, 0.15), transparent);
+        animation: shimmer 3s ease-in-out infinite;
+      }
+  
+      @keyframes shimmer {
+        0% {
+          left: -100%;
+        }
+  
+        50% {
+          left: 100%;
+        }
+  
+        100% {
+          left: 100%;
+        }
+      }
+  
+      .btn--glass:hover {
+        border-color: var(--accent);
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.15), rgba(184, 77, 255, 0.06));
+        box-shadow: 0 8px 40px rgba(184, 77, 255, 0.38), inset 0 1px 0 rgba(184, 77, 255, 0.25);
+        transform: translateY(-3px);
+      }
+  
+      .btn--glass:active {
+        transform: translateY(0) scale(0.98);
+      }
+  
+      .btn--glass--filled {
+        background: linear-gradient(135deg, #e8d0ff, var(--accent));
+        color: #050010;
+        border-color: var(--accent);
+        font-weight: 700;
+        box-shadow: 0 0 28px rgba(197, 108, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+  
+      .btn--glass--filled:hover {
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        box-shadow: 0 8px 44px rgba(184, 77, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
+  
+      /* ===== SECTION TITLE ===== */
+      .section-title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-style: normal;
+        font-size: clamp(1.8rem, 5vw, 2.6rem);
+        text-align: center;
+        letter-spacing: 0.04em;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+  
+      /* ===== PAGE SECTIONS WRAPPER ===== */
+      .page-section {
+        padding: 80px 20px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      #why,
+      #carriers,
+      #how-to-order,
+      #faq,
+      #contact {
+        scroll-margin-top: 84px;
+      }
+  
+      .page-section--surface {
+        background: var(--bg-surface);
+        max-width: none;
+        padding: 80px 20px;
+      }
+  
+      .page-section--surface>.section-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+  
+      /* ===== WHY CARDS ===== */
+      .why-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 50px;
+      }
+  
+      @media (min-width: 560px) {
+        .why-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+  
+      @media (min-width: 900px) {
+        .why-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+      }
+  
+      .why-card {
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.07) 0%, rgba(184, 77, 255, 0.02) 100%);
+        border: 1px solid rgba(184, 77, 255, 0.18);
+        border-radius: 16px;
+        padding: 28px 22px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+  
+      .why-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(184, 77, 255, 0.4), transparent);
+      }
+  
+      .why-card:hover {
+        border-color: rgba(184, 77, 255, 0.4);
+        transform: translateY(-5px);
+        box-shadow: 0 16px 40px rgba(184, 77, 255, 0.18);
+      }
+  
+      .why-card__icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.2), rgba(184, 77, 255, 0.06));
+        border: 1px solid rgba(184, 77, 255, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        margin-bottom: 18px;
+        color: var(--accent-light);
+      }
+
+      .why-card__icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+  
+      .why-card__title {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: none;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+      }
+  
+      .why-card__desc {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 400;
+        color: var(--text-secondary);
+        line-height: 1.75;
+      }
+  
+      /* ===== HOW TO ORDER STEPS ===== */
+      .steps-list {
+        display: flex;
+        flex-direction: column;
+        max-width: 740px;
+        margin: 50px auto 0;
+      }
+  
+      .step-item {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+        position: relative;
+      }
+  
+      .step-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 22px;
+        top: 54px;
+        width: 2px;
+        height: calc(100% - 20px);
+        background: linear-gradient(to bottom, rgba(184, 77, 255, 0.4), rgba(184, 77, 255, 0.03));
+      }
+  
+      .step-num {
+        flex-shrink: 0;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(184, 77, 255, 0.5);
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.15), rgba(184, 77, 255, 0.04));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-style: normal;
+        font-size: 1.15rem;
+        color: var(--accent-light);
+        margin-top: 4px;
+        box-shadow: 0 0 16px rgba(197, 108, 255, 0.2);
+      }
+  
+      .step-content {
+        flex: 1;
+        padding-bottom: 40px;
+      }
+  
+      .step-title {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: none;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+  
+      .step-desc {
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 400;
+        color: var(--text-secondary);
+        line-height: 1.75;
+      }
+  
+      .step-desc a {
+        color: var(--accent-light);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        font-weight: 600;
+      }
+  
+      .step-desc a:hover {
+        color: var(--accent-light);
+      }
+  
+      /* ===== IMPORTANT NOTES ===== */
+      .notes-box {
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.05), rgba(184, 77, 255, 0.02));
+        border: 1px solid rgba(184, 77, 255, 0.2);
+        border-left: 3px solid var(--accent);
+        border-radius: 14px;
+        padding: 32px;
+        max-width: 740px;
+        margin: 50px auto 0;
+        position: relative;
+        overflow: hidden;
+      }
+  
+      .notes-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(circle, rgba(184, 77, 255, 0.07) 0%, transparent 70%);
+        pointer-events: none;
+      }
+  
+      .notes-box__heading {
+        font-family: var(--font-body);
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+  
+      .notes-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+  
+      .notes-list li {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 400;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        padding-left: 22px;
+        position: relative;
+      }
+  
+      .notes-list li::before {
+        content: '›';
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-size: 1.2rem;
+        line-height: 1.3;
+      }
+  
+      /* ===== CARRIERS SECTION ===== */
+      .carriers {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 24px;
+        margin-top: 50px;
+      }
+  
+      .carrier-card {
+        background: linear-gradient(160deg, rgba(197, 108, 255, 0.22) 0%, rgba(22, 16, 34, 0.95) 48%, rgba(12, 7, 24, 0.98) 100%);
+        border: 1.5px solid rgba(232, 208, 255, 0.45);
+        border-radius: 18px;
+        padding: 36px 44px;
+        text-align: center;
+        flex: 1;
+        min-width: 220px;
+        max-width: 320px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 0 1px rgba(197, 108, 255, 0.12), 0 12px 40px rgba(197, 108, 255, 0.22), inset 0 1px 0 rgba(237, 220, 255, 0.25);
+        transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      }
+
+      .carrier-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 12%;
+        right: 12%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent-light), transparent);
+        box-shadow: 0 0 16px rgba(197, 108, 255, 0.8);
+      }
+  
+      .carrier-card:hover {
+        border-color: var(--accent-light);
+        transform: translateY(-6px);
+        box-shadow: 0 0 0 1px rgba(237, 220, 255, 0.25), 0 18px 48px rgba(197, 108, 255, 0.38), inset 0 1px 0 rgba(237, 220, 255, 0.35);
+      }
+  
+      .carrier-card__name {
+        font-family: var(--font-heading);
+        font-size: 1.85rem;
+        font-weight: 800;
+        font-style: normal;
+        color: var(--text-primary);
+        letter-spacing: 0.04em;
+        margin-bottom: 10px;
+      }
+  
+      .carrier-card__desc {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        color: var(--accent-light);
+        font-weight: 500;
+        line-height: 1.6;
+      }
+  
+      /* ===== FAQ ===== */
+      .faq-list {
+        max-width: 780px;
+        margin: 50px auto 0;
+      }
+  
+      .faq-item {
+        border-bottom: 1px solid rgba(184, 77, 255, 0.12);
+        overflow: hidden;
+      }
+  
+      .faq-item:first-child {
+        border-top: 1px solid rgba(184, 77, 255, 0.12);
+      }
+  
+      .faq-question {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 22px 0;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        letter-spacing: 0.02em;
+        line-height: 1.5;
+        transition: color 0.3s ease;
+        min-height: 60px;
+      }
+  
+      .faq-question:hover {
+        color: var(--accent-light);
+      }
+  
+      .faq-item.active .faq-question {
+        color: var(--accent-light);
+      }
+  
+      .faq-icon {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid rgba(184, 77, 255, 0.3);
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.08), rgba(184, 77, 255, 0.02));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent-light);
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+  
+      .faq-item.active .faq-icon {
+        transform: rotate(45deg);
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.2), rgba(184, 77, 255, 0.06));
+        border-color: rgba(184, 77, 255, 0.5);
+        box-shadow: 0 0 14px rgba(184, 77, 255, 0.18);
+      }
+  
+      .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+  
+      .faq-item.active .faq-answer {
+        max-height: 800px;
+      }
+  
+      .faq-answer-inner {
+        padding: 0 0 24px 0;
+        font-family: var(--font-body);
+        font-size: 1rem;
+        font-weight: 400;
+        color: var(--text-secondary);
+        line-height: 1.85;
+        border-left: 2px solid rgba(184, 77, 255, 0.25);
+        padding-left: 20px;
+        margin-left: 4px;
+      }
+  
+      /* ===== CTA SECTION ===== */
+      .cta-section {
+        text-align: center;
+        padding: 90px 20px;
+        position: relative;
+        overflow: hidden;
+      }
+  
+      .cta-section::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at center, rgba(184, 77, 255, 0.16) 0%, transparent 70%);
+        pointer-events: none;
+      }
+  
+      .cta-section__heading {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-style: normal;
+        font-size: clamp(2rem, 7vw, 3.2rem);
+        letter-spacing: 0.03em;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        position: relative;
+      }
+  
+      .cta-section__sub {
+        font-family: var(--font-body);
+        font-size: clamp(0.88rem, 2vw, 1rem);
+        font-weight: 400;
+        color: var(--text-secondary);
+        max-width: 460px;
+        margin: 0 auto 36px;
+        line-height: 1.75;
+        position: relative;
+      }
+  
+      .cta-section__buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        justify-content: center;
+        position: relative;
+      }
+  
+      /* ===== FOOTER ===== */
+      .footer {
+        border-top: 1px solid var(--border-accent);
+        padding: 50px 20px 30px;
+        text-align: center;
+      }
+  
+      .footer__logo {
+        width: 148px;
+        height: 148px;
+        border-radius: 22px;
+        object-fit: cover;
+        margin: 0 auto 14px;
+        border: 2px solid rgba(184, 77, 255, 0.4);
+        box-shadow: 0 0 36px rgba(184, 77, 255, 0.4);
+      }
+  
+      .footer__brand {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.08em;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+  
+      .footer__tagline {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 400;
+        color: var(--text-secondary);
+        font-style: normal;
+        margin-bottom: 24px;
+      }
+  
+      .footer__copy {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        letter-spacing: 0.04em;
+      }
+  
+      /* ===== SCROLLBAR ===== */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+  
+      ::-webkit-scrollbar-track {
+        background: #050010;
+      }
+  
+      ::-webkit-scrollbar-thumb {
+        background: rgba(184, 77, 255, 0.3);
+        border-radius: 3px;
+      }
+  
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(184, 77, 255, 0.5);
+      }
+  
+      /* ===== MOBILE (max 599px) ===== */
+      @media (max-width: 599px) {
+        .navbar {
+          padding: 0 12px;
+          height: 60px;
+        }
+
+        .navbar__brand {
+          font-size: 0.95rem;
+        }
+
+        .navbar__brand-text {
+          display: none;
+        }
+
+        .navbar__link {
+          display: none;
+        }
+
+        .navbar__link--product {
+          display: inline-flex;
+          font-size: 0.72rem;
+          padding: 7px 8px;
+        }
+
+        .navbar__link--accounts {
+          padding: 6px 12px;
+        }
+
+        .labels-hero {
+          padding: 100px 16px 54px;
+        }
+  
+        .labels-hero__title {
+          font-size: 2.6rem;
+        }
+  
+        .labels-hero__tagline {
+          font-size: 0.95rem;
+          line-height: 1.7;
+          margin-bottom: 26px;
+        }
+  
+        .labels-hero__cta {
+          flex-direction: column;
+          align-items: stretch;
+        }
+  
+        .labels-hero__cta .btn--glass {
+          width: 100%;
+          padding: 16px 20px;
+          font-size: 0.8rem;
+        }
+  
+        .labels-hero__badges {
+          gap: 8px;
+        }
+  
+        .labels-hero__badge {
+          font-size: 0.72rem;
+          padding: 6px 12px;
+        }
+  
+        .page-section {
+          padding: 60px 16px;
+        }
+  
+        .page-section--surface {
+          padding: 60px 16px;
+        }
+  
+        .why-card {
+          padding: 22px 18px;
+        }
+  
+        .why-card__icon {
+          width: 40px;
+          height: 40px;
+          font-size: 1.2rem;
+          margin-bottom: 14px;
+        }
+  
+        .why-card__title {
+          font-size: 0.92rem;
+        }
+  
+        .why-card__desc {
+          font-size: 0.85rem;
+        }
+  
+        .step-item {
+          gap: 16px;
+        }
+  
+        .step-num {
+          width: 40px;
+          height: 40px;
+          font-size: 1rem;
+        }
+  
+        .step-item:not(:last-child)::after {
+          left: 19px;
+          top: 48px;
+        }
+  
+        .step-content {
+          padding-bottom: 28px;
+        }
+  
+        .step-desc {
+          font-size: 0.87rem;
+        }
+  
+        .notes-box {
+          padding: 22px 18px;
+        }
+  
+        .notes-list li {
+          font-size: 0.87rem;
+        }
+  
+        .carriers {
+          flex-direction: column;
+          align-items: center;
+        }
+  
+        .carrier-card {
+          max-width: 100%;
+          padding: 24px 28px;
+        }
+  
+        .faq-question {
+          font-size: 0.9rem;
+          padding: 18px 0;
+          min-height: 56px;
+        }
+  
+        .faq-icon {
+          width: 28px;
+          height: 28px;
+          font-size: 0.95rem;
+        }
+  
+        .faq-answer-inner {
+          font-size: 0.87rem;
+          padding-left: 14px;
+        }
+  
+        .cta-section {
+          padding: 70px 16px;
+        }
+  
+        .cta-section__buttons {
+          flex-direction: column;
+          align-items: stretch;
+        }
+  
+        .cta-section__buttons .btn--glass {
+          width: 100%;
+          padding: 16px 20px;
+          font-size: 0.82rem;
+        }
+      }
+  
+      /* ===== TABLET: 600px–767px ===== */
+      @media (min-width: 600px) and (max-width: 767px) {
+        .labels-hero {
+          padding: 110px 28px 60px;
+        }
+  
+        .page-section {
+          padding: 70px 28px;
+        }
+  
+        .page-section--surface {
+          padding: 70px 28px;
+        }
+      }
+  
+      /* ===== DESKTOP ===== */
+      @media (min-width: 768px) {
+        .navbar {
+          padding: 0 40px;
+          height: 72px;
+        }
+  
+        .labels-hero {
+          padding: 150px 40px 90px;
+        }
+  
+        .page-section {
+          padding: 100px 40px;
+        }
+  
+        .page-section--surface {
+          padding: 100px 40px;
+        }
+  
+        .faq-question {
+          font-size: 1rem;
+          padding: 24px 0;
+        }
+      }
+  
+      @media (min-width: 1200px) {
+        .navbar {
+          padding: 0 60px;
+        }
+  
+        .page-section {
+          padding: 120px 60px;
+        }
+  
+        .page-section--surface {
+          padding: 120px 60px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        .reveal {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+
+        .btn--glass::before {
+          animation: none;
+        }
+
+        .why-card,
+        .carrier-card,
+        .btn--glass {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="noise-overlay" aria-hidden="true"></div>
+  
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+      <a href="index.html" class="navbar__brand">
+        <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+        <span class="navbar__brand-text">LABELDIRECT</span>
+      </a>
+      <div class="navbar__links">
+        <div class="navbar__primary">
+          <a href="index.html" class="navbar__link navbar__link--product navbar__link--active" aria-current="page">Labels</a>
+          <a href="#how-to-order" class="navbar__link">How to order</a>
+          <a href="#faq" class="navbar__link">FAQ</a>
+        </div>
+        <a href="login.html" class="navbar__link navbar__link--product navbar__link--accounts">Accounts</a>
+      </div>
+    </nav>
+  
+    <main id="main">
+    <!-- HERO BANNER -->
+    <section class="labels-hero">
+      <p class="labels-hero__eyebrow reveal">LABELDIRECT Services</p>
+      <h1 class="labels-hero__title reveal reveal-delay-1">
+        SHIPPING
+        <span>LABELS</span>
+      </h1>
+      <p class="labels-hero__tagline reveal reveal-delay-2">
+        Professional FedEx and UPS labels from aged business accounts. Fast turnaround, 24/7.
+      </p>
+      <div class="labels-hero__badges reveal reveal-delay-3">
+        <span class="labels-hero__badge">FedEx &amp; UPS</span>
+        <span class="labels-hero__badge">30–40 min turnaround</span>
+        <span class="labels-hero__badge">24/7 service</span>
+      </div>
+      <div class="labels-hero__cta reveal reveal-delay-4 visible">
+        <a href="https://t.me/labeldirect" target="_blank" rel="noopener noreferrer" class="btn--glass btn--glass--filled">
+          START YOUR ORDER →
+        </a>
+        <a href="login.html" class="btn--glass">
+          VIEW ACCOUNTS →
+        </a>
+      </div>
+    </section>
+  
+    <!-- WHY LABELDIRECT -->
+    <section class="page-section--surface" id="why">
+      <div class="section-inner">
+        <h2 class="section-title reveal visible">WHY LABELDIRECT?</h2>
+        <div class="section-divider reveal reveal-delay-1 visible"></div>
+        <div class="why-grid">
+  
+          <div class="why-card reveal reveal-delay-1">
+            <div class="why-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.3-6M21 3v6h-6"/></svg>
+            </div>
+            <h3 class="why-card__title">Daily fresh, aged accounts</h3>
+            <p class="why-card__desc">High-tier, aged business accounts for every label — refreshed daily for account health and lower risk.</p>
+          </div>
+  
+          <div class="why-card reveal reveal-delay-2">
+            <div class="why-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3 5 7v6c0 5 3.5 7.5 7 9 3.5-1.5 7-4 7-9V7l-7-4z"/></svg>
+            </div>
+            <h3 class="why-card__title">Premium quality</h3>
+            <p class="why-card__desc">We prioritize carrier standing so your risk stays as low as possible. No shortcuts.</p>
+          </div>
+  
+          <div class="why-card reveal reveal-delay-3">
+            <div class="why-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 10-14h-7l0-6z"/></svg>
+            </div>
+            <h3 class="why-card__title">Fast service, 24/7</h3>
+            <p class="why-card__desc">Around-the-clock operations with a 30–40 minute label delivery window. No downtime.</p>
+          </div>
+  
+          <div class="why-card reveal reveal-delay-4">
+            <div class="why-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 3.5 6 3.5 9s-1 6-3.5 9c-2.5-3-3.5-6-3.5-9s1-6 3.5-9z"/></svg>
+            </div>
+            <h3 class="why-card__title">Global reach</h3>
+            <p class="why-card__desc">FedEx and UPS labels for domestic and worldwide shipping — wherever packages need to go.</p>
+          </div>
+  
+        </div>
+      </div>
+    </section>
+  
+    <!-- CARRIERS -->
+    <section class="page-section" id="carriers">
+      <h2 class="section-title reveal visible">CARRIERS WE WORK WITH</h2>
+      <div class="section-divider reveal reveal-delay-1 visible"></div>
+      <div class="carriers">
+  
+        <div class="carrier-card reveal reveal-delay-2 visible">
+          <h3 class="carrier-card__name">FedEx</h3>
+          <p class="carrier-card__desc">Domestic &amp; International<br>Express &amp; Ground</p>
+        </div>
+  
+        <div class="carrier-card reveal reveal-delay-3 visible">
+          <h3 class="carrier-card__name">UPS</h3>
+          <p class="carrier-card__desc">Domestic &amp; Worldwide<br>All service levels</p>
+        </div>
+  
+      </div>
+    </section>
+  
+    <!-- HOW TO ORDER -->
+    <section class="page-section--surface" id="how-to-order">
+      <div class="section-inner">
+        <h2 class="section-title reveal visible">HOW TO ORDER</h2>
+        <div class="section-divider reveal reveal-delay-1 visible"></div>
+        <div class="steps-list">
+  
+          <div class="step-item reveal reveal-delay-1 visible">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h3 class="step-title">Request the form</h3>
+              <p class="step-desc">Message us on <a href="https://t.me/LABELDIRECT" target="_blank" rel="noopener noreferrer">Telegram</a> or <a href="https://signal.me/#p/LABELDIRECT.01" target="_blank" rel="noopener noreferrer">Signal</a> for the official Label Order Form. Backup channel: <strong style="color: var(--accent-light);">@LABELDIRECT</strong>.</p>
+            </div>
+          </div>
+  
+          <div class="step-item reveal reveal-delay-2 visible">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h3 class="step-title">Fill &amp; send</h3>
+              <p class="step-desc">Complete the form with your full shipment details — carrier selection, package weight,
+                dimensions, origin address, and destination. Send it back to us when ready.</p>
+            </div>
+          </div>
+  
+          <div class="step-item reveal reveal-delay-3 visible">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h3 class="step-title">Processing</h3>
+              <p class="step-desc">We generate your label using premium aged business accounts. Allow <strong style="color: var(--accent-light); font-weight: 600;">30–40 minutes</strong> for delivery. This may vary slightly during high-volume periods.</p>
+            </div>
+          </div>
+  
+          <div class="step-item reveal reveal-delay-4 visible">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h3 class="step-title">Ship</h3>
+              <p class="step-desc">Receive your PDF label and tracking number via our secure channel. Drop your package at
+                any official FedEx or UPS location. That's it — you're moving.</p>
+            </div>
+          </div>
+  
+        </div>
+  
+        <!-- Important Notes -->
+        <div class="notes-box reveal">
+          <h3 class="notes-box__heading">Important notes</h3>
+          <ul class="notes-list">
+            <li><strong style="color: var(--text-primary);">Your responsibility:</strong> All shipments are at the customer's own risk. We cannot guarantee landing outcomes. Anyone claiming a 100% success rate is not being honest.</li>
+            <li><strong style="color: var(--text-primary);">No EORI support:</strong> We do not provide EORI assistance. Confirm customs documentation before shipping internationally.</li>
+            <li><strong style="color: var(--text-primary);">Crypto only:</strong> We accept cryptocurrency only. No cards, PayPal, or bank transfers.</li>
+            <li><strong style="color: var(--text-primary);">Flat shipping rate:</strong> Shipping is <strong style="color: var(--accent-light);">$200 per box</strong>, regardless of order size.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  
+    <!-- FAQ -->
+    <section class="page-section" id="faq">
+      <h2 class="section-title reveal visible">FREQUENTLY ASKED QUESTIONS</h2>
+      <div class="section-divider reveal reveal-delay-1 visible"></div>
+  
+      <div class="faq-list" id="faq-list">
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-1" aria-expanded="false" aria-controls="faq-a-1">
+            Do you guarantee my package will land?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-1" role="region" aria-labelledby="faq-q-1">
+            <div class="faq-answer-inner">No. Anyone promising a 100% guarantee is not being honest. We use aged business accounts to minimize risk, but the outcome is always at the customer's own risk.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-2" aria-expanded="false" aria-controls="faq-a-2">
+            How long does it take to get my label?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-2" role="region" aria-labelledby="faq-q-2">
+            <div class="faq-answer-inner">Standard turnaround is 30–40 minutes after we receive your completed order form. High volume can add a little time.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-3" aria-expanded="false" aria-controls="faq-a-3">
+            What carriers do you work with?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-3" role="region" aria-labelledby="faq-q-3">
+            <div class="faq-answer-inner">FedEx and UPS, domestic and worldwide.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-4" aria-expanded="false" aria-controls="faq-a-4">
+            Do you provide EORI support for international shipping?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-4" role="region" aria-labelledby="faq-q-4">
+            <div class="faq-answer-inner">No. You are responsible for customs documentation and requirements before you ship.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-5" aria-expanded="false" aria-controls="faq-a-5">
+            Why are your accounts better than others?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-5" role="region" aria-labelledby="faq-q-5">
+            <div class="faq-answer-inner">We use daily-refreshed, aged premium business accounts. Stronger carrier history reduces flags and holds compared with typical consumer accounts.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-6" aria-expanded="false" aria-controls="faq-a-6">
+            What payment methods do you accept?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-6" role="region" aria-labelledby="faq-q-6">
+            <div class="faq-answer-inner">Cryptocurrency only. We do not accept cards, PayPal, or bank transfers.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-7" aria-expanded="false" aria-controls="faq-a-7">
+            Do you offer volume discounts?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-7" role="region" aria-labelledby="faq-q-7">
+            <div class="faq-answer-inner">Yes. Volume pricing is confirmed when you order on Telegram, based on quantity.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-8" aria-expanded="false" aria-controls="faq-a-8">
+            Is there a minimum order?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-8" role="region" aria-labelledby="faq-q-8">
+            <div class="faq-answer-inner">No minimum. Shipping is a flat $200 per box regardless of order size.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-9" aria-expanded="false" aria-controls="faq-a-9">
+            Are you available 24/7?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-9" role="region" aria-labelledby="faq-q-9">
+            <div class="faq-answer-inner">Yes. We operate around the clock so you can move inventory whenever you need to.</div>
+          </div>
+        </div>
+  
+        <div class="faq-item">
+          <button class="faq-question" id="faq-q-10" aria-expanded="false" aria-controls="faq-a-10">
+            How do I get started?
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" id="faq-a-10" role="region" aria-labelledby="faq-q-10">
+            <div class="faq-answer-inner">Message <strong style="color: var(--accent-light);">@LABELDIRECT</strong> on Telegram for the Label Order Form. If needed, use backup <strong style="color: var(--accent-light);">@BACKUPLABELDIRECT</strong>. Fill it out and send it back — we handle the rest.</div>
+          </div>
+        </div>
+  
+      </div>
+    </section>
+  
+    <!-- CTA -->
+    <section class="cta-section" id="contact">
+      <h2 class="cta-section__heading">Ready to ship?</h2>
+      <p class="cta-section__sub">Message us now. The team is online 24/7.</p>
+      <div class="cta-section__buttons">
+        <a href="https://t.me/LABELDIRECT" target="_blank" rel="noopener noreferrer" class="btn--glass btn--glass--filled">
+          Telegram
+        </a>
+        <a href="https://signal.me/#p/thecommission.01" target="_blank" rel="noopener noreferrer" class="btn--glass">
+          Signal
+        </a>
+        <a href="https://instagram.com/LABELDIRECT" target="_blank" rel="noopener noreferrer" class="btn--glass">
+          Instagram
+        </a>
+      </div>
+    </section>
+    </main>
+  
+    <!-- FOOTER -->
+    <footer class="footer">
+      <img src="logo.jpeg" alt="LABELDIRECT" class="footer__logo" width="148" height="148">
+      <div class="footer__brand">LABELDIRECT</div>
+      <p class="footer__tagline">Top shelf. Every time. · <a href="login.html" style="color: var(--accent-light);">Accounts</a></p>
+      <p class="footer__copy">© 2026 LABELDIRECT. All rights reserved.</p>
+    </footer>
+  
+    <script>
+      /* ===== SCROLL REVEAL ===== */
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+  
+      document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+  
+      /* ===== FAQ ACCORDION ===== */
+      document.querySelectorAll('.faq-item').forEach(function (item) {
+        var btn = item.querySelector('.faq-question');
+        btn.addEventListener('click', function () {
+          var isOpen = item.classList.contains('active');
+          document.querySelectorAll('.faq-item.active').forEach(function (open) {
+            open.classList.remove('active');
+            open.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+          });
+          if (!isOpen) {
+            item.classList.add('active');
+            btn.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+    </script>
+  
+  
+  
+  </body></html>

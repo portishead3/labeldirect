@@ -1,0 +1,40 @@
+# Render Blueprint — deploy from dashboard: New > Blueprint > connect repo with root at backend/
+# Or create Web Service manually: Root Directory = backend, Build = npm install, Start = npm start
+
+services:
+  - type: web
+    name: labeldirect-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ACCOUNTS_ACCESS_TOKEN
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHANNEL
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        sync: false
+      - key: NOWPAYMENTS_API_KEY
+        sync: false
+      - key: IPN_SECRET
+        sync: false
+      - key: NOWPAYMENTS_API_BASE
+        value: https://api.nowpayments.io
+      - key: PUBLIC_SITE_URL
+        sync: false
+      - key: NOWPAYMENTS_IPN_URL
+        sync: false

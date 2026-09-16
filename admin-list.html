@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List — Admin — LABELDIRECT</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#12141a">
+    <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        background: #12141a;
+        color: #e4e2ea;
+        font-family: 'Jost', sans-serif;
+        line-height: 1.6;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      input {
+        font-family: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #cfc6de;
+        outline-offset: 3px;
+      }
+
+      :root {
+        --bg-primary: #12141a;
+        --bg-card: #181b22;
+        --bg-surface: #1e222b;
+        --accent: #9b7ec8;
+        --text-primary: #e4e2ea;
+        --text-secondary: #9a96a8;
+        --border-accent: rgba(155, 126, 200, 0.18);
+        --hairline: rgba(255, 255, 255, 0.06);
+        --nav-h: 64px;
+        --danger: #c45c5c;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(18, 20, 26, 0.96);
+        border-bottom: 1px solid var(--hairline);
+        padding: 0 20px;
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+      }
+
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid var(--border-accent);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .navbar__link,
+      .navbar__cta {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 8px 14px;
+        border-radius: 6px;
+      }
+
+      .navbar__link {
+        color: var(--text-secondary);
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .navbar__cta {
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: calc(var(--nav-h) + 28px) 20px 48px;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .lede {
+        color: var(--text-secondary);
+        margin-bottom: 22px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        padding: 22px;
+        margin-bottom: 20px;
+      }
+
+      .card h2 {
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+
+      .status {
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        border: 1px solid var(--hairline);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+      }
+
+      .status.is-error {
+        color: #f0c4c4;
+        border-color: rgba(220, 90, 90, 0.35);
+      }
+
+      .status.is-ok {
+        color: #c6e4c9;
+        border-color: rgba(90, 180, 110, 0.35);
+      }
+
+      label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      input {
+        width: 100%;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        margin-bottom: 14px;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px 24px;
+        margin-bottom: 18px;
+        font-size: 0.9rem;
+      }
+
+      .meta-grid dt {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .meta-grid dd {
+        margin: 0 0 8px;
+        color: var(--text-primary);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+
+      .toolbar--rows {
+        margin-bottom: 16px;
+      }
+
+      .btn {
+        background: var(--accent);
+        color: #12141a;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        padding: 10px 16px;
+        border-radius: 8px;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn--ghost {
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-accent);
+      }
+
+      .btn--danger {
+        background: var(--danger);
+        color: #fff8f8;
+        border: 1px solid #d46a6a;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+      }
+
+      .btn--danger:hover:not(:disabled) {
+        background: #d16666;
+      }
+
+      .muted {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        margin-bottom: 14px;
+      }
+
+      .dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(8, 10, 14, 0.72);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        overflow: auto;
+      }
+
+      .dialog {
+        width: min(440px, 100%);
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 12px;
+        padding: 22px;
+      }
+
+      .dialog__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .dialog__header h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      .dialog__close {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        margin: -6px -6px 0 0;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-size: 1.45rem;
+        line-height: 1;
+      }
+
+      .dialog__close:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .empty {
+        color: var(--text-secondary);
+        padding: 8px 0 0;
+      }
+
+      .list-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .list-row {
+        display: grid;
+        grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+        grid-template-areas:
+          "num text text"
+          "num price action";
+        gap: 8px 14px;
+        padding: 14px 14px 14px 12px;
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        background: var(--bg-surface);
+        box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.06);
+      }
+
+      .list-row:nth-child(even) {
+        background: #191d26;
+        box-shadow: inset 3px 0 0 rgba(155, 126, 200, 0.22);
+      }
+
+      .list-row.is-selected {
+        border-color: rgba(155, 126, 200, 0.45);
+        background: rgba(155, 126, 200, 0.14);
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+
+      .list-row__num {
+        grid-area: num;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--text-secondary);
+        padding-top: 2px;
+      }
+
+      .list-row__text {
+        grid-area: text;
+        margin: 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        color: var(--text-primary);
+      }
+
+      .list-row__price {
+        grid-area: price;
+        justify-self: start;
+        min-width: 6.5rem;
+        align-self: center;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+
+      .list-row__price-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .list-row__price-btn {
+        min-width: 6.5rem;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border-accent);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
+        text-align: left;
+      }
+
+      .list-row__price-btn:hover {
+        border-color: var(--accent);
+        background: rgba(155, 126, 200, 0.12);
+      }
+
+      .list-row__price-empty {
+        display: inline-block;
+        min-width: 6.5rem;
+        padding: 8px 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        background: var(--bg-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+      }
+
+      .list-row__price-input {
+        width: 6.5rem;
+        margin: 0;
+        padding: 8px 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .list-row__select {
+        grid-area: action;
+        justify-self: start;
+        min-width: 92px;
+        padding: 7px 12px;
+        font-size: 0.7rem;
+      }
+
+      .list-row__select.is-on {
+        background: rgba(155, 126, 200, 0.28);
+        color: var(--text-primary);
+        border-color: var(--accent);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (min-width: 768px) {
+        :root { --nav-h: 72px; }
+        .navbar { padding: 0 40px; height: 72px; }
+        .meta-grid { grid-template-columns: auto 1fr auto 1fr auto 1fr; }
+        .meta-grid dd { margin-bottom: 0; }
+        .list-row {
+          grid-template-columns: 3.5rem minmax(0, 1fr) 7.25rem auto;
+          grid-template-areas: "num text price action";
+          align-items: center;
+          padding: 14px 16px;
+        }
+        .list-row__price {
+          justify-self: end;
+        }
+        .list-row__select {
+          justify-self: end;
+        }
+      }
+    </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="index.html" class="navbar__brand">
+      <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+      <span>LABELDIRECT</span>
+    </a>
+    <div class="navbar__links">
+      <a href="accounts.html" class="navbar__link">Accounts</a>
+      <a href="admin.html" class="navbar__link">Admin</a>
+      <button type="button" class="navbar__cta" id="logout-btn" hidden>Log out</button>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <h1 id="list-title">List</h1>
+    <p id="page-status" class="status" hidden></p>
+
+    <section class="card" id="login-card">
+      <h2>Sign in</h2>
+      <p class="lede" style="margin-bottom: 14px;">Sign in to view this list.</p>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <div class="toolbar">
+          <button class="btn" type="submit" id="login-submit">Sign in</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" id="list-card" hidden>
+      <dl class="meta-grid" id="list-meta">
+        <dt>Created</dt>
+        <dd id="meta-created">—</dd>
+        <dt>Updated</dt>
+        <dd id="meta-updated">—</dd>
+        <dt>Lines</dt>
+        <dd id="meta-lines">—</dd>
+      </dl>
+      <div class="toolbar toolbar--rows">
+        <button type="button" class="btn btn--ghost" id="copy-btn">Copy</button>
+        <button type="button" class="btn btn--ghost" id="select-all-btn">Select all</button>
+        <button type="button" class="btn btn--ghost" id="set-price-btn" disabled>Set price</button>
+        <button type="button" class="btn btn--danger" id="delete-btn" disabled>Delete</button>
+      </div>
+      <p class="empty" id="list-empty" hidden>No lines in this list.</p>
+      <div class="list-rows" id="list-rows" role="list"></div>
+    </section>
+  </main>
+
+  <div class="dialog-backdrop" id="price-dialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="price-dialog-title">
+      <div class="dialog__header">
+        <h2 id="price-dialog-title">Set price</h2>
+        <button type="button" class="dialog__close" id="price-dialog-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted" id="price-dialog-copy">Set a price for the selected accounts.</p>
+      <label for="bulk-price">Price</label>
+      <input id="bulk-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 50">
+      <div class="toolbar">
+        <button type="button" class="btn" id="price-dialog-confirm">Save</button>
+        <button type="button" class="btn btn--ghost" id="price-dialog-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dialog-backdrop" id="delete-dialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-copy">
+      <div class="dialog__header">
+        <h2 id="delete-dialog-title">Delete rows</h2>
+        <button type="button" class="dialog__close" id="delete-dialog-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted" id="delete-dialog-copy">This cannot be undone.</p>
+      <div class="toolbar">
+        <button type="button" class="btn btn--ghost" id="delete-dialog-cancel">Cancel</button>
+        <button type="button" class="btn btn--danger" id="delete-dialog-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="listings.js"></script>
+  <script>
+    var statusEl = document.getElementById("page-status");
+    var loginCard = document.getElementById("login-card");
+    var listCard = document.getElementById("list-card");
+    var listTitle = document.getElementById("list-title");
+    var listRowsEl = document.getElementById("list-rows");
+    var listEmpty = document.getElementById("list-empty");
+    var logoutBtn = document.getElementById("logout-btn");
+    var loginForm = document.getElementById("login-form");
+    var loginSubmit = document.getElementById("login-submit");
+    var copyBtn = document.getElementById("copy-btn");
+    var selectAllBtn = document.getElementById("select-all-btn");
+    var setPriceBtn = document.getElementById("set-price-btn");
+    var deleteBtn = document.getElementById("delete-btn");
+    var priceDialog = document.getElementById("price-dialog");
+    var priceDialogCopy = document.getElementById("price-dialog-copy");
+    var priceDialogConfirm = document.getElementById("price-dialog-confirm");
+    var bulkPriceInput = document.getElementById("bulk-price");
+    var deleteDialog = document.getElementById("delete-dialog");
+    var deleteDialogCopy = document.getElementById("delete-dialog-copy");
+    var deleteDialogConfirm = document.getElementById("delete-dialog-confirm");
+    var client = null;
+    var accessToken = null;
+    var listId = new URLSearchParams(window.location.search).get("id");
+    var loadedList = null;
+    var listLines = [];
+    var selected = {};
+    var accountsByLogin = {};
+    var editingIndex = null;
+    var ignorePriceBlur = false;
+    var PRICE_BATCH = 500;
+
+    function note(message, kind) {
+      ListingsApp.setStatus(statusEl, message, kind || "");
+    }
+
+    function formatTime(value) {
+      if (!value) return "—";
+      var date = new Date(value);
+      if (isNaN(date.getTime())) return String(value);
+      return date.toLocaleString();
+    }
+
+    function splitContent(text) {
+      var lines = String(text || "").split(/\r?\n/);
+      if (lines.length && lines[lines.length - 1] === "") lines.pop();
+      return lines;
+    }
+
+    function joinContent() {
+      return listLines.join("\n");
+    }
+
+    function selectedIndexes() {
+      return Object.keys(selected).map(Number).filter(function (i) {
+        return selected[i] && i >= 0 && i < listLines.length;
+      }).sort(function (a, b) { return a - b; });
+    }
+
+    function selectedCount() {
+      return selectedIndexes().length;
+    }
+
+    function allSelected() {
+      return listLines.length > 0 && selectedCount() === listLines.length;
+    }
+
+    function loginFromLine(line) {
+      var login = String(line || "").trim().split(/\s*\|\s*/)[0].trim();
+      return login.includes(":") ? login : "";
+    }
+
+    function setAccountsFromList(row) {
+      accountsByLogin = {};
+      ((row && row.accounts) || []).forEach(function (acct) {
+        if (!acct || !acct.login) return;
+        accountsByLogin[acct.login] = { id: acct.id, price: acct.price };
+      });
+    }
+
+    function accountForLine(line) {
+      var login = loginFromLine(line);
+      return login ? accountsByLogin[login] || null : null;
+    }
+
+    function formatPrice(value) {
+      var n = Number(value);
+      if (!Number.isFinite(n)) return "—";
+      return String(n);
+    }
+
+    function parseEnteredPrice(raw) {
+      var text = String(raw || "").trim();
+      if (!text) return null;
+      var n = Number(text);
+      if (!Number.isFinite(n) || n < 0) return null;
+      return Math.round(n * 100) / 100;
+    }
+
+    function selectedAccountIds() {
+      var ids = [];
+      var seen = {};
+      var skipped = 0;
+      selectedIndexes().forEach(function (index) {
+        var acct = accountForLine(listLines[index]);
+        if (!acct || !acct.id) {
+          skipped += 1;
+          return;
+        }
+        if (seen[acct.id]) return;
+        seen[acct.id] = true;
+        ids.push(acct.id);
+      });
+      return { ids: ids, skipped: skipped };
+    }
+
+    function applyLocalPrice(ids, price) {
+      Object.keys(accountsByLogin).forEach(function (login) {
+        if (ids.indexOf(accountsByLogin[login].id) !== -1) {
+          accountsByLogin[login].price = price;
+        }
+      });
+    }
+
+    function patchPrices(ids, price) {
+      var chain = Promise.resolve();
+      function send(chunk) {
+        return ListingsApp.adminRequest(accessToken, "/api/admin/accounts/price", {
+          method: "PATCH",
+          body: { ids: chunk, price: price }
+        });
+      }
+      for (var i = 0; i < ids.length; i += PRICE_BATCH) {
+        chain = chain.then(send.bind(null, ids.slice(i, i + PRICE_BATCH)));
+      }
+      return chain;
+    }
+
+    function rowEl(index) {
+      return listRowsEl.querySelector('.list-row[data-index="' + index + '"]');
+    }
+
+    function paintRowSelection(row, index) {
+      var on = !!selected[index];
+      row.classList.toggle("is-selected", on);
+      var selectBtn = row.querySelector(".list-row__select");
+      if (!selectBtn) return;
+      selectBtn.classList.toggle("is-on", on);
+      selectBtn.textContent = on ? "Selected" : "Select";
+      selectBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      selectBtn.setAttribute("aria-label", (on ? "Deselect" : "Select") + " row " + (index + 1));
+    }
+
+    function renderPriceCell(index, wrap) {
+      wrap.textContent = "";
+      var label = document.createElement("span");
+      label.className = "list-row__price-label";
+      label.textContent = "Price";
+      wrap.appendChild(label);
+
+      var acct = accountForLine(listLines[index]);
+      if (!acct || !acct.id) {
+        var empty = document.createElement("span");
+        empty.className = "list-row__price-empty";
+        empty.textContent = "—";
+        wrap.appendChild(empty);
+        return;
+      }
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "list-row__price-btn";
+      btn.textContent = formatPrice(acct.price);
+      btn.setAttribute("aria-label", "Current price " + formatPrice(acct.price) + ", click to edit row " + (index + 1));
+      btn.addEventListener("click", function () {
+        startPriceEdit(index, wrap);
+      });
+      wrap.appendChild(btn);
+    }
+
+    function startPriceEdit(index, wrap) {
+      var acct = accountForLine(listLines[index]);
+      if (!acct || !acct.id) return;
+      if (editingIndex === index) return;
+      if (editingIndex != null) {
+        var prevIndex = editingIndex;
+        var prevWrap = document.querySelector('.list-row[data-index="' + prevIndex + '"] .list-row__price');
+        ignorePriceBlur = true;
+        editingIndex = null;
+        if (prevWrap) renderPriceCell(prevIndex, prevWrap);
+      }
+      editingIndex = index;
+      wrap.textContent = "";
+      var label = document.createElement("span");
+      label.className = "list-row__price-label";
+      label.textContent = "Price";
+      wrap.appendChild(label);
+      var input = document.createElement("input");
+      input.className = "list-row__price-input";
+      input.type = "number";
+      input.min = "0";
+      input.step = "0.01";
+      input.inputMode = "decimal";
+      input.value = formatPrice(acct.price);
+      input.setAttribute("aria-label", "Price for row " + (index + 1));
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commitPriceEdit(index, wrap, input);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          ignorePriceBlur = true;
+          editingIndex = null;
+          renderPriceCell(index, wrap);
+        }
+      });
+      input.addEventListener("blur", function () {
+        if (ignorePriceBlur) {
+          ignorePriceBlur = false;
+          return;
+        }
+        if (editingIndex === index) commitPriceEdit(index, wrap, input);
+      });
+      wrap.appendChild(input);
+      input.focus();
+      input.select();
+    }
+
+    function commitPriceEdit(index, wrap, input) {
+      var acct = accountForLine(listLines[index]);
+      var price = parseEnteredPrice(input.value);
+      editingIndex = null;
+      if (!acct || !acct.id) {
+        renderPriceCell(index, wrap);
+        return;
+      }
+      if (price == null) {
+        renderPriceCell(index, wrap);
+        note("Enter a valid price of 0 or more.", "error");
+        return;
+      }
+      if (Number(acct.price) === price) {
+        renderPriceCell(index, wrap);
+        return;
+      }
+      input.disabled = true;
+      patchPrices([acct.id], price)
+        .then(function () {
+          acct.price = price;
+          renderPriceCell(index, wrap);
+          note("Updated price.", "ok");
+        })
+        .catch(function (err) {
+          renderPriceCell(index, wrap);
+          note(err.message || "Could not update price.", "error");
+        });
+    }
+
+    function setPageTitle(name) {
+      var label = name || "List";
+      listTitle.textContent = label;
+      document.title = label + " — Admin — LABELDIRECT";
+    }
+
+    function showLoggedOut() {
+      loginCard.hidden = false;
+      listCard.hidden = true;
+      logoutBtn.hidden = true;
+      closePriceDialog();
+      closeDeleteDialog();
+    }
+
+    function showLoggedInShell() {
+      loginCard.hidden = true;
+      logoutBtn.hidden = false;
+    }
+
+    function updateBulkControls() {
+      var n = selectedCount();
+      var empty = listLines.length === 0;
+      selectAllBtn.disabled = empty;
+      selectAllBtn.textContent = allSelected() ? "Deselect all" : "Select all";
+      selectAllBtn.setAttribute("aria-pressed", allSelected() ? "true" : "false");
+      setPriceBtn.disabled = n === 0;
+      setPriceBtn.textContent = n > 0 ? "Set price (" + n + ")" : "Set price";
+      deleteBtn.disabled = n === 0;
+      deleteBtn.textContent = n > 0 ? "Delete (" + n + ")" : "Delete";
+    }
+
+    function renderRows() {
+      editingIndex = null;
+      ignorePriceBlur = true;
+      listRowsEl.textContent = "";
+      listEmpty.hidden = listLines.length > 0;
+      listRowsEl.hidden = listLines.length === 0;
+      listLines.forEach(function (line, index) {
+        var row = document.createElement("div");
+        row.className = "list-row" + (selected[index] ? " is-selected" : "");
+        row.setAttribute("role", "listitem");
+        row.dataset.index = String(index);
+
+        var num = document.createElement("span");
+        num.className = "list-row__num";
+        num.textContent = String(index + 1);
+
+        var text = document.createElement("pre");
+        text.className = "list-row__text";
+        text.textContent = line || " ";
+
+        var priceWrap = document.createElement("div");
+        priceWrap.className = "list-row__price";
+        renderPriceCell(index, priceWrap);
+
+        var selectBtn = document.createElement("button");
+        selectBtn.type = "button";
+        selectBtn.className = "btn btn--ghost list-row__select" + (selected[index] ? " is-on" : "");
+        selectBtn.textContent = selected[index] ? "Selected" : "Select";
+        selectBtn.setAttribute("aria-pressed", selected[index] ? "true" : "false");
+        selectBtn.setAttribute("aria-label", (selected[index] ? "Deselect" : "Select") + " row " + (index + 1));
+        selectBtn.addEventListener("click", function () {
+          toggleRow(index);
+        });
+
+        row.appendChild(num);
+        row.appendChild(text);
+        row.appendChild(priceWrap);
+        row.appendChild(selectBtn);
+        listRowsEl.appendChild(row);
+      });
+      updateBulkControls();
+      ignorePriceBlur = false;
+    }
+
+    function toggleRow(index) {
+      if (selected[index]) delete selected[index];
+      else selected[index] = true;
+      var row = rowEl(index);
+      if (row) paintRowSelection(row, index);
+      updateBulkControls();
+    }
+
+    function renderList(row) {
+      loadedList = row;
+      selected = {};
+      setAccountsFromList(row);
+      listLines = splitContent(row.content || "");
+      setPageTitle(row.name);
+      document.getElementById("meta-created").textContent = formatTime(row.created_at);
+      document.getElementById("meta-updated").textContent = formatTime(row.updated_at);
+      document.getElementById("meta-lines").textContent = String(listLines.length);
+      renderRows();
+      listCard.hidden = false;
+    }
+
+    function loadList() {
+      if (!listId || !listId.trim()) {
+        setPageTitle("List");
+        note("Missing list id in URL.", "error");
+        listCard.hidden = true;
+        return Promise.resolve();
+      }
+      note("Loading list…");
+      return ListingsApp.adminRequest(accessToken, "/api/admin/lists/" + encodeURIComponent(listId.trim()))
+        .then(function (row) {
+          renderList(row);
+          note("", "");
+          statusEl.hidden = true;
+        })
+        .catch(function (err) {
+          listCard.hidden = true;
+          var msg = err.message || "Could not load list.";
+          if (/not found/i.test(msg)) {
+            msg = "List not found.";
+          }
+          note(msg, "error");
+        });
+    }
+
+    function copyListContent() {
+      var text = joinContent();
+      var done = navigator.clipboard && navigator.clipboard.writeText
+        ? navigator.clipboard.writeText(text)
+        : Promise.reject(new Error("Clipboard unavailable"));
+      done.then(function () {
+        note("Copied list to clipboard.", "ok");
+      }).catch(function () {
+        window.prompt("Copy this list:", text);
+      });
+    }
+
+    function toggleSelectAll() {
+      if (!listLines.length) return;
+      if (allSelected()) {
+        selected = {};
+      } else {
+        selected = {};
+        listLines.forEach(function (_line, index) {
+          selected[index] = true;
+        });
+      }
+      renderRows();
+    }
+
+    function openDeleteDialog() {
+      var n = selectedCount();
+      if (!n) return;
+      deleteDialogCopy.textContent = n === 1
+        ? "Delete 1 selected row from this list? This cannot be undone."
+        : "Delete " + n + " selected rows from this list? This cannot be undone.";
+      deleteDialog.hidden = false;
+      deleteDialogConfirm.focus();
+    }
+
+    function closeDeleteDialog() {
+      if (deleteDialog.hidden) return;
+      deleteDialog.hidden = true;
+      if (!deleteBtn.disabled) deleteBtn.focus();
+    }
+
+    function openPriceDialog() {
+      var n = selectedCount();
+      if (!n) return;
+      var picked = selectedAccountIds();
+      priceDialogCopy.textContent = picked.ids.length === 0
+        ? "None of the selected lines have an imported account."
+        : picked.ids.length === 1
+          ? "Set the price for 1 selected account."
+          : "Set the price for " + picked.ids.length + " selected accounts.";
+      if (picked.skipped) {
+        priceDialogCopy.textContent += " " + picked.skipped +
+          (picked.skipped === 1 ? " line has" : " lines have") +
+          " no imported account and will be skipped.";
+      }
+      bulkPriceInput.value = "";
+      priceDialog.hidden = false;
+      if (picked.ids.length) {
+        priceDialogConfirm.disabled = false;
+        bulkPriceInput.focus();
+      } else {
+        priceDialogConfirm.disabled = true;
+      }
+    }
+
+    function closePriceDialog() {
+      if (priceDialog.hidden) return;
+      priceDialog.hidden = true;
+      priceDialogConfirm.disabled = false;
+      if (!setPriceBtn.disabled) setPriceBtn.focus();
+    }
+
+    function saveSelectedPrices() {
+      var picked = selectedAccountIds();
+      if (!picked.ids.length) {
+        closePriceDialog();
+        note("None of the selected lines have an imported account.", "error");
+        return;
+      }
+      if (!accessToken) {
+        closePriceDialog();
+        note("Sign in first.", "error");
+        return;
+      }
+      var price = parseEnteredPrice(bulkPriceInput.value);
+      if (price == null) {
+        note("Enter a valid price of 0 or more.", "error");
+        bulkPriceInput.focus();
+        return;
+      }
+      closePriceDialog();
+      setPriceBtn.disabled = true;
+      note("Updating price…");
+      patchPrices(picked.ids, price)
+        .then(function () {
+          applyLocalPrice(picked.ids, price);
+          listLines.forEach(function (_line, index) {
+            var wrap = document.querySelector('.list-row[data-index="' + index + '"] .list-row__price');
+            var acct = accountForLine(listLines[index]);
+            if (wrap && acct && picked.ids.indexOf(acct.id) !== -1) renderPriceCell(index, wrap);
+          });
+          var msg = picked.ids.length === 1
+            ? "Updated 1 account."
+            : "Updated " + picked.ids.length + " accounts.";
+          if (picked.skipped) {
+            msg += " Skipped " + picked.skipped +
+              (picked.skipped === 1 ? " line with no imported account." : " lines with no imported account.");
+          }
+          note(msg, "ok");
+        })
+        .catch(function (err) {
+          note(err.message || "Could not update price.", "error");
+        })
+        .then(function () {
+          updateBulkControls();
+        });
+    }
+
+    function deleteSelectedRows() {
+      var indexes = selectedIndexes();
+      if (!indexes.length) {
+        closeDeleteDialog();
+        return;
+      }
+      if (!accessToken || !listId) {
+        closeDeleteDialog();
+        note("Sign in first.", "error");
+        return;
+      }
+
+      var keep = listLines.filter(function (_line, index) {
+        return !selected[index];
+      });
+      var content = keep.join("\n");
+      closeDeleteDialog();
+      deleteBtn.disabled = true;
+      selectAllBtn.disabled = true;
+      setPriceBtn.disabled = true;
+      note("Deleting selected rows…");
+      ListingsApp.adminRequest(accessToken, "/api/admin/lists/" + encodeURIComponent(listId.trim()), {
+        method: "PATCH",
+        body: { content: content }
+      })
+        .then(function (row) {
+          renderList(row);
+          note(
+            indexes.length === 1 ? "Deleted 1 row." : "Deleted " + indexes.length + " rows.",
+            "ok"
+          );
+        })
+        .catch(function (err) {
+          updateBulkControls();
+          note(err.message || "Could not delete selected rows.", "error");
+        });
+    }
+
+    if (!listId || !listId.trim()) {
+      note("Missing list id in URL.", "error");
+    }
+
+    if (!ListingsApp.isAuthConfigured() || !ListingsApp.isApiConfigured()) {
+      showLoggedOut();
+      loginForm.querySelectorAll("input, button").forEach(function (el) { el.disabled = true; });
+      note("Set LABELDIRECT_API.baseUrl in config.js, add backend/.env, and run npm start in backend/.", "error");
+    } else {
+      client = ListingsApp.getClient();
+
+      client.auth.onAuthStateChange(function (_event, session) {
+        accessToken = session && session.access_token ? session.access_token : null;
+        if (session) {
+          showLoggedInShell();
+          loadList();
+        } else {
+          showLoggedOut();
+        }
+      });
+
+      loginForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        loginSubmit.disabled = true;
+        note("Signing in…");
+        client.auth.signInWithPassword({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        }).then(function (res) {
+          loginSubmit.disabled = false;
+          if (res.error) throw res.error;
+          note("Signed in.", "ok");
+          loginForm.reset();
+        }).catch(function (err) {
+          loginSubmit.disabled = false;
+          note(err.message || "Sign in failed.", "error");
+        });
+      });
+
+      logoutBtn.addEventListener("click", function () {
+        client.auth.signOut().then(function () {
+          note("Signed out.", "ok");
+        });
+      });
+
+      copyBtn.addEventListener("click", copyListContent);
+      selectAllBtn.addEventListener("click", toggleSelectAll);
+      setPriceBtn.addEventListener("click", openPriceDialog);
+      deleteBtn.addEventListener("click", openDeleteDialog);
+      document.getElementById("price-dialog-cancel").addEventListener("click", closePriceDialog);
+      document.getElementById("price-dialog-close").addEventListener("click", closePriceDialog);
+      priceDialogConfirm.addEventListener("click", saveSelectedPrices);
+      priceDialog.addEventListener("click", function (event) {
+        if (event.target === priceDialog) closePriceDialog();
+      });
+      bulkPriceInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveSelectedPrices();
+        }
+      });
+      document.getElementById("delete-dialog-cancel").addEventListener("click", closeDeleteDialog);
+      document.getElementById("delete-dialog-close").addEventListener("click", closeDeleteDialog);
+      deleteDialogConfirm.addEventListener("click", deleteSelectedRows);
+      deleteDialog.addEventListener("click", function (event) {
+        if (event.target === deleteDialog) closeDeleteDialog();
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        if (!priceDialog.hidden) {
+          event.preventDefault();
+          closePriceDialog();
+          return;
+        }
+        if (!deleteDialog.hidden) {
+          event.preventDefault();
+          closeDeleteDialog();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
