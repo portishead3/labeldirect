@@ -39,7 +39,8 @@
       }
 
       button,
-      input {
+      input,
+      select {
         font-family: inherit;
       }
 
@@ -51,7 +52,8 @@
 
       a:focus-visible,
       button:focus-visible,
-      input:focus-visible {
+      input:focus-visible,
+      select:focus-visible {
         outline: 2px solid #cfc6de;
         outline-offset: 3px;
       }
@@ -196,7 +198,8 @@
         margin-bottom: 6px;
       }
 
-      input {
+      input,
+      select {
         width: 100%;
         background: var(--bg-surface);
         color: var(--text-primary);
@@ -602,6 +605,7 @@
         <button type="button" class="btn btn--ghost" id="copy-btn">Copy</button>
         <button type="button" class="btn btn--ghost" id="select-all-btn">Select all</button>
         <button type="button" class="btn btn--ghost" id="set-price-btn" disabled>Set price</button>
+        <button type="button" class="btn btn--ghost" id="set-status-btn" disabled>Set status</button>
         <button type="button" class="btn btn--danger" id="delete-btn" disabled>Delete</button>
       </div>
       <p class="empty" id="list-empty" hidden>No accounts yet.</p>
@@ -625,6 +629,25 @@
     </div>
   </div>
 
+  <div class="dialog-backdrop" id="status-dialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="status-dialog-title">
+      <div class="dialog__header">
+        <h2 id="status-dialog-title">Set status</h2>
+        <button type="button" class="dialog__close" id="status-dialog-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted" id="status-dialog-copy">Set the status for the selected accounts.</p>
+      <label for="bulk-status">Status</label>
+      <select id="bulk-status">
+        <option value="active">Active</option>
+        <option value="cash">Cash</option>
+      </select>
+      <div class="toolbar">
+        <button type="button" class="btn" id="status-dialog-confirm">Save</button>
+        <button type="button" class="btn btn--ghost" id="status-dialog-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="dialog-backdrop" id="delete-dialog" hidden>
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-copy">
       <div class="dialog__header">
@@ -641,7 +664,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="listings.js?v=full-list"></script>
+  <script src="listings.js?v=status"></script>
   <script>
     var statusEl = document.getElementById("page-status");
     var loginCard = document.getElementById("login-card");
@@ -654,11 +677,16 @@
     var copyBtn = document.getElementById("copy-btn");
     var selectAllBtn = document.getElementById("select-all-btn");
     var setPriceBtn = document.getElementById("set-price-btn");
+    var setStatusBtn = document.getElementById("set-status-btn");
     var deleteBtn = document.getElementById("delete-btn");
     var priceDialog = document.getElementById("price-dialog");
     var priceDialogCopy = document.getElementById("price-dialog-copy");
     var priceDialogConfirm = document.getElementById("price-dialog-confirm");
     var bulkPriceInput = document.getElementById("bulk-price");
+    var statusDialog = document.getElementById("status-dialog");
+    var statusDialogCopy = document.getElementById("status-dialog-copy");
+    var statusDialogConfirm = document.getElementById("status-dialog-confirm");
+    var bulkStatusInput = document.getElementById("bulk-status");
     var deleteDialog = document.getElementById("delete-dialog");
     var deleteDialogCopy = document.getElementById("delete-dialog-copy");
     var deleteDialogConfirm = document.getElementById("delete-dialog-confirm");
@@ -723,6 +751,7 @@
 
     function fieldValue(row, key) {
       if (key === "price") return formatPrice(row.price);
+      if (key === "account_status") return ListingsApp.formatAccountStatus(row.account_status) || "";
       if (row[key] == null || String(row[key]).trim() === "") return "";
       return String(row[key]);
     }
@@ -737,6 +766,7 @@
         "card_number=" + fieldValue(row, "card_number"),
         "expiry=" + fieldValue(row, "expiry"),
         "price=" + formatPrice(row.price),
+        "account_status=" + fieldValue(row, "account_status"),
         "vendor=" + fieldValue(row, "vendor")
       ].join(" | ");
     }
@@ -748,6 +778,7 @@
       { key: "inbound", label: "Inbound" },
       { key: "card_number", label: "Card" },
       { key: "expiry", label: "Expiry" },
+      { key: "account_status", label: "Status" },
       { key: "vendor", label: "Vendor" }
     ];
 
@@ -774,6 +805,20 @@
         return ListingsApp.adminRequest(accessToken, "/api/admin/accounts/price", {
           method: "PATCH",
           body: { ids: chunk, price: price }
+        });
+      }
+      for (var i = 0; i < ids.length; i += PRICE_BATCH) {
+        chain = chain.then(send.bind(null, ids.slice(i, i + PRICE_BATCH)));
+      }
+      return chain;
+    }
+
+    function patchStatuses(ids, accountStatus) {
+      var chain = Promise.resolve();
+      function send(chunk) {
+        return ListingsApp.adminRequest(accessToken, "/api/admin/accounts/status", {
+          method: "PATCH",
+          body: { ids: chunk, accountStatus: accountStatus }
         });
       }
       for (var i = 0; i < ids.length; i += PRICE_BATCH) {
@@ -969,6 +1014,7 @@
       listCard.hidden = true;
       logoutBtn.hidden = true;
       closePriceDialog();
+      closeStatusDialog();
       closeDeleteDialog();
     }
 
@@ -986,6 +1032,8 @@
       copyBtn.disabled = empty;
       setPriceBtn.disabled = n === 0;
       setPriceBtn.textContent = n > 0 ? "Set price (" + n + ")" : "Set price";
+      setStatusBtn.disabled = n === 0;
+      setStatusBtn.textContent = n > 0 ? "Set status (" + n + ")" : "Set status";
       deleteBtn.disabled = n === 0;
       deleteBtn.textContent = n > 0 ? "Delete (" + n + ")" : "Delete";
     }
@@ -1248,6 +1296,25 @@
       if (!setPriceBtn.disabled) setPriceBtn.focus();
     }
 
+    function openStatusDialog() {
+      var n = selectedCount();
+      if (!n) return;
+      statusDialogCopy.textContent = n === 1
+        ? "Set the status for 1 selected account."
+        : "Set the status for " + n + " selected accounts.";
+      bulkStatusInput.value = "active";
+      statusDialog.hidden = false;
+      statusDialogConfirm.disabled = false;
+      bulkStatusInput.focus();
+    }
+
+    function closeStatusDialog() {
+      if (statusDialog.hidden) return;
+      statusDialog.hidden = true;
+      statusDialogConfirm.disabled = false;
+      if (!setStatusBtn.disabled) setStatusBtn.focus();
+    }
+
     function saveSelectedPrices() {
       var ids = selectedIds();
       if (!ids.length) {
@@ -1286,6 +1353,44 @@
         });
     }
 
+    function saveSelectedStatuses() {
+      var ids = selectedIds();
+      if (!ids.length) {
+        closeStatusDialog();
+        note("Select at least one account.", "error");
+        return;
+      }
+      if (!accessToken) {
+        closeStatusDialog();
+        note("Sign in first.", "error");
+        return;
+      }
+      var accountStatus = String(bulkStatusInput.value || "").trim().toLowerCase();
+      if (accountStatus !== "active" && accountStatus !== "cash") {
+        note("Choose account status: Active or Cash.", "error");
+        bulkStatusInput.focus();
+        return;
+      }
+      closeStatusDialog();
+      setStatusBtn.disabled = true;
+      note("Updating status…");
+      patchStatuses(ids, accountStatus)
+        .then(function () {
+          ids.forEach(function (id) {
+            var acct = accountById(id);
+            if (acct) acct.account_status = accountStatus;
+          });
+          renderRows();
+          note(ids.length === 1 ? "Updated 1 account." : "Updated " + ids.length + " accounts.", "ok");
+        })
+        .catch(function (err) {
+          note(err.message || "Could not update status.", "error");
+        })
+        .then(function () {
+          updateBulkControls();
+        });
+    }
+
     function deleteSelectedRows() {
       var ids = selectedIds();
       if (!ids.length) {
@@ -1301,6 +1406,7 @@
       deleteBtn.disabled = true;
       selectAllBtn.disabled = true;
       setPriceBtn.disabled = true;
+      setStatusBtn.disabled = true;
       note("Deleting selected accounts…");
       deleteAccounts(ids)
         .then(function () {
@@ -1361,12 +1467,19 @@
       copyBtn.addEventListener("click", copyListContent);
       selectAllBtn.addEventListener("click", toggleSelectAll);
       setPriceBtn.addEventListener("click", openPriceDialog);
+      setStatusBtn.addEventListener("click", openStatusDialog);
       deleteBtn.addEventListener("click", openDeleteDialog);
       document.getElementById("price-dialog-cancel").addEventListener("click", closePriceDialog);
       document.getElementById("price-dialog-close").addEventListener("click", closePriceDialog);
       priceDialogConfirm.addEventListener("click", saveSelectedPrices);
       priceDialog.addEventListener("click", function (event) {
         if (event.target === priceDialog) closePriceDialog();
+      });
+      document.getElementById("status-dialog-cancel").addEventListener("click", closeStatusDialog);
+      document.getElementById("status-dialog-close").addEventListener("click", closeStatusDialog);
+      statusDialogConfirm.addEventListener("click", saveSelectedStatuses);
+      statusDialog.addEventListener("click", function (event) {
+        if (event.target === statusDialog) closeStatusDialog();
       });
       bulkPriceInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
@@ -1385,6 +1498,11 @@
         if (!priceDialog.hidden) {
           event.preventDefault();
           closePriceDialog();
+          return;
+        }
+        if (!statusDialog.hidden) {
+          event.preventDefault();
+          closeStatusDialog();
           return;
         }
         if (!deleteDialog.hidden) {

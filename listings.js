@@ -1,5 +1,5 @@
 (function (global) {
-  var COLUMNS = ["login", "country", "state", "outbound", "inbound", "card_number", "expiry", "price", "vendor"];
+  var COLUMNS = ["login", "country", "state", "outbound", "inbound", "card_number", "expiry", "price", "account_status", "vendor"];
 
   function supabaseConfig() {
     return global.LABELDIRECT_SUPABASE || {};
@@ -125,9 +125,31 @@
     return text || "—";
   }
 
+  function formatAccountStatus(value) {
+    var raw = String(value == null ? "" : value).trim().toLowerCase();
+    if (raw === "cash") return "Cash";
+    if (raw === "active") return "Active";
+    return "";
+  }
+
   function td(value) {
     var cell = document.createElement("td");
     cell.textContent = dash(value);
+    return cell;
+  }
+
+  function statusTd(value) {
+    var cell = document.createElement("td");
+    var raw = String(value == null ? "" : value).trim().toLowerCase();
+    var label = formatAccountStatus(raw);
+    if (!label) {
+      cell.textContent = "—";
+      return cell;
+    }
+    var pill = document.createElement("span");
+    pill.className = "status-pill status-pill--" + raw;
+    pill.textContent = label;
+    cell.appendChild(pill);
     return cell;
   }
 
@@ -156,7 +178,11 @@
     rows.forEach(function (row) {
       var tr = document.createElement("tr");
       COLUMNS.forEach(function (key) {
-        tr.appendChild(td(row[key]));
+        if (key === "account_status") {
+          tr.appendChild(statusTd(row[key]));
+        } else {
+          tr.appendChild(td(row[key]));
+        }
       });
       tbody.appendChild(tr);
     });
@@ -288,6 +314,7 @@
     fetchWallet: fetchWallet,
     createDeposit: createDeposit,
     loadBalanceDisplays: loadBalanceDisplays,
-    parseDepositAmount: parseDepositAmount
+    parseDepositAmount: parseDepositAmount,
+    formatAccountStatus: formatAccountStatus
   };
 })(window);

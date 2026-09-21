@@ -24,7 +24,7 @@ import { logUserActivity } from "../lib/activityLog.js";
 export const publicRouter = Router();
 
 const PUBLIC_ACCOUNT_COLUMNS =
-  "id,login,country,state,outbound,inbound,card_number,expiry,price,created_at,updated_at,list_id,sort_order,lists(name)";
+  "id,login,country,state,outbound,inbound,card_number,expiry,price,account_status,created_at,updated_at,list_id,sort_order,lists(name)";
 
 function publicSiteUrl() {
   const raw = String(process.env.PUBLIC_SITE_URL || "").trim().replace(/\/$/, "");

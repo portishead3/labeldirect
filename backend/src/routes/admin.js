@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { getSupabaseAdmin } from "../supabaseAdmin.js";
 import { requireAdmin } from "../middleware/auth.js";
-import { acceptListImport } from "../lib/parsePaste.js";
+import { acceptListImport, parseAccountStatus } from "../lib/parsePaste.js";
 import { enqueueListProcess } from "../lib/listJobs.js";
 import { fetchAccountRows } from "../lib/withVendor.js";
 import {
@@ -10,7 +10,7 @@ import {
   telegramBotConfigured,
   TELEGRAM_MESSAGE_MAX,
 } from "../lib/telegramBot.js";
-import { dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
+import { creditWalletManually, dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
 import { backfillDepositActivity } from "../lib/activityLog.js";
 
 const LIST_INDEX_COLUMNS = "id,name,created_at,updated_at,process_status,process_error,process_stats";
@@ -40,7 +40,7 @@ function listOptions(body) {
 
 function clientIngestStatus(err) {
   const msg = String(err && err.message ? err.message : "");
-  if (/Give this list a name|no longer available|already exists|paste a list|no valid lines|Enter a price|valid price/i.test(msg)) {
+  if (/Give this list a name|no longer available|already exists|paste a list|no valid lines|Enter a price|valid price|account status|Active or Cash/i.test(msg)) {
     return 400;
   }
   return 500;
@@ -135,7 +135,7 @@ async function fetchAccountsForList(client, listId) {
   while (true) {
     const { data, error } = await client
       .from("accounts")
-      .select("id,login,price")
+      .select("id,login,price,account_status")
       .eq("list_id", listId)
       .range(from, from + pageSize - 1);
     if (error) throw error;
@@ -156,6 +156,7 @@ async function attachListAccounts(client, list) {
       id: row.id,
       login: row.login,
       price: row.price,
+      account_status: row.account_status,
     })),
   };
 }
@@ -282,7 +283,7 @@ adminRouter.get("/accounts", async (_req, res) => {
     const client = getSupabaseAdmin();
     const rows = await fetchAccountRows(
       client,
-      "id,login,country,state,outbound,inbound,card_number,expiry,price,created_at,updated_at,list_id,sort_order,lists(name)"
+      "id,login,country,state,outbound,inbound,card_number,expiry,price,account_status,created_at,updated_at,list_id,sort_order,lists(name)"
     );
     res.json(rows);
   } catch (err) {
@@ -331,6 +332,34 @@ adminRouter.get("/users/:id/activity", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message || "Could not load activity." });
+  }
+});
+
+adminRouter.post("/users/:id/credit", async (req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const id = String(req.params.id || "").trim();
+    const { data: user, error } = await client
+      .from("access_tokens")
+      .select(USER_COLUMNS)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    const result = await creditWalletManually(user.id, req.body && req.body.amount);
+    res.json({
+      ok: true,
+      amount: result.amount,
+      balance: result.balance,
+      user: { ...user, balance: result.balance },
+    });
+  } catch (err) {
+    const msg = err.message || "Could not add balance.";
+    const status = err.status || (/Enter an amount|two decimal|positive amount|too large/i.test(msg) ? 400 : 500);
+    res.status(status).json({ error: msg });
   }
 });
 
@@ -427,6 +456,39 @@ adminRouter.patch("/accounts/price", async (req, res) => {
   } catch (err) {
     const msg = err.message || "Could not update price.";
     const status = /Enter a price|valid price|Select at least|Too many/i.test(msg) ? 400 : 500;
+    res.status(status).json({ error: msg });
+  }
+});
+
+adminRouter.patch("/accounts/status", async (req, res) => {
+  try {
+    const ids = uniqueIds(req.body && req.body.ids);
+    if (!ids.length) {
+      res.status(400).json({ error: "Select at least one account." });
+      return;
+    }
+    if (ids.length > MAX_PRICE_IDS) {
+      res.status(400).json({ error: "Too many accounts. Update at most 500 at a time." });
+      return;
+    }
+    const accountStatus = parseAccountStatus(
+      (req.body && (req.body.accountStatus || req.body.account_status)) || "",
+      true
+    );
+    const client = getSupabaseAdmin();
+    const now = new Date().toISOString();
+    const chunks = inChunks(ids, 120);
+    for (let i = 0; i < chunks.length; i++) {
+      const { error } = await client
+        .from("accounts")
+        .update({ account_status: accountStatus, updated_at: now })
+        .in("id", chunks[i]);
+      if (error) throw error;
+    }
+    res.json({ ok: true, updated: ids.length, accountStatus });
+  } catch (err) {
+    const msg = err.message || "Could not update account status.";
+    const status = /account status|Active or Cash|Select at least|Too many/i.test(msg) ? 400 : 500;
     res.status(status).json({ error: msg });
   }
 });

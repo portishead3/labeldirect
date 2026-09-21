@@ -398,7 +398,7 @@
       .accounts-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 720px;
+        min-width: 820px;
       }
 
       .accounts-table th,
@@ -447,6 +447,29 @@
       .empty-state p {
         color: var(--text-secondary);
         font-size: 1rem;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status-pill--active {
+        color: #c6e4c9;
+        background: rgba(90, 180, 110, 0.16);
+        border: 1px solid rgba(90, 180, 110, 0.35);
+      }
+
+      .status-pill--cash {
+        color: #e4d6b0;
+        background: rgba(200, 160, 80, 0.16);
+        border: 1px solid rgba(200, 160, 80, 0.35);
       }
 
       .page-status {
@@ -652,6 +675,7 @@
                 <th scope="col">Cardnumber</th>
                 <th scope="col">Expiry</th>
                 <th scope="col">Price</th>
+                <th scope="col">Status</th>
                 <th scope="col">Base</th>
               </tr>
             </thead>
@@ -680,6 +704,7 @@
                 <th scope="col">Cardnumber</th>
                 <th scope="col">Expiry</th>
                 <th scope="col">Price</th>
+                <th scope="col">Status</th>
                 <th scope="col">Base</th>
               </tr>
             </thead>
@@ -691,7 +716,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=token"></script>
+  <script src="listings.js?v=status"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("login.html");

@@ -51,6 +51,7 @@ create table if not exists public.lists (
   name text not null unique,
   content text not null default '',
   price numeric(10,2),
+  account_status text check (account_status is null or account_status in ('active', 'cash')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -70,6 +71,7 @@ create table if not exists public.accounts (
   card_number text not null default '',
   expiry text not null default '',
   price numeric(10,2) not null default 0,
+  account_status text check (account_status is null or account_status in ('active', 'cash')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

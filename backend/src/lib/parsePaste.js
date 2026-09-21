@@ -25,6 +25,22 @@ function firstFilled(fields, aliases) {
   return "";
 }
 
+export function normalizeAccountStatus(value) {
+  const raw = String(value == null ? "" : value).trim().toLowerCase();
+  return raw === "active" || raw === "cash" ? raw : "";
+}
+
+export function parseAccountStatus(value, required = false) {
+  const raw = String(value == null ? "" : value).trim();
+  if (!raw) {
+    if (required) throw new Error("Choose account status: Active or Cash.");
+    return null;
+  }
+  const status = normalizeAccountStatus(raw);
+  if (!status) throw new Error("Account status must be Active or Cash.");
+  return status;
+}
+
 function expiryFromText(text) {
   const match = String(text || "").match(/\b(0?[1-9]|1[0-2])\/(\d{4}|\d{2})\b/);
   return match ? match[0].replace(/^(\d)\//, "0$1/") : "";
@@ -166,6 +182,9 @@ export function parseLine(line) {
           "validthru",
         ])
       ) || expiryFromText(card) || expiryFromText(text),
+    account_status: normalizeAccountStatus(
+      firstFilled(fields, ["accountstatus", "acctstatus", "accountstate", "status"])
+    ),
   };
 }
 
@@ -197,6 +216,7 @@ export function accountPayload(row, listId) {
     updated_at: new Date().toISOString(),
   };
   if (row.price != null && row.price !== "") payload.price = Number(row.price);
+  payload.account_status = normalizeAccountStatus(row.account_status) || null;
   if (listId) payload.list_id = listId;
   return payload;
 }
@@ -238,7 +258,7 @@ export function loginsFromContent(raw) {
 
 export async function fetchByLogins(client, logins, columns) {
   if (!logins.length) return [];
-  const select = columns || "id,login,country,state,card_number,expiry";
+  const select = columns || "id,login,country,state,card_number,expiry,account_status";
   const rows = [];
   const chunks = inChunks(logins, 120);
   for (let i = 0; i < chunks.length; i += 4) {
@@ -271,8 +291,9 @@ export async function processParsed(client, parsed, listId, price) {
   for (const login of logins) {
     const occurrences = grouped[login];
     const latest = occurrences[occurrences.length - 1];
-    const withPrice = price == null ? latest : { ...latest, price };
-    const payload = accountPayload(withPrice, listId);
+    const stamped = { ...latest };
+    if (price != null && price !== "") stamped.price = price;
+    const payload = accountPayload(stamped, listId);
     if (accountMap[login]) {
       accountUpdates.push({
         id: accountMap[login].id,
