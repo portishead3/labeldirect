@@ -1,5 +1,9 @@
 # Deploy LABELDIRECT API to Render
 
+**Workspace vs service:** In the Render CLI, `tea-…` IDs are usually **workspaces** (e.g. workspace name `payments`). Web services use **`srv-…`** (e.g. `labeldirect-1` → `https://labeldirect-1.onrender.com`).
+
+Use **Node** with **Root Directory** `backend`. Do not use Rust / empty root (that causes `Cargo.toml` errors).
+
 Local git is initialized at the WEB project root. Push to GitHub, then connect Render.
 
 ## 1. Push to GitHub

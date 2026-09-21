@@ -150,6 +150,16 @@ export async function startTelegramBot() {
     console.warn("Telegram bot skipped: BOT_TOKEN is not set.");
     return;
   }
+  if (String(process.env.TELEGRAM_POLLING || "true").toLowerCase() === "false") {
+    console.warn("Telegram bot skipped: TELEGRAM_POLLING=false.");
+    return;
+  }
+
+  try {
+    await telegramApi("deleteWebhook", { drop_pending_updates: true });
+  } catch (err) {
+    console.warn("Telegram deleteWebhook:", err.message || err);
+  }
 
   const username = telegramBotUsername();
   console.log("Telegram bot polling" + (username ? " @" + username : ""));

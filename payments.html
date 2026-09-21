@@ -440,6 +440,24 @@
         text-decoration: underline;
       }
 
+      .payments-success__message {
+        font-size: 1.08rem;
+        color: var(--text-primary);
+        margin: 8px 0 28px;
+        line-height: 1.5;
+      }
+
+      .payments-success__amount {
+        font-weight: 800;
+        color: var(--accent-light);
+      }
+
+      .payments-success__btn {
+        display: block;
+        text-align: center;
+        text-decoration: none;
+      }
+
       .page-status {
         margin-bottom: 16px;
         padding: 10px 14px;
@@ -572,7 +590,7 @@
   </nav>
 
   <main id="main" class="payments-page">
-    <div class="payments-card">
+    <div class="payments-card" id="deposit-checkout">
       <p class="payments-card__eyebrow">Wallet</p>
       <h1 class="payments-card__title">Add funds</h1>
       <p class="payments-card__lead">Top up your balance with crypto via NOWPayments. Your balance updates after the payment is confirmed on the network.</p>
@@ -598,12 +616,38 @@
 
       <a href="accounts.html" class="payments-back">← Back to accounts</a>
     </div>
+
+    <div class="payments-card" id="deposit-success" hidden>
+      <p class="payments-card__eyebrow">Wallet</p>
+      <h1 class="payments-card__title">Payment successful</h1>
+      <p class="payments-success__message" id="deposit-success-message">Successfully deposited.</p>
+      <a href="accounts.html" class="payments-submit payments-success__btn">Back to account page</a>
+    </div>
   </main>
 
   <script src="config.js"></script>
   <script src="listings.js?v=wallet"></script>
   <script>
-    if (!ListingsApp.getAccountsSession()) {
+    var params = new URLSearchParams(window.location.search);
+    var checkoutCard = document.getElementById("deposit-checkout");
+    var successCard = document.getElementById("deposit-success");
+    var successMessage = document.getElementById("deposit-success-message");
+    var isDepositSuccess = params.get("deposit") === "success";
+
+    if (isDepositSuccess) {
+      var amountNum = Number(String(params.get("amount") || "").replace(/,/g, ""));
+      var amountText = Number.isFinite(amountNum) && amountNum > 0
+        ? ListingsApp.formatUsd(amountNum)
+        : "";
+      if (successMessage) {
+        successMessage.innerHTML = amountText
+          ? 'Successfully deposited <span class="payments-success__amount">' + amountText + "</span>"
+          : "Successfully deposited.";
+      }
+      if (checkoutCard) checkoutCard.hidden = true;
+      if (successCard) successCard.hidden = false;
+      document.title = "Deposit successful — LABELDIRECT";
+    } else if (!ListingsApp.getAccountsSession()) {
       window.location.replace("login.html");
     } else {
     var statusEl = document.getElementById("page-status");
@@ -651,15 +695,11 @@
       minLabel.textContent = ListingsApp.formatUsd(ListingsApp.WALLET_MIN_DEPOSIT_USD);
     }
 
-    refreshBalance();
-
-    var params = new URLSearchParams(window.location.search);
-    if (params.get("deposit") === "success") {
-      showStatus("Payment submitted. Your balance will update after NOWPayments confirms the transaction (this can take a few minutes).", "info");
-      startBalancePoll();
-    } else if (params.get("deposit") === "cancel") {
+    if (params.get("deposit") === "cancel") {
       showStatus("Payment was cancelled. You can try again when ready.", "info");
     }
+
+    refreshBalance();
 
     if (logoutBtn) {
       logoutBtn.addEventListener("click", function () {
@@ -687,7 +727,14 @@
             if (!data || !data.invoiceUrl) {
               throw new Error("Could not start checkout.");
             }
-            window.location.href = data.invoiceUrl;
+            var paymentWindow = window.open(data.invoiceUrl, "_blank", "noopener,noreferrer");
+            if (submitBtn) submitBtn.disabled = false;
+            if (!paymentWindow) {
+              window.location.href = data.invoiceUrl;
+              return;
+            }
+            showStatus("Payment opened in a new tab. Complete checkout there — your balance will update after confirmation.", "info");
+            startBalancePoll();
           })
           .catch(function (err) {
             if (submitBtn) submitBtn.disabled = false;

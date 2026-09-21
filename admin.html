@@ -297,13 +297,26 @@
       }
 
       #saved-lists-wrap,
-      #users-wrap {
+      #users-wrap,
+      #clients-wrap,
+      #user-activity-wrap {
         margin-top: 16px;
       }
 
       #saved-lists-wrap table,
-      #users-wrap table {
+      #users-wrap table,
+      #clients-wrap table {
         min-width: 640px;
+      }
+
+      .user-activity-toolbar {
+        margin-bottom: 12px;
+      }
+
+      .cell-wrap {
+        white-space: normal;
+        word-break: break-all;
+        max-width: 280px;
       }
 
       #notify-message {
@@ -591,7 +604,7 @@
 
   <main class="wrap">
     <h1>Admin</h1>
-    <p class="lede">Add accounts shown on the Accounts page, or message registered clients on Telegram.</p>
+    <p class="lede">Add accounts shown on the Accounts page, message registered clients on Telegram, or review user activity.</p>
     <p id="page-status" class="status" hidden></p>
 
     <section class="card" id="login-card">
@@ -613,6 +626,7 @@
         <nav class="admin-nav">
           <button type="button" class="admin-nav__btn is-active" data-admin-view="add">Add accounts</button>
           <button type="button" class="admin-nav__btn" data-admin-view="notify">Send notification</button>
+          <button type="button" class="admin-nav__btn" data-admin-view="users">Users</button>
         </nav>
       </aside>
 
@@ -661,6 +675,49 @@
             </thead>
             <tbody id="users-tbody"></tbody>
           </table>
+        </div>
+      </section>
+
+      <section class="card" data-view-panel="users" hidden>
+        <div id="user-directory">
+          <h2>Users</h2>
+          <p class="muted">Clients who generated a token with the Telegram bot. Click a row to see their activity.</p>
+          <p class="empty" id="clients-empty">No registered users yet.</p>
+          <div class="table-wrap" id="clients-wrap" hidden>
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Name</th>
+                  <th>Telegram ID</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody id="clients-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="user-activity" hidden>
+          <div class="toolbar user-activity-toolbar">
+            <button class="btn btn--ghost" type="button" id="user-activity-back">Back</button>
+          </div>
+          <h2 id="user-activity-title">User</h2>
+          <p class="muted" id="user-activity-copy"></p>
+          <p class="empty" id="user-activity-empty">No activity yet.</p>
+          <div class="table-wrap" id="user-activity-wrap" hidden>
+            <table>
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Action</th>
+                  <th>Amount</th>
+                  <th>From address</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="user-activity-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </section>
       </div>
@@ -802,6 +859,22 @@
     var pendingAnnounce = {};
     var listsPollTimer = null;
     var MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+    var clientsEmpty = document.getElementById("clients-empty");
+    var clientsWrap = document.getElementById("clients-wrap");
+    var clientsTbody = document.getElementById("clients-tbody");
+    var userDirectory = document.getElementById("user-directory");
+    var userActivity = document.getElementById("user-activity");
+    var userActivityTitle = document.getElementById("user-activity-title");
+    var userActivityCopy = document.getElementById("user-activity-copy");
+    var userActivityEmpty = document.getElementById("user-activity-empty");
+    var userActivityWrap = document.getElementById("user-activity-wrap");
+    var userActivityTbody = document.getElementById("user-activity-tbody");
+    var ACTIVITY_LABELS = {
+      login: "Signed in",
+      deposit_created: "Deposit started",
+      funds_added: "Add funds",
+      purchase: "Purchased accounts"
+    };
 
     function note(message, kind) {
       ListingsApp.setStatus(statusEl, message, kind || "");
@@ -835,6 +908,12 @@
           note(err.message || "Could not load users.", "error");
         });
       }
+      if (name === "users") {
+        showUserDirectory();
+        refreshClients().catch(function (err) {
+          note(err.message || "Could not load users.", "error");
+        });
+      }
     }
 
     function showLoggedOut() {
@@ -844,6 +923,7 @@
       pasteDialog.hidden = true;
       closeNotifyDialog();
       closeConfirmDialog(false);
+      showUserDirectory();
       pendingAnnounce = {};
       if (listsPollTimer) {
         clearTimeout(listsPollTimer);
@@ -909,6 +989,149 @@
       return ListingsApp.adminRequest(accessToken, "/api/admin/users").then(function (rows) {
         renderUserRows(Array.isArray(rows) ? rows : []);
       });
+    }
+
+    function formatBalance(value) {
+      return ListingsApp.formatUsd(value == null ? 0 : value);
+    }
+
+    function activityLabel(action) {
+      return ACTIVITY_LABELS[action] || String(action || "—");
+    }
+
+    function activityDetails(row) {
+      var d = row && row.details && typeof row.details === "object" ? row.details : {};
+      var parts = [];
+      if (Array.isArray(d.accounts) && d.accounts.length) {
+        parts.push(d.accounts.map(function (item) {
+          if (item && typeof item === "object") return item.login || item.id || "";
+          return String(item || "");
+        }).filter(Boolean).join(", "));
+      }
+      if (Array.isArray(d.logins) && d.logins.length) {
+        parts.push(d.logins.join(", "));
+      }
+      if (d.pay_currency) parts.push(String(d.pay_currency));
+      if (d.pay_amount != null && String(d.pay_amount).trim()) {
+        parts.push(String(d.pay_amount));
+      }
+      if (d.order_id) parts.push(String(d.order_id));
+      return parts.filter(Boolean).join(" · ") || "—";
+    }
+
+    function showUserDirectory() {
+      userActivity.hidden = true;
+      userDirectory.hidden = false;
+      userActivityTbody.textContent = "";
+    }
+
+    function renderClientRows(rows) {
+      clientsTbody.textContent = "";
+      clientsEmpty.hidden = rows.length > 0;
+      clientsWrap.hidden = rows.length === 0;
+      rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        tr.className = "list-row-open";
+        tr.tabIndex = 0;
+        tr.setAttribute("role", "link");
+        var who = usernameLabel(row) || displayName(row) || "this user";
+        tr.setAttribute("aria-label", "Open activity for " + who);
+
+        function openUser() {
+          openUserActivity(row);
+        }
+
+        tr.addEventListener("click", openUser);
+        tr.addEventListener("keydown", function (event) {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openUser();
+          }
+        });
+
+        var username = document.createElement("td");
+        username.textContent = usernameLabel(row) || "—";
+        tr.appendChild(username);
+        var name = document.createElement("td");
+        name.textContent = displayName(row) || "—";
+        tr.appendChild(name);
+        var telegramId = document.createElement("td");
+        telegramId.textContent = row.telegram_user_id == null ? "—" : String(row.telegram_user_id);
+        tr.appendChild(telegramId);
+        var balance = document.createElement("td");
+        balance.textContent = formatBalance(row.balance);
+        tr.appendChild(balance);
+        clientsTbody.appendChild(tr);
+      });
+    }
+
+    function refreshClients() {
+      return ListingsApp.adminRequest(accessToken, "/api/admin/users").then(function (rows) {
+        renderClientRows(Array.isArray(rows) ? rows : []);
+      });
+    }
+
+    function renderActivityRows(rows) {
+      userActivityTbody.textContent = "";
+      userActivityEmpty.hidden = rows.length > 0;
+      userActivityWrap.hidden = rows.length === 0;
+      rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        var when = document.createElement("td");
+        when.textContent = formatTime(row.created_at);
+        tr.appendChild(when);
+        var action = document.createElement("td");
+        action.textContent = activityLabel(row.action);
+        tr.appendChild(action);
+        var amount = document.createElement("td");
+        amount.textContent = row.amount_usd == null || row.amount_usd === ""
+          ? "—"
+          : formatBalance(row.amount_usd);
+        tr.appendChild(amount);
+        var from = document.createElement("td");
+        from.className = "cell-wrap";
+        from.textContent = row.from_address || "—";
+        tr.appendChild(from);
+        var details = document.createElement("td");
+        details.className = "cell-wrap";
+        details.textContent = activityDetails(row);
+        tr.appendChild(details);
+        userActivityTbody.appendChild(tr);
+      });
+    }
+
+    function openUserActivity(row) {
+      if (!row || !row.id) return;
+      userDirectory.hidden = true;
+      userActivity.hidden = false;
+      var who = usernameLabel(row) || displayName(row) || "User";
+      userActivityTitle.textContent = who;
+      var copyParts = [];
+      if (usernameLabel(row) && displayName(row)) copyParts.push(displayName(row));
+      copyParts.push("ID " + (row.telegram_user_id == null ? "—" : String(row.telegram_user_id)));
+      copyParts.push("Balance " + formatBalance(row.balance));
+      userActivityCopy.textContent = copyParts.join(" · ");
+      userActivityEmpty.hidden = true;
+      userActivityEmpty.textContent = "No activity yet.";
+      userActivityWrap.hidden = true;
+      userActivityTbody.textContent = "";
+      ListingsApp.adminRequest(accessToken, "/api/admin/users/" + encodeURIComponent(row.id) + "/activity")
+        .then(function (payload) {
+          var user = payload && payload.user ? payload.user : row;
+          var activityWho = usernameLabel(user) || displayName(user) || who;
+          userActivityTitle.textContent = activityWho;
+          var nextCopy = [];
+          if (usernameLabel(user) && displayName(user)) nextCopy.push(displayName(user));
+          nextCopy.push("ID " + (user.telegram_user_id == null ? "—" : String(user.telegram_user_id)));
+          nextCopy.push("Balance " + formatBalance(user.balance));
+          userActivityCopy.textContent = nextCopy.join(" · ");
+          renderActivityRows(payload && Array.isArray(payload.activity) ? payload.activity : []);
+        })
+        .catch(function (err) {
+          note(err.message || "Could not load activity.", "error");
+          userActivityEmpty.hidden = false;
+          userActivityEmpty.textContent = err.message || "Could not load activity.";
+        });
     }
 
     function closeNotifyDialog() {
@@ -1282,6 +1505,7 @@
       notifyAllBtn.addEventListener("click", function () {
         openNotifyDialog(null);
       });
+      document.getElementById("user-activity-back").addEventListener("click", showUserDirectory);
       document.getElementById("notify-cancel").addEventListener("click", closeNotifyDialog);
       document.getElementById("notify-close").addEventListener("click", closeNotifyDialog);
       notifyDialog.addEventListener("click", function (event) {
@@ -1314,7 +1538,11 @@
           closeNotifyDialog();
           return;
         }
-        if (!pasteDialog.hidden) closePasteDialog();
+        if (!pasteDialog.hidden) {
+          closePasteDialog();
+          return;
+        }
+        if (!userActivity.hidden) showUserDirectory();
       });
       pasteForm.querySelectorAll('input[name="paste-source"]').forEach(function (radio) {
         radio.addEventListener("change", function () {

@@ -5,7 +5,7 @@ window.LABELDIRECT_SUPABASE = {
 };
 
 window.LABELDIRECT_API = {
-  baseUrl: "http://localhost:3000"
+  baseUrl: "https://labeldirect-1.onrender.com"
 };
 
 window.LABELDIRECT_TELEGRAM = {

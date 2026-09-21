@@ -19,6 +19,7 @@ import {
   telegramUserIdForOwner,
 } from "../lib/wallet.js";
 import { createInvoice, isNowPaymentsConfigured, verifyIpnSignature } from "../lib/nowpayments.js";
+import { logUserActivity } from "../lib/activityLog.js";
 
 export const publicRouter = Router();
 
@@ -34,8 +35,15 @@ function ipnCallbackUrl() {
   return String(process.env.NOWPAYMENTS_IPN_URL || "").trim();
 }
 
-async function loginWithOwnerKey(res, ownerKey) {
+async function loginWithOwnerKey(res, ownerKey, activity) {
   await ensureWallet(ownerKey);
+  if (activity) {
+    try {
+      await logUserActivity(activity);
+    } catch (err) {
+      console.error("login activity:", err);
+    }
+  }
   res.json({ accessToken: createAccountsSession({ sub: ownerKey }) });
 }
 
@@ -62,7 +70,7 @@ publicRouter.post("/auth/login", async (req, res) => {
   try {
     const { data, error } = await getSupabaseAdmin()
       .from("access_tokens")
-      .select("id")
+      .select("id, telegram_user_id")
       .eq("token_hash", hashAccessToken(token))
       .maybeSingle();
     if (error) throw error;
@@ -70,7 +78,12 @@ publicRouter.post("/auth/login", async (req, res) => {
       res.status(401).json({ error: "That token didn’t work. Check it and try again." });
       return;
     }
-    await loginWithOwnerKey(res, String(data.id));
+    const ownerKey = String(data.id);
+    await loginWithOwnerKey(res, ownerKey, {
+      ownerKey,
+      telegramUserId: data.telegram_user_id,
+      action: "login",
+    });
   } catch (err) {
     console.error("POST /api/auth/login:", err);
     res.status(500).json({ error: err.message || "Could not sign in." });
@@ -146,7 +159,7 @@ publicRouter.post("/wallet/deposits", requireWalletAccess, async (req, res) => {
       priceAmountUsd: parsed.dollars,
       orderId,
       ipnCallbackUrl: ipnUrl,
-      successUrl: `${siteUrl}/payments.html?deposit=success`,
+      successUrl: `${siteUrl}/payments.html?deposit=success&amount=${encodeURIComponent(String(parsed.dollars))}`,
       cancelUrl: `${siteUrl}/payments.html?deposit=cancel`,
     });
 
@@ -158,6 +171,18 @@ publicRouter.post("/wallet/deposits", requireWalletAccess, async (req, res) => {
       })
       .eq("id", deposit.id);
     if (updateError) throw updateError;
+
+    try {
+      await logUserActivity({
+        ownerKey: req.accountsSub,
+        telegramUserId,
+        action: "deposit_created",
+        amountUsd: parsed.dollars,
+        details: { deposit_id: deposit.id, order_id: deposit.order_id },
+      });
+    } catch (err) {
+      console.error("deposit_created activity:", err);
+    }
 
     res.json({ invoiceUrl, orderId: deposit.order_id });
   } catch (err) {

@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "../supabaseAdmin.js";
+import { detailsFromDeposit, fromAddressFromIpn, logUserActivity } from "./activityLog.js";
 
 export const WALLET_MIN_DEPOSIT_USD = 10;
 
@@ -83,7 +84,7 @@ export async function applyDepositCredit(depositId) {
   const client = getSupabaseAdmin();
   const { data: deposit, error: depError } = await client
     .from("deposits")
-    .select("id, wallet_id, amount_usd, credited_at, payment_status")
+    .select("id, wallet_id, amount_usd, credited_at, payment_status, telegram_user_id, order_id, raw_ipn")
     .eq("id", depositId)
     .maybeSingle();
   if (depError) throw depError;
@@ -98,7 +99,7 @@ export async function applyDepositCredit(depositId) {
 
   const { data: wallet, error: walletError } = await client
     .from("wallets")
-    .select("balance_cents")
+    .select("owner_key, balance_cents")
     .eq("id", deposit.wallet_id)
     .single();
   if (walletError) throw walletError;
@@ -120,6 +121,20 @@ export async function applyDepositCredit(depositId) {
     .update({ balance_cents: newBalance, updated_at: now })
     .eq("id", deposit.wallet_id);
   if (balanceError) throw balanceError;
+
+  try {
+    await logUserActivity({
+      ownerKey: wallet.owner_key,
+      telegramUserId: deposit.telegram_user_id,
+      action: "funds_added",
+      amountUsd: deposit.amount_usd,
+      fromAddress: fromAddressFromIpn(deposit.raw_ipn),
+      details: detailsFromDeposit(deposit),
+      createdAt: now,
+    });
+  } catch (err) {
+    console.error("funds_added activity:", err);
+  }
 
   return { credited: true, addCents };
 }

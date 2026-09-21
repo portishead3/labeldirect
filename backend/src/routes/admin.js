@@ -10,6 +10,8 @@ import {
   telegramBotConfigured,
   TELEGRAM_MESSAGE_MAX,
 } from "../lib/telegramBot.js";
+import { dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
+import { backfillDepositActivity } from "../lib/activityLog.js";
 
 const LIST_INDEX_COLUMNS = "id,name,created_at,updated_at,process_status,process_error,process_stats";
 const LIST_DETAIL_COLUMNS = LIST_INDEX_COLUMNS + ",content";
@@ -102,6 +104,28 @@ async function fetchAccessTokenUsers(client) {
     from += pageSize;
   }
   return all;
+}
+
+async function attachWalletBalances(client, users) {
+  if (!users.length) return users;
+  const ids = users.map((row) => row.id).filter(Boolean);
+  const balances = Object.create(null);
+  const chunks = inChunks(ids, 200);
+  for (let i = 0; i < chunks.length; i++) {
+    if (!chunks[i].length) continue;
+    const { data, error } = await client
+      .from("wallets")
+      .select("owner_key, balance_cents")
+      .in("owner_key", chunks[i]);
+    if (error) throw error;
+    (data || []).forEach((wallet) => {
+      balances[wallet.owner_key] = dollarsFromCents(wallet.balance_cents);
+    });
+  }
+  return users.map((row) => ({
+    ...row,
+    balance: balances[row.id] != null ? balances[row.id] : 0,
+  }));
 }
 
 async function fetchAccountsForList(client, listId) {
@@ -268,10 +292,45 @@ adminRouter.get("/accounts", async (_req, res) => {
 
 adminRouter.get("/users", async (_req, res) => {
   try {
-    const rows = await fetchAccessTokenUsers(getSupabaseAdmin());
-    res.json(rows);
+    const client = getSupabaseAdmin();
+    const rows = await fetchAccessTokenUsers(client);
+    res.json(await attachWalletBalances(client, rows));
   } catch (err) {
     res.status(500).json({ error: err.message || "Could not load users." });
+  }
+});
+
+adminRouter.get("/users/:id/activity", async (req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const id = String(req.params.id || "").trim();
+    const { data: user, error } = await client
+      .from("access_tokens")
+      .select(USER_COLUMNS)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    await backfillDepositActivity(user.id);
+    const { data: activity, error: actError } = await client
+      .from("user_activity")
+      .select("id, action, amount_usd, from_address, details, created_at")
+      .eq("owner_key", user.id)
+      .order("created_at", { ascending: false });
+    if (actError) throw actError;
+    const wallet = await getWalletByOwnerKey(user.id);
+    res.json({
+      user: {
+        ...user,
+        balance: wallet ? dollarsFromCents(wallet.balance_cents) : 0,
+      },
+      activity: activity || [],
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Could not load activity." });
   }
 });
 
