@@ -11,6 +11,7 @@ create table if not exists public.wallets (
 create table if not exists public.deposits (
   id uuid primary key default gen_random_uuid(),
   wallet_id uuid not null references public.wallets (id) on delete restrict,
+  telegram_user_id bigint,
   amount_usd numeric(12, 2) not null check (amount_usd > 0),
   order_id text not null unique,
   nowpayments_invoice_id text,
@@ -21,8 +22,12 @@ create table if not exists public.deposits (
   updated_at timestamptz not null default now()
 );
 
+alter table public.deposits
+  add column if not exists telegram_user_id bigint;
+
 create index if not exists deposits_wallet_id_idx on public.deposits (wallet_id);
 create index if not exists deposits_payment_status_idx on public.deposits (payment_status);
+create index if not exists deposits_telegram_user_id_idx on public.deposits (telegram_user_id);
 
 alter table public.wallets enable row level security;
 alter table public.deposits enable row level security;

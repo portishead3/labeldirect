@@ -16,6 +16,7 @@ import {
   getWalletByOwnerKey,
   parseDepositAmount,
   shouldCreditDeposit,
+  telegramUserIdForOwner,
 } from "../lib/wallet.js";
 import { createInvoice, isNowPaymentsConfigured, verifyIpnSignature } from "../lib/nowpayments.js";
 
@@ -123,6 +124,7 @@ publicRouter.post("/wallet/deposits", requireWalletAccess, async (req, res) => {
 
   try {
     const wallet = await ensureWallet(req.accountsSub);
+    const telegramUserId = await telegramUserIdForOwner(req.accountsSub);
     const orderId = `ld-${crypto.randomUUID()}`;
     const now = new Date().toISOString();
 
@@ -130,6 +132,7 @@ publicRouter.post("/wallet/deposits", requireWalletAccess, async (req, res) => {
       .from("deposits")
       .insert({
         wallet_id: wallet.id,
+        telegram_user_id: telegramUserId,
         amount_usd: parsed.dollars,
         order_id: orderId,
         payment_status: "pending",

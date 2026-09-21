@@ -33,6 +33,19 @@ export async function getWalletByOwnerKey(ownerKey) {
   return data;
 }
 
+export async function telegramUserIdForOwner(ownerKey) {
+  const key = String(ownerKey || "").trim();
+  if (!key || key === "shared") return null;
+  const { data, error } = await getSupabaseAdmin()
+    .from("access_tokens")
+    .select("telegram_user_id")
+    .eq("id", key)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data || data.telegram_user_id == null) return null;
+  return data.telegram_user_id;
+}
+
 export function parseDepositAmount(input) {
   const raw = String(input == null ? "" : input).trim().replace(/,/g, "");
   if (!raw) return { ok: false, error: "Enter an amount." };
