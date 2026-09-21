@@ -48,6 +48,18 @@ export async function telegramUserIdForOwner(ownerKey) {
 }
 
 export function parseDepositAmount(input) {
+  const parsed = parseCreditAmount(input);
+  if (!parsed.ok) return parsed;
+  if (parsed.dollars < WALLET_MIN_DEPOSIT_USD) {
+    return {
+      ok: false,
+      error: `Minimum deposit is $${WALLET_MIN_DEPOSIT_USD.toFixed(2)}.`,
+    };
+  }
+  return parsed;
+}
+
+export function parseCreditAmount(input) {
   const raw = String(input == null ? "" : input).trim().replace(/,/g, "");
   if (!raw) return { ok: false, error: "Enter an amount." };
   if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
@@ -57,11 +69,8 @@ export function parseDepositAmount(input) {
   if (!Number.isFinite(dollars) || dollars <= 0) {
     return { ok: false, error: "Enter a positive amount." };
   }
-  if (dollars < WALLET_MIN_DEPOSIT_USD) {
-    return {
-      ok: false,
-      error: `Minimum deposit is $${WALLET_MIN_DEPOSIT_USD.toFixed(2)}.`,
-    };
+  if (dollars > 100000) {
+    return { ok: false, error: "Amount is too large." };
   }
   return { ok: true, dollars: Math.round(dollars * 100) / 100 };
 }
@@ -137,4 +146,45 @@ export async function applyDepositCredit(depositId) {
   }
 
   return { credited: true, addCents };
+}
+
+export async function creditWalletManually(ownerKey, dollars) {
+  const key = String(ownerKey || "").trim();
+  if (!key) throw new Error("User is required.");
+  const parsed = parseCreditAmount(dollars);
+  if (!parsed.ok) {
+    const err = new Error(parsed.error);
+    err.status = 400;
+    throw err;
+  }
+
+  const wallet = await ensureWallet(key);
+  const telegramUserId = await telegramUserIdForOwner(key);
+  const addCents = centsFromDollars(parsed.dollars);
+  const now = new Date().toISOString();
+  const newBalance = Number(wallet.balance_cents) + addCents;
+
+  const { error: balanceError } = await getSupabaseAdmin()
+    .from("wallets")
+    .update({ balance_cents: newBalance, updated_at: now })
+    .eq("id", wallet.id);
+  if (balanceError) throw balanceError;
+
+  try {
+    await logUserActivity({
+      ownerKey: key,
+      telegramUserId,
+      action: "manual_credit",
+      amountUsd: parsed.dollars,
+      details: { source: "admin" },
+      createdAt: now,
+    });
+  } catch (err) {
+    console.error("manual_credit activity:", err);
+  }
+
+  return {
+    amount: parsed.dollars,
+    balance: dollarsFromCents(newBalance),
+  };
 }

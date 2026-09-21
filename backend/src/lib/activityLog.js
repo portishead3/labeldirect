@@ -7,12 +7,21 @@ export function fromAddressFromIpn(rawIpn) {
   return text || null;
 }
 
+export function paymentIdFromIpn(rawIpn) {
+  if (!rawIpn || typeof rawIpn !== "object") return null;
+  const id = rawIpn.payment_id || rawIpn.paymentId;
+  const text = String(id == null ? "" : id).trim();
+  return text || null;
+}
+
 export function detailsFromDeposit(deposit) {
   const row = deposit || {};
   const ipn = row.raw_ipn && typeof row.raw_ipn === "object" ? row.raw_ipn : {};
   const details = {};
   if (row.id) details.deposit_id = String(row.id);
   if (row.order_id) details.order_id = String(row.order_id);
+  const paymentId = paymentIdFromIpn(ipn);
+  if (paymentId) details.payment_id = paymentId;
   const currency = ipn.pay_currency || ipn.payCurrency;
   if (currency) details.pay_currency = String(currency);
   if (ipn.pay_amount != null) details.pay_amount = ipn.pay_amount;
@@ -69,26 +78,33 @@ export async function backfillDepositActivity(ownerKey) {
 
   const { data: existing, error: actError } = await client
     .from("user_activity")
-    .select("action, details")
+    .select("id, action, details")
     .eq("owner_key", key)
     .in("action", ["deposit_created", "funds_added"]);
   if (actError) throw actError;
 
   const seen = new Set();
+  const byDeposit = Object.create(null);
   (existing || []).forEach((row) => {
     const depositId = row.details && row.details.deposit_id;
-    if (depositId) seen.add(row.action + ":" + depositId);
+    if (!depositId) return;
+    seen.add(row.action + ":" + depositId);
+    if (!byDeposit[depositId]) byDeposit[depositId] = [];
+    byDeposit[depositId].push(row);
   });
 
   for (const deposit of deposits) {
     const depositId = String(deposit.id);
+    const paymentId = paymentIdFromIpn(deposit.raw_ipn);
     if (!seen.has("deposit_created:" + depositId)) {
+      const createdDetails = detailsFromDeposit({ ...deposit, raw_ipn: null });
+      if (paymentId) createdDetails.payment_id = paymentId;
       await logUserActivity({
         ownerKey: key,
         telegramUserId: deposit.telegram_user_id,
         action: "deposit_created",
         amountUsd: deposit.amount_usd,
-        details: detailsFromDeposit({ ...deposit, raw_ipn: null }),
+        details: createdDetails,
         createdAt: deposit.created_at,
       });
     }
@@ -102,6 +118,18 @@ export async function backfillDepositActivity(ownerKey) {
         details: detailsFromDeposit(deposit),
         createdAt: deposit.credited_at,
       });
+    }
+    if (!paymentId) continue;
+    const rows = byDeposit[depositId] || [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.details && row.details.payment_id) continue;
+      const details = Object.assign({}, row.details || {}, { payment_id: paymentId });
+      const { error: updateError } = await client
+        .from("user_activity")
+        .update({ details })
+        .eq("id", row.id);
+      if (updateError) throw updateError;
     }
   }
 }
