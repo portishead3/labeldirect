@@ -299,7 +299,8 @@
       #saved-lists-wrap,
       #users-wrap,
       #clients-wrap,
-      #user-activity-wrap {
+      #user-activity-wrap,
+      #purchases-wrap {
         margin-top: 16px;
       }
 
@@ -309,7 +310,8 @@
         min-width: 640px;
       }
 
-      #user-activity-wrap table {
+      #user-activity-wrap table,
+      #purchases-wrap table {
         min-width: 860px;
       }
 
@@ -631,6 +633,7 @@
           <button type="button" class="admin-nav__btn is-active" data-admin-view="add">Add accounts</button>
           <button type="button" class="admin-nav__btn" data-admin-view="notify">Send notification</button>
           <button type="button" class="admin-nav__btn" data-admin-view="users">Users</button>
+          <button type="button" class="admin-nav__btn" data-admin-view="purchases">Purchases</button>
         </nav>
       </aside>
 
@@ -725,6 +728,27 @@
               <tbody id="user-activity-tbody"></tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <section class="card" data-view-panel="purchases" hidden>
+        <h2>Purchases</h2>
+        <p class="muted">Accounts bought by clients. Each row is one purchase checkout.</p>
+        <p class="empty" id="purchases-empty">No purchases yet.</p>
+        <div class="table-wrap" id="purchases-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>User</th>
+                <th>Telegram ID</th>
+                <th>Accounts</th>
+                <th>Purchased</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="purchases-tbody"></tbody>
+          </table>
         </div>
       </section>
       </div>
@@ -921,6 +945,9 @@
     var userActivityEmpty = document.getElementById("user-activity-empty");
     var userActivityWrap = document.getElementById("user-activity-wrap");
     var userActivityTbody = document.getElementById("user-activity-tbody");
+    var purchasesEmpty = document.getElementById("purchases-empty");
+    var purchasesWrap = document.getElementById("purchases-wrap");
+    var purchasesTbody = document.getElementById("purchases-tbody");
     var ACTIVITY_LABELS = {
       login: "Signed in",
       deposit_created: "Deposit started",
@@ -982,6 +1009,11 @@
         showUserDirectory();
         refreshClients().catch(function (err) {
           note(err.message || "Could not load users.", "error");
+        });
+      }
+      if (name === "purchases") {
+        refreshPurchases().catch(function (err) {
+          note(err.message || "Could not load purchases.", "error");
         });
       }
     }
@@ -1162,6 +1194,57 @@
     function refreshClients() {
       return ListingsApp.adminRequest(accessToken, "/api/admin/users").then(function (rows) {
         renderClientRows(Array.isArray(rows) ? rows : []);
+      });
+    }
+
+    function purchaseAccountsLabel(row) {
+      var accounts = row && Array.isArray(row.accounts) ? row.accounts : [];
+      if (!accounts.length) return "—";
+      return accounts.map(function (acct) {
+        var login = String((acct && acct.login) || "").trim() || "—";
+        var price = acct && acct.price != null ? formatBalance(acct.price) : "";
+        var vendor = String((acct && acct.vendor) || "").trim();
+        var bits = [login];
+        if (price) bits.push(price);
+        if (vendor) bits.push(vendor);
+        return bits.join(" · ");
+      }).join("; ");
+    }
+
+    function renderPurchaseRows(rows) {
+      purchasesTbody.textContent = "";
+      purchasesEmpty.hidden = rows.length > 0;
+      purchasesWrap.hidden = rows.length === 0;
+      rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        var when = document.createElement("td");
+        when.textContent = formatTime(row.created_at);
+        tr.appendChild(when);
+        var user = document.createElement("td");
+        user.textContent = usernameLabel(row) || displayName(row) || "—";
+        tr.appendChild(user);
+        var telegramId = document.createElement("td");
+        telegramId.textContent = row.telegram_user_id == null ? "—" : String(row.telegram_user_id);
+        tr.appendChild(telegramId);
+        var count = document.createElement("td");
+        count.textContent = row.account_count == null ? "—" : String(row.account_count);
+        tr.appendChild(count);
+        var purchased = document.createElement("td");
+        purchased.className = "cell-wrap";
+        purchased.textContent = purchaseAccountsLabel(row);
+        tr.appendChild(purchased);
+        var total = document.createElement("td");
+        total.textContent = row.total_usd == null || row.total_usd === ""
+          ? "—"
+          : formatBalance(row.total_usd);
+        tr.appendChild(total);
+        purchasesTbody.appendChild(tr);
+      });
+    }
+
+    function refreshPurchases() {
+      return ListingsApp.adminRequest(accessToken, "/api/admin/purchases").then(function (rows) {
+        renderPurchaseRows(Array.isArray(rows) ? rows : []);
       });
     }
 

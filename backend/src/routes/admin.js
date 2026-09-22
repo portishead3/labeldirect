@@ -310,6 +310,87 @@ adminRouter.get("/users", async (_req, res) => {
   }
 });
 
+async function fetchPurchases(client) {
+  const pageSize = 500;
+  const all = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await client
+      .from("purchases")
+      .select("id, owner_key, telegram_user_id, account_data, total_usd, created_at")
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const rows = data || [];
+    all.push(...rows);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
+async function attachPurchaseUsers(client, purchases) {
+  if (!purchases.length) return purchases;
+  const ownerKeys = [];
+  const seen = Object.create(null);
+  for (let i = 0; i < purchases.length; i++) {
+    const key = String(purchases[i].owner_key || "").trim();
+    if (!key || seen[key]) continue;
+    seen[key] = true;
+    ownerKeys.push(key);
+  }
+  const usersById = Object.create(null);
+  const chunks = inChunks(ownerKeys, 200);
+  for (let i = 0; i < chunks.length; i++) {
+    if (!chunks[i].length) continue;
+    const { data, error } = await client
+      .from("access_tokens")
+      .select(USER_COLUMNS)
+      .in("id", chunks[i]);
+    if (error) throw error;
+    (data || []).forEach((user) => {
+      usersById[user.id] = user;
+    });
+  }
+  return purchases.map((row) => {
+    const user = usersById[row.owner_key] || null;
+    const accounts = Array.isArray(row.account_data) ? row.account_data : [];
+    return {
+      id: row.id,
+      owner_key: row.owner_key,
+      telegram_user_id: row.telegram_user_id != null
+        ? row.telegram_user_id
+        : user && user.telegram_user_id != null
+          ? user.telegram_user_id
+          : null,
+      telegram_username: user ? user.telegram_username : null,
+      telegram_first_name: user ? user.telegram_first_name : null,
+      telegram_last_name: user ? user.telegram_last_name : null,
+      total_usd: row.total_usd,
+      created_at: row.created_at,
+      account_count: accounts.length,
+      accounts: accounts.map((acct) => ({
+        id: acct && acct.id != null ? acct.id : null,
+        login: acct && acct.login != null ? String(acct.login) : "",
+        price: acct && acct.price != null ? Number(acct.price) || 0 : 0,
+        vendor: acct && acct.vendor != null ? String(acct.vendor) : "",
+        country: acct && acct.country != null ? String(acct.country) : "",
+        account_status: acct && acct.account_status != null ? String(acct.account_status) : "",
+      })),
+    };
+  });
+}
+
+adminRouter.get("/purchases", async (_req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const rows = await fetchPurchases(client);
+    res.json(await attachPurchaseUsers(client, rows));
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Could not load purchases." });
+  }
+});
+
 adminRouter.get("/users/:id/activity", async (req, res) => {
   try {
     const client = getSupabaseAdmin();

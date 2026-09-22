@@ -58,6 +58,7 @@ Node server between the static site and Supabase. **Service role key stays here 
 | DELETE | `/api/admin/lists/:id` | Bearer |
 | GET | `/api/admin/accounts` | Bearer (Supabase session) |
 | GET | `/api/admin/users` | Bearer (Telegram clients from `access_tokens`) |
+| GET | `/api/admin/purchases` | Bearer (purchase history with buyer + accounts) |
 | POST | `/api/admin/notify` | Bearer (`{ message, telegramUserId? }` — DM via bot; omit id to send to all) |
 | PATCH | `/api/admin/accounts/price` | Bearer (`{ ids, price }` — up to 500 account ids) |
 | PATCH | `/api/admin/accounts/order` | Bearer (`{ ids }` — full display order, up to 5000) |
