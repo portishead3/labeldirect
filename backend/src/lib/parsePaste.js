@@ -325,7 +325,7 @@ export async function processParsed(client, parsed, listId, price) {
   return { inserted, updated, duped, parsed: parsed.length };
 }
 
-function friendlyListError(err) {
+export function friendlyListError(err) {
   const msg = String(err && err.message ? err.message : err || "");
   if (/duplicate key|unique/i.test(msg)) {
     return new Error("A list with that name already exists.");

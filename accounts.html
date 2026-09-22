@@ -388,6 +388,221 @@
         color: var(--text-secondary);
       }
 
+      .accounts-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 12px 16px;
+        margin: 0 0 22px;
+      }
+
+      .accounts-filters__field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 150px;
+        flex: 1 1 160px;
+        max-width: 240px;
+      }
+
+      .accounts-filters__label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .accounts-filters__select {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 100%;
+        background-color: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        padding: 10px 36px 10px 12px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239a96a8' d='M1.4.6 6 5.2 10.6.6 12 2 6 8 0 2z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px 8px;
+      }
+
+      .accounts-filters__select:hover {
+        border-color: var(--border-accent);
+      }
+
+      .accounts-filters__select:focus {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 2px;
+      }
+
+      .accounts-filters__field--action {
+        flex: 0 0 auto;
+        max-width: none;
+      }
+
+      .accounts-filters__reset {
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        background: transparent;
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        padding: 10px 18px;
+        white-space: nowrap;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      }
+
+      .accounts-filters__reset:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.12);
+        border-color: var(--accent);
+      }
+
+      /* Country combobox */
+      .country-combo {
+        position: relative;
+      }
+
+      .country-combo__input {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 100%;
+        background-color: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        padding: 10px 36px 10px 12px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        cursor: text;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239a96a8' d='M1.4.6 6 5.2 10.6.6 12 2 6 8 0 2z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px 8px;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease;
+      }
+
+      .country-combo__input::placeholder {
+        color: var(--text-secondary);
+      }
+
+      .country-combo__input:hover {
+        border-color: var(--border-accent);
+      }
+
+      .country-combo__input:focus {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 2px;
+      }
+
+      .country-combo__input.is-open {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-color: var(--border-accent);
+      }
+
+      .country-combo__dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 200;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+        border-top: none;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        min-width: 200px;
+      }
+
+      .country-combo__list {
+        list-style: none;
+        margin: 0;
+        padding: 4px 0;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .country-combo__item {
+        padding: 9px 14px;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .country-combo__item:hover {
+        background: rgba(155, 126, 200, 0.12);
+      }
+
+      .country-combo__item.is-selected {
+        color: var(--accent-light);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .country-combo__item--all {
+        color: var(--text-secondary);
+        font-style: italic;
+        border-bottom: 1px solid var(--hairline);
+        margin-bottom: 2px;
+      }
+
+      .country-combo__empty {
+        padding: 10px 14px;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        font-style: italic;
+      }
+
+      .country-combo__pages {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 7px 10px;
+        border-top: 1px solid var(--hairline);
+      }
+
+      .country-combo__page-btn {
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--accent-light);
+        background: none;
+        border: none;
+        padding: 3px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .country-combo__page-btn:hover:not(:disabled) {
+        background: rgba(155, 126, 200, 0.14);
+      }
+
+      .country-combo__page-btn:disabled {
+        color: var(--text-secondary);
+        opacity: 0.45;
+        cursor: default;
+      }
+
+      .country-combo__page-info {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+
       .table-wrap {
         overflow-x: auto;
         border: 1px solid var(--hairline);
@@ -588,6 +803,20 @@
         .accounts-main {
           padding: 18px 12px 32px;
         }
+
+        .accounts-filters {
+          flex-direction: column;
+        }
+
+        .accounts-filters__field {
+          max-width: none;
+          min-width: 0;
+          width: 100%;
+        }
+
+        .accounts-filters__reset {
+          width: 100%;
+        }
       }
 
       @media (min-width: 768px) {
@@ -608,6 +837,167 @@
 
         .accounts-main {
           padding: 36px 48px 48px;
+        }
+      }
+
+      /* ── Checkbox column ───────────────────────────────────── */
+      .accounts-table__cb-cell {
+        width: 40px;
+        text-align: center;
+        padding: 14px 8px;
+      }
+
+      .accounts-table thead .accounts-table__cb-cell {
+        width: 40px;
+      }
+
+      .account-checkbox {
+        width: 17px;
+        height: 17px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        vertical-align: middle;
+      }
+
+      /* ── Selected row highlight ────────────────────────────── */
+      .accounts-table tbody tr.is-selected td {
+        background: rgba(155, 126, 200, 0.14);
+        border-bottom-color: rgba(155, 126, 200, 0.28);
+      }
+
+      .accounts-table tbody tr.is-selected td:first-child {
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+
+      /* ── Checkout bar ──────────────────────────────────────── */
+      .checkout-bar {
+        position: sticky;
+        top: var(--nav-h);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        gap: 20px;
+        padding: 12px 20px;
+        margin: 0 0 22px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-accent);
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .checkout-bar.is-visible {
+        display: flex;
+      }
+
+      .checkout-bar__info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      .checkout-bar__count {
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .checkout-bar__total {
+        font-weight: 700;
+        color: var(--accent-light);
+      }
+
+      .checkout-bar__balance {
+        font-size: 0.82rem;
+      }
+
+      .checkout-bar__balance-ok {
+        color: #8bc98e;
+      }
+
+      .checkout-bar__balance-low {
+        color: #e47878;
+      }
+
+      .checkout-bar__sep {
+        width: 1px;
+        height: 28px;
+        background: var(--hairline);
+        flex-shrink: 0;
+      }
+
+      .checkout-btn {
+        font-family: var(--font-body);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #0d0818;
+        background: var(--accent);
+        border: none;
+        border-radius: 8px;
+        padding: 11px 28px;
+        cursor: pointer;
+        transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        box-shadow: 0 0 16px rgba(155, 126, 200, 0.35);
+        white-space: nowrap;
+      }
+
+      .checkout-btn:hover:not(:disabled) {
+        background: var(--accent-light);
+        box-shadow: 0 0 24px rgba(155, 126, 200, 0.55);
+      }
+
+      .checkout-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .checkout-btn.is-loading {
+        pointer-events: none;
+        opacity: 0.6;
+      }
+
+      .checkout-bar__clear {
+        font-family: var(--font-body);
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: none;
+        border: 1px solid var(--hairline);
+        border-radius: 6px;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: color 0.2s ease, border-color 0.2s ease;
+      }
+
+      .checkout-bar__clear:hover {
+        color: var(--text-primary);
+        border-color: var(--accent);
+      }
+
+      @media (max-width: 599px) {
+        .checkout-bar {
+          flex-wrap: wrap;
+          gap: 10px;
+          padding: 10px 12px;
+          margin: 0 0 16px;
+          border-radius: 8px;
+        }
+
+        .checkout-bar__info {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .checkout-bar__sep {
+          display: none;
+        }
+
+        .checkout-btn {
+          width: 100%;
+          text-align: center;
         }
       }
     </style>
@@ -655,19 +1045,79 @@
     <main id="main" class="accounts-main">
       <p id="page-status" class="page-status" hidden></p>
 
+      <form class="accounts-filters" id="accounts-filters" aria-label="Filter accounts">
+        <div class="accounts-filters__field" id="field-country">
+          <label class="accounts-filters__label" for="filter-country-input">Country</label>
+          <div class="country-combo" id="country-combo">
+            <input
+              type="text"
+              id="filter-country-input"
+              class="country-combo__input"
+              placeholder="All countries"
+              autocomplete="off"
+              spellcheck="false"
+              role="combobox"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="country-combo-list"
+            >
+            <div class="country-combo__dropdown" id="country-combo-dropdown" hidden>
+              <ul class="country-combo__list" id="country-combo-list" role="listbox" aria-label="Countries"></ul>
+              <div class="country-combo__pages" id="country-combo-pages" hidden>
+                <button type="button" class="country-combo__page-btn" id="country-combo-prev" aria-label="Previous page">‹ Prev</button>
+                <span class="country-combo__page-info" id="country-combo-page-info"></span>
+                <button type="button" class="country-combo__page-btn" id="country-combo-next" aria-label="Next page">Next ›</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accounts-filters__field">
+          <label class="accounts-filters__label" for="filter-base">Base</label>
+          <select id="filter-base" name="base" class="accounts-filters__select">
+            <option value="">All bases</option>
+          </select>
+        </div>
+        <div class="accounts-filters__field">
+          <label class="accounts-filters__label" for="filter-outbound">Outbound</label>
+          <select id="filter-outbound" name="outbound" class="accounts-filters__select">
+            <option value="">All</option>
+            <option value="0">0 shipments</option>
+            <option value="below10">Below 10</option>
+            <option value="10plus">10 or more</option>
+          </select>
+        </div>
+        <div class="accounts-filters__field accounts-filters__field--action">
+          <span class="accounts-filters__label" aria-hidden="true">&nbsp;</span>
+          <button type="button" class="accounts-filters__reset" id="filter-reset">Reset</button>
+        </div>
+      </form>
+
+      <div class="checkout-bar" id="checkout-bar">
+        <div class="checkout-bar__info">
+          <span><span class="checkout-bar__count" id="checkout-count">0</span> account(s) selected</span>
+          <span>Total: <span class="checkout-bar__total" id="checkout-total">$0.00</span></span>
+          <span class="checkout-bar__balance" id="checkout-balance-info"></span>
+        </div>
+        <span class="checkout-bar__sep" aria-hidden="true"></span>
+        <button type="button" class="checkout-btn" id="checkout-btn" disabled>Checkout</button>
+        <button type="button" class="checkout-bar__clear" id="checkout-clear">Clear</button>
+      </div>
+
       <section class="accounts-panel" id="panel-ups" data-panel="ups" hidden>
         <div class="accounts-panel__header">
           <h1 class="accounts-panel__title">UPS</h1>
           <p class="accounts-panel__meta">Select UPS to browse available accounts.</p>
         </div>
         <div class="empty-state">
-          <p>No UPS accounts listed yet.</p>
+          <p data-empty-default="No UPS accounts listed yet.">No UPS accounts listed yet.</p>
         </div>
         <div class="table-wrap" hidden>
           <table class="accounts-table">
             <thead>
               <tr>
+                <th scope="col" class="accounts-table__cb-cell"></th>
                 <th scope="col">Login</th>
+                <th scope="col">Account status</th>
                 <th scope="col">Country</th>
                 <th scope="col">State</th>
                 <th scope="col">Outbound</th>
@@ -675,7 +1125,6 @@
                 <th scope="col">Cardnumber</th>
                 <th scope="col">Expiry</th>
                 <th scope="col">Price</th>
-                <th scope="col">Status</th>
                 <th scope="col">Base</th>
               </tr>
             </thead>
@@ -690,13 +1139,15 @@
           <p class="accounts-panel__meta">Available FedEx accounts</p>
         </div>
         <div class="empty-state">
-          <p>No FedEx accounts listed yet.</p>
+          <p data-empty-default="No FedEx accounts listed yet.">No FedEx accounts listed yet.</p>
         </div>
         <div class="table-wrap" hidden>
           <table class="accounts-table">
             <thead>
               <tr>
+                <th scope="col" class="accounts-table__cb-cell"></th>
                 <th scope="col">Login</th>
+                <th scope="col">Account status</th>
                 <th scope="col">Country</th>
                 <th scope="col">State</th>
                 <th scope="col">Outbound</th>
@@ -704,7 +1155,6 @@
                 <th scope="col">Cardnumber</th>
                 <th scope="col">Expiry</th>
                 <th scope="col">Price</th>
-                <th scope="col">Status</th>
                 <th scope="col">Base</th>
               </tr>
             </thead>
@@ -716,7 +1166,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=status"></script>
+  <script src="listings.js?v=account-filters"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("login.html");
@@ -725,6 +1175,212 @@
     var panels = document.querySelectorAll('.accounts-panel');
     var statusEl = document.getElementById('page-status');
     var logoutBtn = document.getElementById('logout-btn');
+    var filtersForm = document.getElementById('accounts-filters');
+    var baseSelect = document.getElementById('filter-base');
+    var outboundSelect = document.getElementById('filter-outbound');
+    var resetBtn = document.getElementById('filter-reset');
+    var allRows = [];
+
+    // ── Country combobox state ──────────────────────────────────────────────
+    var COUNTRY_PAGE_SIZE = 10;
+    var countryComboValue = '';      // internal filter value ('' = All)
+    var countryComboLabel = '';      // display label for selected value
+    var countryComboOptions = [];    // [{value, label}] for current carrier
+    var countryComboPage = 0;        // 0-based current page
+    var countryComboOpen = false;
+
+    var comboInput   = document.getElementById('filter-country-input');
+    var comboDrop    = document.getElementById('country-combo-dropdown');
+    var comboList    = document.getElementById('country-combo-list');
+    var comboPages   = document.getElementById('country-combo-pages');
+    var comboPrev    = document.getElementById('country-combo-prev');
+    var comboNext    = document.getElementById('country-combo-next');
+    var comboPageInfo= document.getElementById('country-combo-page-info');
+
+    function filteredCountryOptions() {
+      var q = comboInput ? comboInput.value.trim().toLowerCase() : '';
+      if (!q) return countryComboOptions;
+      return countryComboOptions.filter(function (opt) {
+        return opt.label.toLowerCase().indexOf(q) !== -1 ||
+               opt.value.toLowerCase().indexOf(q) !== -1;
+      });
+    }
+
+    function renderCountryDropdown() {
+      if (!comboList) return;
+      var opts = filteredCountryOptions();
+      var totalPages = Math.max(1, Math.ceil(opts.length / COUNTRY_PAGE_SIZE));
+      if (countryComboPage >= totalPages) countryComboPage = 0;
+
+      comboList.textContent = '';
+
+      // "All countries" row always at top
+      var allItem = document.createElement('li');
+      allItem.className = 'country-combo__item country-combo__item--all' +
+                          (countryComboValue === '' ? ' is-selected' : '');
+      allItem.setAttribute('role', 'option');
+      allItem.setAttribute('aria-selected', countryComboValue === '' ? 'true' : 'false');
+      allItem.textContent = 'All countries';
+      allItem.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        selectCountry('', '');
+      });
+      comboList.appendChild(allItem);
+
+      if (opts.length === 0) {
+        var empty = document.createElement('li');
+        empty.className = 'country-combo__empty';
+        empty.textContent = 'No countries match.';
+        comboList.appendChild(empty);
+      } else {
+        var start = countryComboPage * COUNTRY_PAGE_SIZE;
+        var pageOpts = opts.slice(start, start + COUNTRY_PAGE_SIZE);
+        pageOpts.forEach(function (opt) {
+          var li = document.createElement('li');
+          li.className = 'country-combo__item' +
+                         (opt.value === countryComboValue ? ' is-selected' : '');
+          li.setAttribute('role', 'option');
+          li.setAttribute('aria-selected', opt.value === countryComboValue ? 'true' : 'false');
+          li.textContent = opt.label;
+          li.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            selectCountry(opt.value, opt.label);
+          });
+          comboList.appendChild(li);
+        });
+      }
+
+      // Pages control
+      if (comboPages) {
+        if (opts.length > COUNTRY_PAGE_SIZE) {
+          comboPages.hidden = false;
+          if (comboPrev) comboPrev.disabled = countryComboPage === 0;
+          if (comboNext) comboNext.disabled = countryComboPage >= totalPages - 1;
+          if (comboPageInfo) {
+            comboPageInfo.textContent =
+              'Page ' + (countryComboPage + 1) + ' of ' + totalPages;
+          }
+        } else {
+          comboPages.hidden = true;
+        }
+      }
+    }
+
+    function openCountryDropdown() {
+      if (!comboDrop || !comboInput) return;
+      countryComboOpen = true;
+      countryComboPage = 0;
+      comboDrop.hidden = false;
+      comboInput.classList.add('is-open');
+      comboInput.setAttribute('aria-expanded', 'true');
+      // Show the query as empty so user can type to search
+      comboInput.value = '';
+      renderCountryDropdown();
+    }
+
+    function closeCountryDropdown() {
+      if (!comboDrop || !comboInput) return;
+      countryComboOpen = false;
+      comboDrop.hidden = true;
+      comboInput.classList.remove('is-open');
+      comboInput.setAttribute('aria-expanded', 'false');
+      // Restore display label
+      comboInput.value = countryComboLabel;
+    }
+
+    function selectCountry(value, label) {
+      countryComboValue = value;
+      countryComboLabel = label;
+      closeCountryDropdown();
+      renderFiltered();
+    }
+
+    function setCountryOptions(options, keepValue) {
+      // Find if current value still exists
+      var found = options.some(function (opt) { return opt.value === keepValue; });
+      if (!found) {
+        countryComboValue = '';
+        countryComboLabel = '';
+      }
+      countryComboOptions = options;
+      if (comboInput && !countryComboOpen) {
+        comboInput.value = countryComboLabel;
+      }
+    }
+
+    if (comboInput) {
+      comboInput.addEventListener('focus', function () {
+        if (!countryComboOpen) openCountryDropdown();
+      });
+      comboInput.addEventListener('click', function () {
+        if (!countryComboOpen) openCountryDropdown();
+      });
+      comboInput.addEventListener('input', function () {
+        countryComboPage = 0;
+        renderCountryDropdown();
+      });
+      comboInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          closeCountryDropdown();
+          comboInput.blur();
+        }
+      });
+      comboInput.addEventListener('blur', function () {
+        // Small delay so mousedown on items fires first
+        setTimeout(function () {
+          if (countryComboOpen) closeCountryDropdown();
+        }, 150);
+      });
+    }
+
+    if (comboPrev) {
+      comboPrev.addEventListener('click', function () {
+        if (countryComboPage > 0) {
+          countryComboPage--;
+          renderCountryDropdown();
+        }
+      });
+    }
+
+    if (comboNext) {
+      comboNext.addEventListener('click', function () {
+        var opts = filteredCountryOptions();
+        var totalPages = Math.ceil(opts.length / COUNTRY_PAGE_SIZE);
+        if (countryComboPage < totalPages - 1) {
+          countryComboPage++;
+          renderCountryDropdown();
+        }
+      });
+    }
+    // ── end Country combobox ────────────────────────────────────────────────
+
+    function activeCarrier() {
+      var tab = document.querySelector('.carrier-tab.is-active');
+      return tab ? tab.getAttribute('data-carrier') : 'fedex';
+    }
+
+    function currentFilters() {
+      return {
+        country: countryComboValue,
+        base: baseSelect ? baseSelect.value : '',
+        outbound: outboundSelect ? outboundSelect.value : ''
+      };
+    }
+
+    function refreshFilterOptions() {
+      var carrierRows = ListingsApp.rowsForCarrier(allRows, activeCarrier());
+      setCountryOptions(ListingsApp.countryOptions(carrierRows), countryComboValue);
+      ListingsApp.fillFilterSelect(
+        baseSelect,
+        ListingsApp.baseOptions(carrierRows),
+        baseSelect ? baseSelect.value : '',
+        'All bases'
+      );
+    }
+
+    function renderFiltered() {
+      ListingsApp.renderAccounts(allRows, currentFilters());
+    }
 
     tabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
@@ -745,8 +1401,34 @@
             panel.setAttribute('hidden', '');
           }
         });
+
+        refreshFilterOptions();
+        renderFiltered();
       });
     });
+
+    function resetFilters() {
+      selectCountry('', '');
+      if (baseSelect) baseSelect.value = '';
+      if (outboundSelect) outboundSelect.value = '';
+      renderFiltered();
+    }
+
+    if (filtersForm) {
+      filtersForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+      });
+      // base + outbound selects still fire change on the form
+      filtersForm.addEventListener('change', function () {
+        renderFiltered();
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        resetFilters();
+      });
+    }
 
     function showStatus(message, isError) {
       ListingsApp.setStatus(statusEl, message, isError ? 'error' : '');
@@ -771,7 +1453,9 @@
       showStatus('Loading accounts…');
       ListingsApp.fetchAccountsFromApi()
         .then(function (rows) {
-          ListingsApp.renderAccounts(rows);
+          allRows = rows || [];
+          refreshFilterOptions();
+          renderFiltered();
           showStatus('');
         })
         .catch(function (err) {
@@ -782,6 +1466,251 @@
           showStatus(err.message || 'Could not load accounts.', true);
         });
     }
+
+    // ── Checkout / Purchase logic ───────────────────────────────────────────
+    var MAX_SELECTED = 3;
+    var selectedAccounts = [];  // [{id, price}]
+    var userBalanceDollars = 0;
+
+    var checkoutBar   = document.getElementById('checkout-bar');
+    var checkoutCount  = document.getElementById('checkout-count');
+    var checkoutTotal  = document.getElementById('checkout-total');
+    var checkoutBalInfo = document.getElementById('checkout-balance-info');
+    var checkoutBtn    = document.getElementById('checkout-btn');
+    var checkoutClear  = document.getElementById('checkout-clear');
+
+    function getStoredBalance() {
+      var el = document.querySelector('[data-balance-display]');
+      if (el) {
+        var raw = el.getAttribute('data-balance-usd');
+        if (raw != null) return Number(raw) || 0;
+      }
+      return 0;
+    }
+
+    function selectedTotalPrice() {
+      var sum = 0;
+      for (var i = 0; i < selectedAccounts.length; i++) {
+        sum += selectedAccounts[i].price;
+      }
+      return Math.round(sum * 100) / 100;
+    }
+
+    function updateCheckoutBar() {
+      userBalanceDollars = getStoredBalance();
+      var count = selectedAccounts.length;
+      var total = selectedTotalPrice();
+      var canAfford = userBalanceDollars >= total && total > 0;
+
+      if (checkoutCount) checkoutCount.textContent = String(count);
+      if (checkoutTotal) checkoutTotal.textContent = ListingsApp.formatUsd(total);
+
+      if (checkoutBalInfo) {
+        checkoutBalInfo.textContent = 'Balance: ' + ListingsApp.formatUsd(userBalanceDollars);
+        checkoutBalInfo.className = 'checkout-bar__balance ' +
+          (canAfford ? 'checkout-bar__balance-ok' : 'checkout-bar__balance-low');
+      }
+
+      if (checkoutBtn) {
+        checkoutBtn.disabled = !canAfford;
+        checkoutBtn.title = canAfford ? '' : 'Insufficient balance';
+      }
+
+      if (checkoutBar) {
+        checkoutBar.classList.toggle('is-visible', count > 0);
+      }
+    }
+
+    function isSelected(id) {
+      for (var i = 0; i < selectedAccounts.length; i++) {
+        if (selectedAccounts[i].id === id) return true;
+      }
+      return false;
+    }
+
+    function removeSelected(id) {
+      selectedAccounts = selectedAccounts.filter(function (s) { return s.id !== id; });
+    }
+
+    function syncRowHighlights() {
+      var rows = document.querySelectorAll('.accounts-table tbody tr[data-account-id]');
+      rows.forEach(function (tr) {
+        var id = tr.getAttribute('data-account-id');
+        var on = isSelected(id);
+        tr.classList.toggle('is-selected', on);
+        var cb = tr.querySelector('.account-checkbox');
+        if (cb) cb.checked = on;
+      });
+    }
+
+    function clearSelection() {
+      selectedAccounts = [];
+      syncRowHighlights();
+      updateCheckoutBar();
+    }
+
+    document.addEventListener('change', function (e) {
+      var cb = e.target;
+      if (!cb.classList || !cb.classList.contains('account-checkbox')) return;
+
+      var id = cb.getAttribute('data-account-id');
+      var price = Number(cb.getAttribute('data-price')) || 0;
+
+      if (cb.checked) {
+        if (!isSelected(id)) {
+          if (selectedAccounts.length >= MAX_SELECTED) {
+            // Remove oldest selection
+            var removed = selectedAccounts.shift();
+            var oldRow = document.querySelector('tr[data-account-id="' + removed.id + '"]');
+            if (oldRow) {
+              oldRow.classList.remove('is-selected');
+              var oldCb = oldRow.querySelector('.account-checkbox');
+              if (oldCb) oldCb.checked = false;
+            }
+          }
+          selectedAccounts.push({ id: id, price: price });
+        }
+      } else {
+        removeSelected(id);
+      }
+
+      var tr = cb.closest('tr');
+      if (tr) tr.classList.toggle('is-selected', cb.checked);
+
+      updateCheckoutBar();
+    });
+
+    if (checkoutClear) {
+      checkoutClear.addEventListener('click', clearSelection);
+    }
+
+    // When carrier tabs switch or filters re-render, preserve selection highlights
+    var origRenderFiltered = renderFiltered;
+    renderFiltered = function () {
+      origRenderFiltered();
+      syncRowHighlights();
+    };
+
+    // ── Checkout action ─────────────────────────────────────────────────────
+    function openPurchaseTab(accounts, total) {
+      var w = window.open('', '_blank');
+      if (!w) {
+        alert('Allow pop-ups to view your purchased accounts.');
+        return;
+      }
+      var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1.0">' +
+        '<title>Purchased Accounts — LABELDIRECT</title>' +
+        '<style>' +
+        '*{margin:0;padding:0;box-sizing:border-box}' +
+        'body{background:#12141a;color:#e4e2ea;font-family:"Jost",system-ui,sans-serif;padding:40px 24px;line-height:1.7}' +
+        'h1{font-size:1.6rem;font-weight:700;margin-bottom:6px;color:#cfc6de}' +
+        '.meta{color:#9a96a8;font-size:0.92rem;margin-bottom:28px}' +
+        '.card{background:#181b22;border:1px solid rgba(155,126,200,0.18);border-radius:12px;padding:24px;margin-bottom:20px}' +
+        '.card h2{font-size:1.1rem;font-weight:700;color:#e4e2ea;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06)}' +
+        '.field{display:flex;gap:12px;padding:6px 0;font-size:0.92rem}' +
+        '.field-label{color:#9a96a8;min-width:130px;font-weight:600;text-transform:uppercase;font-size:0.78rem;letter-spacing:0.08em;padding-top:2px}' +
+        '.field-value{color:#e4e2ea;word-break:break-all}' +
+        '.total{text-align:center;color:#9b7ec8;font-size:1.15rem;font-weight:700;margin-top:12px}' +
+        '</style></head><body>' +
+        '<h1>Purchased Accounts</h1>' +
+        '<p class="meta">' + new Date().toLocaleString() + ' — Total: ' + ListingsApp.formatUsd(total) + '</p>';
+
+      for (var i = 0; i < accounts.length; i++) {
+        var a = accounts[i];
+        html += '<div class="card"><h2>Account ' + (i + 1) + '</h2>';
+        var fields = [
+          ['Login', a.login],
+          ['Account Status', a.account_status],
+          ['Country', a.country],
+          ['State', a.state],
+          ['Outbound', a.outbound],
+          ['Inbound', a.inbound],
+          ['Card Number', a.card_number],
+          ['Expiry', a.expiry],
+          ['Price', '$' + (Number(a.price) || 0).toFixed(2)],
+          ['Base', a.vendor]
+        ];
+        for (var j = 0; j < fields.length; j++) {
+          var val = fields[j][1];
+          if (val == null || val === '') val = '—';
+          html += '<div class="field"><span class="field-label">' + fields[j][0] + '</span><span class="field-value">' + String(val) + '</span></div>';
+        }
+        html += '</div>';
+      }
+
+      html += '<p class="total">Total paid: ' + ListingsApp.formatUsd(total) + '</p>';
+      html += '</body></html>';
+
+      w.document.write(html);
+      w.document.close();
+    }
+
+    function performCheckout() {
+      if (!selectedAccounts.length) return;
+      var ids = selectedAccounts.map(function (s) { return s.id; });
+      var total = selectedTotalPrice();
+      userBalanceDollars = getStoredBalance();
+
+      if (userBalanceDollars < total) {
+        alert('Insufficient balance. You need ' + ListingsApp.formatUsd(total) + ' but have ' + ListingsApp.formatUsd(userBalanceDollars) + '.');
+        return;
+      }
+
+      if (checkoutBtn) {
+        checkoutBtn.classList.add('is-loading');
+        checkoutBtn.textContent = 'Processing…';
+      }
+
+      ListingsApp.purchaseAccounts(ids)
+        .then(function (result) {
+          // Open new tab with full info
+          openPurchaseTab(result.accounts, result.total);
+
+          // Update balance display
+          document.querySelectorAll('[data-balance-display]').forEach(function (el) {
+            ListingsApp.setBalanceDisplay(el, result.balance);
+          });
+
+          // Remove purchased rows from local data
+          var purchasedIds = {};
+          result.accounts.forEach(function (a) { purchasedIds[a.id] = true; });
+          allRows = allRows.filter(function (row) { return !purchasedIds[row.id]; });
+
+          // Clear selection and re-render
+          selectedAccounts = [];
+          refreshFilterOptions();
+          renderFiltered();
+          updateCheckoutBar();
+
+          showStatus('Purchase complete! Account details opened in a new tab.', false);
+          setTimeout(function () { showStatus(''); }, 5000);
+        })
+        .catch(function (err) {
+          if (err && err.status === 401) {
+            bounceToLogin();
+            return;
+          }
+          alert(err.message || 'Purchase failed. Please try again.');
+        })
+        .finally(function () {
+          if (checkoutBtn) {
+            checkoutBtn.classList.remove('is-loading');
+            checkoutBtn.textContent = 'Checkout';
+          }
+        });
+    }
+
+    if (checkoutBtn) {
+      checkoutBtn.addEventListener('click', performCheckout);
+    }
+
+    // Refresh balance info in checkout bar whenever balance loads
+    ListingsApp.fetchWallet().then(function (wallet) {
+      userBalanceDollars = wallet && wallet.balance != null ? wallet.balance : 0;
+      updateCheckoutBar();
+    }).catch(function () {});
+
     }
   </script>
 </body>

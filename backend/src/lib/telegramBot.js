@@ -59,6 +59,26 @@ export async function sendTelegramMessage(chatId, text) {
   });
 }
 
+export async function sendTelegramDocument(chatId, fileBuffer, filename, caption) {
+  if (!botToken()) {
+    throw new Error("Telegram bot token is not set.");
+  }
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  form.append("document", new Blob([fileBuffer]), filename || "accounts.txt");
+  if (caption) form.append("caption", String(caption));
+
+  const res = await fetch(apiUrl("sendDocument"), {
+    method: "POST",
+    body: form,
+  });
+  const data = await res.json().catch(() => null);
+  if (!data || !data.ok) {
+    throw new Error((data && data.description) || "sendDocument failed (" + res.status + ")");
+  }
+  return data.result;
+}
+
 function isChannelMember(member) {
   const status = member && member.status;
   if (status === "creator" || status === "administrator" || status === "member") return true;

@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { getSupabaseAdmin } from "../supabaseAdmin.js";
 import { requireAdmin } from "../middleware/auth.js";
-import { acceptListImport, parseAccountStatus } from "../lib/parsePaste.js";
+import { acceptListImport, friendlyListError, parseAccountStatus } from "../lib/parsePaste.js";
 import { enqueueListProcess } from "../lib/listJobs.js";
 import { fetchAccountRows } from "../lib/withVendor.js";
 import {
@@ -235,26 +235,35 @@ adminRouter.get("/lists/:id", async (req, res) => {
 
 adminRouter.patch("/lists/:id", async (req, res) => {
   try {
-    const content = req.body && typeof req.body.content === "string" ? req.body.content : null;
-    if (content == null) {
+    const body = req.body || {};
+    const content = typeof body.content === "string" ? body.content : null;
+    const name = typeof body.name === "string" ? body.name.trim() : null;
+    if (content == null && name == null) {
       res.status(400).json({ error: "List content is required." });
       return;
     }
+    if (name != null && !name) {
+      res.status(400).json({ error: "Give this list a name." });
+      return;
+    }
+    const patch = { updated_at: new Date().toISOString() };
+    if (content != null) patch.content = content;
+    if (name != null) patch.name = name;
     const client = getSupabaseAdmin();
     const { data, error } = await client
       .from("lists")
-      .update({ content, updated_at: new Date().toISOString() })
+      .update(patch)
       .eq("id", req.params.id)
       .select(LIST_DETAIL_COLUMNS)
       .maybeSingle();
-    if (error) throw error;
+    if (error) throw friendlyListError(error);
     if (!data) {
       res.status(404).json({ error: "List not found." });
       return;
     }
     res.json(await attachListAccounts(client, data));
   } catch (err) {
-    res.status(500).json({ error: err.message || "Could not update list." });
+    res.status(clientIngestStatus(err)).json({ error: err.message || "Could not update list." });
   }
 });
 

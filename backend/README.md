@@ -54,7 +54,7 @@ Node server between the static site and Supabase. **Service role key stays here 
 | POST | `/api/webhooks/nowpayments` | NOWPayments IPN (`x-nowpayments-sig` HMAC); credits wallet on `finished` / `confirmed` |
 | GET | `/api/admin/lists` | Bearer (id, name, timestamps) |
 | GET | `/api/admin/lists/:id` | Bearer (includes `content` and matching `accounts` `{ id, login, price }`) |
-| PATCH | `/api/admin/lists/:id` | Bearer (`{ content }` — remaining lines after row delete) |
+| PATCH | `/api/admin/lists/:id` | Bearer (`{ content?, name? }` — remaining lines after row delete, and/or a new list name) |
 | DELETE | `/api/admin/lists/:id` | Bearer |
 | GET | `/api/admin/accounts` | Bearer (Supabase session) |
 | GET | `/api/admin/users` | Bearer (Telegram clients from `access_tokens`) |

@@ -1,5 +1,5 @@
 (function (global) {
-  var COLUMNS = ["login", "country", "state", "outbound", "inbound", "card_number", "expiry", "price", "account_status", "vendor"];
+  var COLUMNS = ["login", "account_status", "country", "state", "outbound", "inbound", "card_number", "expiry", "price", "vendor"];
 
   function supabaseConfig() {
     return global.LABELDIRECT_SUPABASE || {};
@@ -153,12 +153,150 @@
     return cell;
   }
 
+  var US_ALIASES = {
+    us: true,
+    usa: true,
+    "united states": true,
+    unitedstates: true
+  };
+
+  function isUsCountry(value) {
+    var text = String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\./g, "");
+    return Boolean(US_ALIASES[text]);
+  }
+
+  function countryKey(value) {
+    if (isUsCountry(value)) return "__us__";
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function vendorKey(value) {
+    var text = String(value == null ? "" : value).trim();
+    return text ? text : "__none__";
+  }
+
+  function outboundOf(row) {
+    var n = Number(row && row.outbound);
+    return Number.isFinite(n) ? n : 0;
+  }
+
   function carrierOf(row) {
     var carrier = String((row && row.carrier) || "fedex").toLowerCase();
     return carrier === "ups" ? "ups" : "fedex";
   }
 
-  function renderPanel(panel, rows) {
+  function rowsForCarrier(rows, carrier) {
+    var wanted = carrier === "ups" ? "ups" : "fedex";
+    return (rows || []).filter(function (row) {
+      return carrierOf(row) === wanted;
+    });
+  }
+
+  function matchesCountry(row, selected) {
+    if (!selected) return true;
+    return countryKey(row && row.country) === selected;
+  }
+
+  function matchesBase(row, selected) {
+    if (!selected) return true;
+    var key = vendorKey(row && row.vendor);
+    if (selected === "__none__" || key === "__none__") return key === selected;
+    return key.toLowerCase() === selected.toLowerCase();
+  }
+
+  function matchesOutboundBand(row, band) {
+    if (!band || band === "all") return true;
+    var n = outboundOf(row);
+    if (band === "0") return n === 0;
+    if (band === "below10") return n >= 1 && n <= 9;
+    if (band === "10plus") return n >= 10;
+    return true;
+  }
+
+  function applyAccountFilters(rows, filters) {
+    var f = filters || {};
+    return (rows || []).filter(function (row) {
+      return (
+        matchesCountry(row, f.country) &&
+        matchesBase(row, f.base) &&
+        matchesOutboundBand(row, f.outbound)
+      );
+    });
+  }
+
+  function countryOptions(rows) {
+    var counts = {};
+    var labels = {};
+    (rows || []).forEach(function (row) {
+      var raw = String((row && row.country) || "").trim();
+      if (!raw) return;
+      var key = countryKey(raw);
+      counts[key] = (counts[key] || 0) + 1;
+      if (!labels[key]) labels[key] = key === "__us__" ? "US" : raw;
+    });
+    return Object.keys(counts)
+      .sort(function (a, b) {
+        var aUs = a === "__us__";
+        var bUs = b === "__us__";
+        if (aUs !== bUs) return aUs ? -1 : 1;
+        if (counts[b] !== counts[a]) return counts[b] - counts[a];
+        return labels[a].localeCompare(labels[b], undefined, { sensitivity: "base" });
+      })
+      .map(function (key) {
+        return { value: key, label: labels[key] };
+      });
+  }
+
+  function baseOptions(rows) {
+    var seen = {};
+    var hasNone = false;
+    (rows || []).forEach(function (row) {
+      var text = String((row && row.vendor) || "").trim();
+      if (!text) {
+        hasNone = true;
+        return;
+      }
+      var key = text.toLowerCase();
+      if (!seen[key]) seen[key] = text;
+    });
+    var opts = Object.keys(seen)
+      .map(function (key) {
+        return { value: seen[key], label: seen[key] };
+      })
+      .sort(function (a, b) {
+        return a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+      });
+    if (hasNone) opts.push({ value: "__none__", label: "No base" });
+    return opts;
+  }
+
+  function fillFilterSelect(select, options, currentValue, allLabel) {
+    if (!select) return "";
+    select.textContent = "";
+    var all = document.createElement("option");
+    all.value = "";
+    all.textContent = allLabel;
+    select.appendChild(all);
+    (options || []).forEach(function (opt) {
+      var el = document.createElement("option");
+      el.value = opt.value;
+      el.textContent = opt.label;
+      select.appendChild(el);
+    });
+    var exists = Boolean(
+      currentValue &&
+        (options || []).some(function (opt) {
+          return opt.value === currentValue;
+        })
+    );
+    select.value = exists ? currentValue : "";
+    return select.value;
+  }
+
+  function renderPanel(panel, rows, options) {
     if (!panel) return;
     var empty = panel.querySelector(".empty-state");
     var wrap = panel.querySelector(".table-wrap");
@@ -167,7 +305,14 @@
     tbody.textContent = "";
 
     if (!rows.length) {
-      if (empty) empty.hidden = false;
+      if (empty) {
+        empty.hidden = false;
+        var p = empty.querySelector("p");
+        if (p) {
+          var fallback = p.getAttribute("data-empty-default") || p.textContent;
+          p.textContent = (options && options.emptyMessage) || fallback;
+        }
+      }
       if (wrap) wrap.hidden = true;
       return;
     }
@@ -177,6 +322,19 @@
 
     rows.forEach(function (row) {
       var tr = document.createElement("tr");
+      if (row.id) tr.setAttribute("data-account-id", row.id);
+      tr.setAttribute("data-price", String(Number(row.price) || 0));
+
+      var cbTd = document.createElement("td");
+      cbTd.className = "accounts-table__cb-cell";
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.className = "account-checkbox";
+      cb.setAttribute("data-account-id", row.id || "");
+      cb.setAttribute("data-price", String(Number(row.price) || 0));
+      cbTd.appendChild(cb);
+      tr.appendChild(cbTd);
+
       COLUMNS.forEach(function (key) {
         if (key === "account_status") {
           tr.appendChild(statusTd(row[key]));
@@ -188,15 +346,22 @@
     });
   }
 
-  function renderAccounts(rows) {
+  function renderAccounts(rows, filters) {
     var fedex = [];
     var ups = [];
     (rows || []).forEach(function (row) {
       if (carrierOf(row) === "ups") ups.push(row);
       else fedex.push(row);
     });
-    renderPanel(document.querySelector('[data-panel="fedex"]'), fedex);
-    renderPanel(document.querySelector('[data-panel="ups"]'), ups);
+    var filteredFedex = applyAccountFilters(fedex, filters);
+    var filteredUps = applyAccountFilters(ups, filters);
+    var filterEmpty = "No accounts match these filters.";
+    renderPanel(document.querySelector('[data-panel="fedex"]'), filteredFedex, {
+      emptyMessage: fedex.length && !filteredFedex.length ? filterEmpty : ""
+    });
+    renderPanel(document.querySelector('[data-panel="ups"]'), filteredUps, {
+      emptyMessage: ups.length && !filteredUps.length ? filterEmpty : ""
+    });
   }
 
   function setStatus(el, message, kind) {
@@ -291,6 +456,18 @@
     return { ok: true, dollars: Math.round(dollars * 100) / 100 };
   }
 
+  function purchaseAccounts(ids, accessToken) {
+    var token = accessToken || getAccountsSession();
+    return fetch(apiBase() + "/api/accounts/purchase", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ ids: ids })
+    }).then(parseJsonResponse);
+  }
+
   global.ListingsApp = {
     COLUMNS: COLUMNS,
     apiBase: apiBase,
@@ -306,6 +483,11 @@
     loginWithToken: loginWithToken,
     adminRequest: adminRequest,
     renderAccounts: renderAccounts,
+    applyAccountFilters: applyAccountFilters,
+    countryOptions: countryOptions,
+    baseOptions: baseOptions,
+    rowsForCarrier: rowsForCarrier,
+    fillFilterSelect: fillFilterSelect,
     dash: dash,
     setStatus: setStatus,
     WALLET_MIN_DEPOSIT_USD: WALLET_MIN_DEPOSIT_USD,
@@ -315,6 +497,7 @@
     createDeposit: createDeposit,
     loadBalanceDisplays: loadBalanceDisplays,
     parseDepositAmount: parseDepositAmount,
-    formatAccountStatus: formatAccountStatus
+    formatAccountStatus: formatAccountStatus,
+    purchaseAccounts: purchaseAccounts
   };
 })(window);

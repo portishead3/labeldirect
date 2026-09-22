@@ -685,7 +685,7 @@
       <section class="card" data-view-panel="users" hidden>
         <div id="user-directory">
           <h2>Users</h2>
-          <p class="muted">Clients who generated a token with the Telegram bot. Click a row to see their activity.</p>
+          <p class="muted">Clients who logged into the system using telegram. Click  see their activity.</p>
           <p class="empty" id="clients-empty">No registered users yet.</p>
           <div class="table-wrap" id="clients-wrap" hidden>
             <table>
@@ -822,6 +822,25 @@
     </div>
   </div>
 
+  <div class="dialog-backdrop" id="rename-dialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rename-dialog-title">
+      <div class="dialog__header">
+        <h2 id="rename-dialog-title">Rename list</h2>
+        <button type="button" class="dialog__close" id="rename-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted" id="rename-dialog-copy">Give this list a new name.</p>
+      <p id="rename-status" class="status" hidden role="alert"></p>
+      <form id="rename-form">
+        <label for="rename-name">List name</label>
+        <input id="rename-name" type="text" autocomplete="off" required placeholder="e.g. FedEx batch 8 Sep">
+        <div class="toolbar">
+          <button class="btn" type="submit" id="rename-submit">Save name</button>
+          <button class="btn btn--ghost" type="button" id="rename-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="dialog-backdrop" id="confirm-dialog" hidden>
     <div class="dialog dialog--confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
       <div class="dialog__header">
@@ -879,6 +898,13 @@
     var savedListsEmpty = document.getElementById("saved-lists-empty");
     var savedListsWrap = document.getElementById("saved-lists-wrap");
     var savedListsTbody = document.getElementById("saved-lists-tbody");
+    var renameDialog = document.getElementById("rename-dialog");
+    var renameForm = document.getElementById("rename-form");
+    var renameCopy = document.getElementById("rename-dialog-copy");
+    var renameInput = document.getElementById("rename-name");
+    var renameSubmit = document.getElementById("rename-submit");
+    var renameStatusEl = document.getElementById("rename-status");
+    var renameTarget = null;
     var client = null;
     var accessToken = null;
     var savedLists = [];
@@ -926,6 +952,10 @@
 
     function creditNote(message, kind) {
       ListingsApp.setStatus(creditStatusEl, message, kind || "");
+    }
+
+    function renameNote(message, kind) {
+      ListingsApp.setStatus(renameStatusEl, message, kind || "");
     }
 
     function formatTime(value) {
@@ -1394,6 +1424,17 @@
         var action = document.createElement("td");
         var actions = document.createElement("div");
         actions.className = "row-actions";
+        var renameBtn = document.createElement("button");
+        renameBtn.type = "button";
+        renameBtn.className = "btn btn--ghost";
+        renameBtn.textContent = "Rename";
+        renameBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          openRenameDialog(row);
+        });
+        renameBtn.addEventListener("mousedown", function (event) {
+          event.stopPropagation();
+        });
         var copyBtn = document.createElement("button");
         copyBtn.type = "button";
         copyBtn.className = "btn btn--ghost";
@@ -1416,6 +1457,7 @@
         deleteBtn.addEventListener("mousedown", function (event) {
           event.stopPropagation();
         });
+        actions.appendChild(renameBtn);
         actions.appendChild(copyBtn);
         actions.appendChild(deleteBtn);
         action.appendChild(actions);
@@ -1426,6 +1468,23 @@
         tr.appendChild(action);
         savedListsTbody.appendChild(tr);
       });
+    }
+
+    function openRenameDialog(row) {
+      renameTarget = row;
+      renameNote("");
+      renameCopy.textContent = "Rename “" + (row.name || "Untitled list") + "”.";
+      renameInput.value = row.name || "";
+      renameSubmit.disabled = false;
+      renameDialog.hidden = false;
+      renameInput.focus();
+      renameInput.select();
+    }
+
+    function closeRenameDialog() {
+      renameDialog.hidden = true;
+      renameTarget = null;
+      renameNote("");
     }
 
     function deleteList(row) {
@@ -1609,6 +1668,11 @@
       notifyDialog.addEventListener("click", function (event) {
         if (event.target === notifyDialog) closeNotifyDialog();
       });
+      document.getElementById("rename-cancel").addEventListener("click", closeRenameDialog);
+      document.getElementById("rename-close").addEventListener("click", closeRenameDialog);
+      renameDialog.addEventListener("click", function (event) {
+        if (event.target === renameDialog) closeRenameDialog();
+      });
       document.getElementById("paste-cancel").addEventListener("click", closePasteDialog);
       document.getElementById("paste-close").addEventListener("click", closePasteDialog);
       pasteDialog.addEventListener("click", function (event) {
@@ -1638,6 +1702,10 @@
         }
         if (!creditDialog.hidden) {
           closeCreditDialog();
+          return;
+        }
+        if (!renameDialog.hidden) {
+          closeRenameDialog();
           return;
         }
         if (!pasteDialog.hidden) {
@@ -1734,6 +1802,45 @@
           .catch(function (err) {
             creditSubmit.disabled = false;
             creditNote(err.message || "Could not add balance.", "error");
+          });
+      });
+
+      renameForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (!accessToken) {
+          renameNote("Sign in first.", "error");
+          return;
+        }
+        if (!renameTarget || !renameTarget.id) {
+          renameNote("Select a list first.", "error");
+          return;
+        }
+        var nextName = (renameInput.value || "").trim();
+        if (!nextName) {
+          renameNote("Give this list a name.", "error");
+          renameInput.focus();
+          return;
+        }
+        var previous = renameTarget.name || "Untitled list";
+        if (nextName === renameTarget.name) {
+          closeRenameDialog();
+          return;
+        }
+        renameSubmit.disabled = true;
+        renameNote("Saving…");
+        ListingsApp.adminRequest(accessToken, "/api/admin/lists/" + encodeURIComponent(renameTarget.id), {
+          method: "PATCH",
+          body: { name: nextName }
+        })
+          .then(function () {
+            renameSubmit.disabled = false;
+            closeRenameDialog();
+            note("Renamed “" + previous + "” to “" + nextName + "”.", "ok");
+            loadSavedLists().catch(function () {});
+          })
+          .catch(function (err) {
+            renameSubmit.disabled = false;
+            renameNote(err.message || "Could not rename list.", "error");
           });
       });
 
