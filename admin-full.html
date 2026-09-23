@@ -243,6 +243,35 @@
         margin-bottom: 16px;
       }
 
+      .search-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+        margin-bottom: 14px;
+      }
+
+      .search-bar__field {
+        flex: 1 1 220px;
+        min-width: 0;
+      }
+
+      .search-bar__field label {
+        margin-bottom: 6px;
+      }
+
+      .search-bar__field input {
+        width: 100%;
+        margin-bottom: 0;
+      }
+
+      .search-bar__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
       .btn {
         background: var(--accent);
         color: #12141a;
@@ -601,6 +630,16 @@
         <dt>Accounts</dt>
         <dd id="meta-count">—</dd>
       </dl>
+      <form class="search-bar" id="search-form" autocomplete="off">
+        <div class="search-bar__field">
+          <label for="account-search">Search</label>
+          <input id="account-search" type="search" placeholder="e.g. abd matches assadasabdkjk" spellcheck="false">
+        </div>
+        <div class="search-bar__actions">
+          <button type="submit" class="btn" id="search-btn">Search</button>
+          <button type="button" class="btn btn--ghost" id="search-clear-btn" hidden>Clear</button>
+        </div>
+      </form>
       <div class="toolbar toolbar--rows">
         <button type="button" class="btn btn--ghost" id="copy-btn">Copy</button>
         <button type="button" class="btn btn--ghost" id="select-all-btn">Select all</button>
@@ -691,16 +730,60 @@
     var deleteDialogCopy = document.getElementById("delete-dialog-copy");
     var deleteDialogConfirm = document.getElementById("delete-dialog-confirm");
     var metaCount = document.getElementById("meta-count");
+    var searchForm = document.getElementById("search-form");
+    var searchInput = document.getElementById("account-search");
+    var searchClearBtn = document.getElementById("search-clear-btn");
     var client = null;
     var accessToken = null;
     var accounts = [];
     var selected = {};
+    var searchQuery = "";
     var editingId = null;
     var ignorePriceBlur = false;
     var drag = null;
     var savingOrder = false;
     var PRICE_BATCH = 500;
     var DELETE_BATCH = 500;
+
+    function normalizeSearchText(value) {
+      return String(value == null ? "" : value).toLowerCase().replace(/\s+/g, "");
+    }
+
+    function textIncludesQuery(haystack, needle) {
+      var h = normalizeSearchText(haystack);
+      var n = normalizeSearchText(needle);
+      if (!n) return true;
+      return h.indexOf(n) !== -1;
+    }
+
+    function rowSearchBlob(row) {
+      return [
+        row.login,
+        row.country,
+        row.state,
+        row.outbound,
+        row.inbound,
+        row.card_number,
+        row.expiry,
+        row.price,
+        row.account_status,
+        ListingsApp.formatAccountStatus(row.account_status),
+        row.vendor
+      ].map(function (part) {
+        return part == null ? "" : String(part);
+      }).join(" ");
+    }
+
+    function visibleAccounts() {
+      if (!normalizeSearchText(searchQuery)) return accounts;
+      return accounts.filter(function (row) {
+        return textIncludesQuery(rowSearchBlob(row), searchQuery);
+      });
+    }
+
+    function isSearchActive() {
+      return !!normalizeSearchText(searchQuery);
+    }
 
     function note(message, kind) {
       ListingsApp.setStatus(statusEl, message, kind || "");
@@ -735,7 +818,12 @@
     }
 
     function allSelected() {
-      return accounts.length > 0 && selectedCount() === accounts.length;
+      var rows = visibleAccounts();
+      if (!rows.length) return false;
+      for (var i = 0; i < rows.length; i++) {
+        if (!selected[rows[i].id]) return false;
+      }
+      return true;
     }
 
     function accountById(id) {
@@ -1013,6 +1101,8 @@
       loginCard.hidden = false;
       listCard.hidden = true;
       logoutBtn.hidden = true;
+      searchInput.value = "";
+      searchQuery = "";
       closePriceDialog();
       closeStatusDialog();
       closeDeleteDialog();
@@ -1025,7 +1115,8 @@
 
     function updateBulkControls() {
       var n = selectedCount();
-      var empty = accounts.length === 0;
+      var rows = visibleAccounts();
+      var empty = rows.length === 0;
       selectAllBtn.disabled = empty;
       selectAllBtn.textContent = allSelected() ? "Deselect all" : "Select all";
       selectAllBtn.setAttribute("aria-pressed", allSelected() ? "true" : "false");
@@ -1155,10 +1246,16 @@
       editingId = null;
       ignorePriceBlur = true;
       listRowsEl.textContent = "";
-      listEmpty.hidden = accounts.length > 0;
-      listRowsEl.hidden = accounts.length === 0;
-      metaCount.textContent = String(accounts.length);
-      accounts.forEach(function (acct, index) {
+      var rows = visibleAccounts();
+      var filtering = isSearchActive();
+      listEmpty.hidden = rows.length > 0;
+      listEmpty.textContent = filtering ? "No matching accounts." : "No accounts yet.";
+      listRowsEl.hidden = rows.length === 0;
+      metaCount.textContent = filtering
+        ? String(rows.length) + " of " + String(accounts.length)
+        : String(accounts.length);
+      searchClearBtn.hidden = !filtering;
+      rows.forEach(function (acct, index) {
         var row = document.createElement("div");
         row.className = "list-row" + (selected[acct.id] ? " is-selected" : "");
         row.setAttribute("role", "listitem");
@@ -1167,7 +1264,8 @@
         var handle = document.createElement("span");
         handle.className = "list-row__drag";
         handle.textContent = "⋮⋮";
-        handle.title = "Drag the row to reorder";
+        handle.title = filtering ? "Clear search to reorder" : "Drag the row to reorder";
+        if (filtering) handle.style.visibility = "hidden";
 
         var num = document.createElement("span");
         num.className = "list-row__num";
@@ -1200,11 +1298,23 @@
         row.appendChild(priceWrap);
         row.appendChild(selectBtn);
         row.setAttribute("aria-grabbed", "false");
-        bindDrag(row, acct.id);
+        if (!filtering) bindDrag(row, acct.id);
         listRowsEl.appendChild(row);
       });
       updateBulkControls();
       ignorePriceBlur = false;
+    }
+
+    function applySearch() {
+      searchQuery = String(searchInput.value || "");
+      renderRows();
+    }
+
+    function clearSearch() {
+      searchInput.value = "";
+      searchQuery = "";
+      renderRows();
+      searchInput.focus();
     }
 
     function toggleRow(id) {
@@ -1237,24 +1347,29 @@
     }
 
     function copyListContent() {
-      var text = accounts.map(copyLine).join("\n");
+      var rows = visibleAccounts();
+      var text = rows.map(copyLine).join("\n");
       var done = navigator.clipboard && navigator.clipboard.writeText
         ? navigator.clipboard.writeText(text)
         : Promise.reject(new Error("Clipboard unavailable"));
       done.then(function () {
-        note("Copied full list to clipboard.", "ok");
+        note(isSearchActive()
+          ? "Copied " + rows.length + " matching account(s) to clipboard."
+          : "Copied full list to clipboard.", "ok");
       }).catch(function () {
         window.prompt("Copy this list:", text);
       });
     }
 
     function toggleSelectAll() {
-      if (!accounts.length) return;
+      var rows = visibleAccounts();
+      if (!rows.length) return;
       if (allSelected()) {
-        selected = {};
+        rows.forEach(function (row) {
+          delete selected[row.id];
+        });
       } else {
-        selected = {};
-        accounts.forEach(function (row) {
+        rows.forEach(function (row) {
           selected[row.id] = true;
         });
       }
@@ -1469,6 +1584,11 @@
       setPriceBtn.addEventListener("click", openPriceDialog);
       setStatusBtn.addEventListener("click", openStatusDialog);
       deleteBtn.addEventListener("click", openDeleteDialog);
+      searchForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        applySearch();
+      });
+      searchClearBtn.addEventListener("click", clearSearch);
       document.getElementById("price-dialog-cancel").addEventListener("click", closePriceDialog);
       document.getElementById("price-dialog-close").addEventListener("click", closePriceDialog);
       priceDialogConfirm.addEventListener("click", saveSelectedPrices);

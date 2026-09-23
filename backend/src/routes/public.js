@@ -21,7 +21,18 @@ import {
 } from "../lib/wallet.js";
 import { createInvoice, isNowPaymentsConfigured, verifyIpnSignature } from "../lib/nowpayments.js";
 import { logUserActivity } from "../lib/activityLog.js";
-import { sendTelegramDocument, telegramBotConfigured } from "../lib/telegramBot.js";
+import {
+  sendRefundAlert,
+  sendTelegramDocument,
+  telegramBotConfigured,
+} from "../lib/telegramBot.js";
+import {
+  isRefundWindowOpen,
+  parseRefundRequest,
+  refundDeadline,
+  refundReasonLabel,
+  REFUND_WINDOW_MINUTES,
+} from "../lib/refunds.js";
 
 export const publicRouter = Router();
 
@@ -252,26 +263,66 @@ const ALL_ACCOUNT_COLUMNS =
 
 const MAX_PURCHASE_ACCOUNTS = 3;
 
-function formatAccountForFile(acct) {
-  const lines = [
-    "Login: " + (acct.login || "—"),
-    "Account Status: " + (acct.account_status || "—"),
-    "Country: " + (acct.country || "—"),
-    "State: " + (acct.state || "—"),
-    "Outbound: " + (acct.outbound ?? "—"),
-    "Inbound: " + (acct.inbound ?? "—"),
-    "Card Number: " + (acct.card_number || "—"),
-    "Expiry: " + (acct.expiry || "—"),
-    "Price: $" + (Number(acct.price) || 0).toFixed(2),
-    "Base: " + (acct.vendor || "—"),
+function bracket(value) {
+  return "[" + String(value == null ? "" : value) + "]";
+}
+
+function carrierLabel(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (text === "ups" || text.includes("ups")) return "UPS";
+  return "FedEx";
+}
+
+function resolveCarrier(acct, carriersMap) {
+  const fromMap = carriersMap && acct && acct.id != null ? carriersMap[String(acct.id)] : "";
+  if (fromMap) return carrierLabel(fromMap);
+  if (acct && acct.carrier) return carrierLabel(acct.carrier);
+  if (acct && acct.vendor) return carrierLabel(acct.vendor);
+  return "FedEx";
+}
+
+/** Same pipe format as pasted list lines. */
+function formatAccountAsPasteLine(acct) {
+  const parts = [
+    String((acct && acct.login) || "").trim(),
+    "CountryCode=" + bracket(acct && acct.country),
+    "StateOrProvinceCode=" + bracket(acct && acct.state),
+    "Outbound=" + bracket(acct && acct.outbound != null ? acct.outbound : 0),
+    "Inbound=" + bracket(acct && acct.inbound != null ? acct.inbound : 0),
+    "CreditCardNumber=" + bracket(acct && acct.card_number),
+    "ExpirationDate=" + bracket(acct && acct.expiry),
   ];
-  return lines.join("\n");
+  if (acct && acct.account_status) {
+    parts.push("AccountStatus=" + bracket(acct.account_status));
+  }
+  return parts.join(" | ");
+}
+
+const REFUND_NOTICE =
+  `You have ${REFUND_WINDOW_MINUTES} minutes from now to check these accounts. ` +
+  "Open Accounts > Orders to request a refund. After " +
+  `${REFUND_WINDOW_MINUTES} minutes the refund option closes.`;
+
+function formatPurchaseTextFile(accounts, carriersMap) {
+  const blocks = (accounts || []).map((acct) => {
+    const label = resolveCarrier(acct, carriersMap);
+    return label + "\n" + formatAccountAsPasteLine(acct);
+  });
+  return (
+    "Thank you for trading with us\n\n" +
+    blocks.join("\n\n") +
+    "\n\n" +
+    REFUND_NOTICE +
+    "\n"
+  );
 }
 
 publicRouter.post("/accounts/purchase", requireWalletAccess, async (req, res) => {
   try {
     const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids : [];
     const uniqueIds = [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
+    const carriersMap =
+      req.body && req.body.carriers && typeof req.body.carriers === "object" ? req.body.carriers : {};
 
     if (!uniqueIds.length) {
       res.status(400).json({ error: "Select at least one account." });
@@ -298,7 +349,8 @@ publicRouter.post("/accounts/purchase", requireWalletAccess, async (req, res) =>
     const accountsWithVendor = accounts.map((row) => {
       const vendor = row.lists && row.lists.name ? row.lists.name : "";
       const { lists, ...rest } = row;
-      return { ...rest, vendor };
+      const carrier = resolveCarrier({ ...rest, vendor }, carriersMap);
+      return { ...rest, vendor, carrier };
     });
 
     const totalDollars = accountsWithVendor.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
@@ -353,18 +405,13 @@ publicRouter.post("/accounts/purchase", requireWalletAccess, async (req, res) =>
 
     if (telegramUserId && telegramBotConfigured()) {
       try {
-        const header = `LABELDIRECT — Account Purchase\nDate: ${now}\nTotal: $${totalDollars.toFixed(2)}\nAccounts: ${accountsWithVendor.length}\n`;
-        const separator = "─".repeat(40);
-        const body = accountsWithVendor.map((a, i) =>
-          `\n${separator}\nAccount ${i + 1}\n${separator}\n${formatAccountForFile(a)}`
-        ).join("\n");
-        const fileContent = header + body + "\n";
+        const fileContent = formatPurchaseTextFile(accountsWithVendor, carriersMap);
         const buf = Buffer.from(fileContent, "utf-8");
         await sendTelegramDocument(
           telegramUserId,
           buf,
           "labeldirect_accounts.txt",
-          `Your ${accountsWithVendor.length} account(s) — $${totalDollars.toFixed(2)}`
+          "Thank you for trading with us. " + REFUND_NOTICE
         );
       } catch (err) {
         console.error("Telegram sendDocument:", err);
@@ -381,6 +428,246 @@ publicRouter.post("/accounts/purchase", requireWalletAccess, async (req, res) =>
     console.error("POST /api/accounts/purchase:", err);
     const msg = err.message || "Could not complete purchase.";
     res.status(500).json({ error: msg });
+  }
+});
+
+async function fetchOwnerPurchases(client, ownerKey) {
+  const { data, error } = await client
+    .from("purchases")
+    .select("id, account_data, total_usd, created_at")
+    .eq("owner_key", ownerKey)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+async function fetchOwnerRefundCases(client, ownerKey) {
+  const { data, error } = await client
+    .from("refund_cases")
+    .select("id, purchase_id, account_login, reason_code, reason_note, status, created_at")
+    .eq("owner_key", ownerKey);
+  if (error) throw error;
+  return data || [];
+}
+
+function refundCaseKey(purchaseId, login) {
+  return String(purchaseId) + "::" + String(login || "").trim().toLowerCase();
+}
+
+function orderRowsFromPurchases(purchases, refundCases) {
+  const casesByKey = Object.create(null);
+  (refundCases || []).forEach((row) => {
+    casesByKey[refundCaseKey(row.purchase_id, row.account_login)] = row;
+  });
+
+  const rows = [];
+  (purchases || []).forEach((purchase) => {
+    const accounts = Array.isArray(purchase.account_data) ? purchase.account_data : [];
+    accounts.forEach((acct) => {
+      const login = String((acct && acct.login) || "").trim();
+      const existing = casesByKey[refundCaseKey(purchase.id, login)] || null;
+      const deadline = refundDeadline(purchase.created_at);
+      rows.push({
+        purchase_id: purchase.id,
+        account_id: acct && acct.id != null ? String(acct.id) : null,
+        login,
+        carrier: resolveCarrier(acct, null),
+        vendor: acct && acct.vendor != null ? String(acct.vendor) : "",
+        country: acct && acct.country != null ? String(acct.country) : "",
+        price: acct && acct.price != null ? Number(acct.price) || 0 : 0,
+        purchased_at: purchase.created_at,
+        refund_deadline: deadline ? deadline.toISOString() : null,
+        refund_open: isRefundWindowOpen(purchase.created_at),
+        refund_status: existing ? existing.status : null,
+        refund_reason: existing ? refundReasonLabel(existing.reason_code) : null,
+      });
+    });
+  });
+  return rows;
+}
+
+publicRouter.get("/orders", requireWalletAccess, async (req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const purchases = await fetchOwnerPurchases(client, req.accountsSub);
+    const refundCases = purchases.length
+      ? await fetchOwnerRefundCases(client, req.accountsSub)
+      : [];
+    res.json({
+      refundWindowMinutes: REFUND_WINDOW_MINUTES,
+      orders: orderRowsFromPurchases(purchases, refundCases),
+    });
+  } catch (err) {
+    console.error("GET /api/orders:", err);
+    res.status(500).json({ error: err.message || "Could not load orders." });
+  }
+});
+
+async function buyerProfile(client, ownerKey) {
+  const { data, error } = await client
+    .from("access_tokens")
+    .select("telegram_user_id, telegram_username, telegram_first_name, telegram_last_name")
+    .eq("id", ownerKey)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+function buyerLabel(profile, telegramUserId) {
+  const username = String((profile && profile.telegram_username) || "").replace(/^@/, "").trim();
+  if (username) return "@" + username;
+  const name = [profile && profile.telegram_first_name, profile && profile.telegram_last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  if (name) return name;
+  return telegramUserId ? "User " + telegramUserId : "A user";
+}
+
+function formatRefundAlert(parts) {
+  const lines = [
+    `${parts.who} just requested refund for the ${parts.carrier.toUpperCase()} account ${parts.login}`,
+    "Issue: " + parts.issue,
+    "Amount: " + parts.amount,
+    "Screenshot: " + parts.screenshotUrl,
+    "Purchased: " + parts.purchasedAt + " · Requested: " + parts.requestedAt,
+  ];
+  if (parts.telegramUserId) lines.push("Telegram ID: " + parts.telegramUserId);
+  return lines.join("\n");
+}
+
+function formatUsd(dollars) {
+  return "$" + (Math.round((Number(dollars) || 0) * 100) / 100).toFixed(2);
+}
+
+function formatAlertTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || "");
+  return date.toISOString().replace("T", " ").slice(0, 16) + " UTC";
+}
+
+publicRouter.post("/orders/:purchaseId/refunds", requireWalletAccess, async (req, res) => {
+  try {
+    const parsed = parseRefundRequest(req.body);
+    const client = getSupabaseAdmin();
+
+    const { data: purchase, error: purchaseError } = await client
+      .from("purchases")
+      .select("id, owner_key, telegram_user_id, account_data, created_at")
+      .eq("id", String(req.params.purchaseId || "").trim())
+      .maybeSingle();
+    if (purchaseError) throw purchaseError;
+    if (!purchase || purchase.owner_key !== req.accountsSub) {
+      res.status(404).json({ error: "Order not found." });
+      return;
+    }
+
+    const accounts = Array.isArray(purchase.account_data) ? purchase.account_data : [];
+    const account = accounts.find(
+      (acct) =>
+        String((acct && acct.login) || "").trim().toLowerCase() ===
+        parsed.accountLogin.toLowerCase()
+    );
+    if (!account) {
+      res.status(404).json({ error: "That account is not part of this order." });
+      return;
+    }
+
+    if (!isRefundWindowOpen(purchase.created_at)) {
+      res.status(409).json({
+        error: `The ${REFUND_WINDOW_MINUTES}-minute refund window for this account has closed.`,
+      });
+      return;
+    }
+
+    const login = String(account.login || "").trim();
+    const { data: existing, error: existingError } = await client
+      .from("refund_cases")
+      .select("id, status")
+      .eq("purchase_id", purchase.id)
+      .eq("account_login", login)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existing) {
+      res.status(409).json({ error: "A refund case is already open for this account." });
+      return;
+    }
+
+    const carrier = resolveCarrier(account, null);
+    const amountUsd = Number(account.price) || 0;
+    const telegramUserId =
+      purchase.telegram_user_id != null
+        ? purchase.telegram_user_id
+        : await telegramUserIdForOwner(req.accountsSub);
+
+    const { data: refundCase, error: insertError } = await client
+      .from("refund_cases")
+      .insert({
+        purchase_id: purchase.id,
+        owner_key: req.accountsSub,
+        telegram_user_id: telegramUserId,
+        account_id: account.id != null ? String(account.id) : null,
+        account_login: login,
+        carrier,
+        amount_usd: amountUsd,
+        reason_code: parsed.reasonCode,
+        reason_note: parsed.note,
+        screenshot_url: parsed.screenshotUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .select("id, status, created_at")
+      .single();
+    if (insertError) throw insertError;
+
+    try {
+      await logUserActivity({
+        ownerKey: req.accountsSub,
+        telegramUserId,
+        action: "refund_requested",
+        amountUsd,
+        details: {
+          refund_case_id: refundCase.id,
+          purchase_id: purchase.id,
+          account_login: login,
+          carrier,
+          reason: refundReasonLabel(parsed.reasonCode),
+        },
+      });
+    } catch (err) {
+      console.error("refund_requested activity:", err);
+    }
+
+    if (telegramBotConfigured()) {
+      try {
+        const profile = await buyerProfile(client, req.accountsSub);
+        await sendRefundAlert(
+          formatRefundAlert({
+            who: buyerLabel(profile, telegramUserId),
+            carrier,
+            login,
+            issue:
+              refundReasonLabel(parsed.reasonCode) +
+              (parsed.note ? " — " + parsed.note : ""),
+            amount: formatUsd(amountUsd),
+            screenshotUrl: parsed.screenshotUrl,
+            purchasedAt: formatAlertTime(purchase.created_at),
+            requestedAt: formatAlertTime(refundCase.created_at),
+            telegramUserId,
+          })
+        );
+      } catch (err) {
+        console.error("Telegram refund alert:", err);
+      }
+    }
+
+    res.json({ ok: true, status: refundCase.status, id: refundCase.id });
+  } catch (err) {
+    if (err && err.status === 400) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    console.error("POST /api/orders/:purchaseId/refunds:", err);
+    res.status(500).json({ error: err.message || "Could not open a refund case." });
   }
 });
 

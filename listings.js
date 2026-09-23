@@ -303,6 +303,7 @@
     var tbody = panel.querySelector("tbody");
     if (!tbody) return;
     tbody.textContent = "";
+    var carrier = (options && options.carrier) || panel.getAttribute("data-panel") || "fedex";
 
     if (!rows.length) {
       if (empty) {
@@ -324,6 +325,7 @@
       var tr = document.createElement("tr");
       if (row.id) tr.setAttribute("data-account-id", row.id);
       tr.setAttribute("data-price", String(Number(row.price) || 0));
+      tr.setAttribute("data-carrier", carrier);
 
       var cbTd = document.createElement("td");
       cbTd.className = "accounts-table__cb-cell";
@@ -332,6 +334,7 @@
       cb.className = "account-checkbox";
       cb.setAttribute("data-account-id", row.id || "");
       cb.setAttribute("data-price", String(Number(row.price) || 0));
+      cb.setAttribute("data-carrier", carrier);
       cbTd.appendChild(cb);
       tr.appendChild(cbTd);
 
@@ -357,9 +360,11 @@
     var filteredUps = applyAccountFilters(ups, filters);
     var filterEmpty = "No accounts match these filters.";
     renderPanel(document.querySelector('[data-panel="fedex"]'), filteredFedex, {
+      carrier: "fedex",
       emptyMessage: fedex.length && !filteredFedex.length ? filterEmpty : ""
     });
     renderPanel(document.querySelector('[data-panel="ups"]'), filteredUps, {
+      carrier: "ups",
       emptyMessage: ups.length && !filteredUps.length ? filterEmpty : ""
     });
   }
@@ -456,15 +461,44 @@
     return { ok: true, dollars: Math.round(dollars * 100) / 100 };
   }
 
-  function purchaseAccounts(ids, accessToken) {
+  function purchaseAccounts(payload, accessToken) {
     var token = accessToken || getAccountsSession();
+    var body = Array.isArray(payload) ? { ids: payload } : payload || {};
     return fetch(apiBase() + "/api/accounts/purchase", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + token,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ ids: ids })
+      body: JSON.stringify(body)
+    }).then(parseJsonResponse);
+  }
+
+  var REFUND_WINDOW_MINUTES = 120;
+
+  var REFUND_REASONS = [
+    { value: "login_incorrect", label: "Login incorrect" },
+    { value: "payment_expired", label: "Payment expired" },
+    { value: "cannot_make_label", label: "Can't make label" },
+    { value: "other", label: "Other" }
+  ];
+
+  function fetchOrders(accessToken) {
+    var token = accessToken || getAccountsSession();
+    return fetch(apiBase() + "/api/orders", {
+      headers: { Authorization: "Bearer " + token }
+    }).then(parseJsonResponse);
+  }
+
+  function requestRefund(purchaseId, payload, accessToken) {
+    var token = accessToken || getAccountsSession();
+    return fetch(apiBase() + "/api/orders/" + encodeURIComponent(purchaseId) + "/refunds", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload || {})
     }).then(parseJsonResponse);
   }
 
@@ -498,6 +532,10 @@
     loadBalanceDisplays: loadBalanceDisplays,
     parseDepositAmount: parseDepositAmount,
     formatAccountStatus: formatAccountStatus,
-    purchaseAccounts: purchaseAccounts
+    purchaseAccounts: purchaseAccounts,
+    REFUND_WINDOW_MINUTES: REFUND_WINDOW_MINUTES,
+    REFUND_REASONS: REFUND_REASONS,
+    fetchOrders: fetchOrders,
+    requestRefund: requestRefund
   };
 })(window);

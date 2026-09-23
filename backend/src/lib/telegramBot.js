@@ -25,6 +25,19 @@ export function telegramBotUsername() {
   return String(process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "").trim();
 }
 
+export function refundGroupId() {
+  return String(process.env.REFUND_GROUP_ID || process.env.refund_group_id || "").trim();
+}
+
+export async function sendRefundAlert(text) {
+  const chatId = refundGroupId();
+  if (!chatId) {
+    console.warn("Refund alert skipped: REFUND_GROUP_ID is not set.");
+    return null;
+  }
+  return await sendTelegramMessage(chatId, text);
+}
+
 function apiUrl(method) {
   return "https://api.telegram.org/bot" + botToken() + "/" + method;
 }

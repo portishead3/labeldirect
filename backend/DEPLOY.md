@@ -33,8 +33,11 @@ Copy from `backend/.env` (never commit `.env`). After the service gets a URL lik
 | `NOWPAYMENTS_IPN_URL` | `https://labeldirect-api-xxxx.onrender.com/api/webhooks/nowpayments` |
 | `PUBLIC_SITE_URL` | `https://your-static-site.com` or `http://127.0.0.1:5500` for dev |
 | `CORS_ORIGIN` | Same origin(s) as the static site |
+| `REFUND_GROUP_ID` | `-1003715362941` — Telegram group the bot posts refund requests to |
 
 Redeploy after setting `NOWPAYMENTS_IPN_URL`.
+
+Apply `refunds.sql` in Supabase before the first deploy that includes the orders/refunds routes.
 
 ## 4. Static site
 

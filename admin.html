@@ -397,6 +397,7 @@
       }
 
       .admin-nav__btn {
+        position: relative;
         width: 100%;
         text-align: left;
         padding: 10px 12px;
@@ -416,6 +417,68 @@
       .admin-nav__btn.is-active {
         color: var(--text-primary);
         background: rgba(155, 126, 200, 0.16);
+      }
+
+      .admin-nav__btn--refunds {
+        margin-top: 4px;
+        color: #f0a37a;
+        background: rgba(240, 122, 74, 0.08);
+        border: 1px solid rgba(240, 122, 74, 0.28);
+      }
+
+      .admin-nav__btn--refunds:hover {
+        color: #ffd2bb;
+        background: rgba(240, 122, 74, 0.16);
+      }
+
+      .admin-nav__btn--refunds.is-active {
+        color: #ffd2bb;
+        background: rgba(240, 122, 74, 0.22);
+        border-color: rgba(240, 122, 74, 0.5);
+      }
+
+      .admin-nav__btn--refunds.has-alerts {
+        animation: refund-glow 1.8s ease-in-out infinite;
+      }
+
+      .admin-nav__badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #ff3b30;
+        border: 2px solid var(--bg-card);
+        color: #fff;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        line-height: 16px;
+        text-align: center;
+        box-shadow: 0 0 10px rgba(255, 59, 48, 0.6);
+      }
+
+      .has-alerts .admin-nav__badge {
+        animation: badge-pulse 1.8s ease-in-out infinite;
+      }
+
+      @keyframes refund-glow {
+        0%, 100% { box-shadow: 0 0 0 rgba(255, 59, 48, 0); }
+        50% { box-shadow: 0 0 14px rgba(255, 59, 48, 0.45); }
+      }
+
+      @keyframes badge-pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(255, 59, 48, 0.5); }
+        50% { transform: scale(1.12); box-shadow: 0 0 16px rgba(255, 59, 48, 0.9); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .admin-nav__btn--refunds.has-alerts,
+        .has-alerts .admin-nav__badge {
+          animation: none;
+        }
       }
 
       .dialog-backdrop {
@@ -634,6 +697,11 @@
           <button type="button" class="admin-nav__btn" data-admin-view="notify">Send notification</button>
           <button type="button" class="admin-nav__btn" data-admin-view="users">Users</button>
           <button type="button" class="admin-nav__btn" data-admin-view="purchases">Purchases</button>
+          <button type="button" class="admin-nav__btn admin-nav__btn--refunds" data-admin-view="refunds" id="refunds-nav-btn">
+            <span>Refunds</span>
+            <span class="admin-nav__badge" id="refunds-badge" aria-hidden="true" hidden>0</span>
+            <span class="visually-hidden" id="refunds-badge-label"></span>
+          </button>
         </nav>
       </aside>
 
@@ -748,6 +816,30 @@
               </tr>
             </thead>
             <tbody id="purchases-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" data-view-panel="refunds" hidden>
+        <h2>Refunds</h2>
+        <p class="muted">Refund cases opened by buyers on accounts they purchased.</p>
+        <p class="empty" id="refunds-empty">No refund cases yet.</p>
+        <div class="table-wrap" id="refunds-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>User</th>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Reason</th>
+                <th>Screenshot</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="refunds-tbody"></tbody>
           </table>
         </div>
       </section>
@@ -881,7 +973,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script src="listings.js?v=status"></script>
+  <script src="listings.js?v=orders-refunds"></script>
   <script>
     var statusEl = document.getElementById("page-status");
     var loginCard = document.getElementById("login-card");
@@ -934,6 +1026,7 @@
     var savedLists = [];
     var pendingAnnounce = {};
     var listsPollTimer = null;
+    var refundsPollTimer = null;
     var MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
     var clientsEmpty = document.getElementById("clients-empty");
     var clientsWrap = document.getElementById("clients-wrap");
@@ -948,12 +1041,22 @@
     var purchasesEmpty = document.getElementById("purchases-empty");
     var purchasesWrap = document.getElementById("purchases-wrap");
     var purchasesTbody = document.getElementById("purchases-tbody");
+    var refundsNavBtn = document.getElementById("refunds-nav-btn");
+    var refundsBadge = document.getElementById("refunds-badge");
+    var refundsBadgeLabel = document.getElementById("refunds-badge-label");
+    var refundsEmpty = document.getElementById("refunds-empty");
+    var refundsWrap = document.getElementById("refunds-wrap");
+    var refundsTbody = document.getElementById("refunds-tbody");
     var ACTIVITY_LABELS = {
       login: "Signed in",
       deposit_created: "Deposit started",
       funds_added: "Add funds",
       manual_credit: "Manual credit",
-      purchase: "Purchased accounts"
+      purchase: "Purchased accounts",
+      account_purchase: "Purchased accounts",
+      refund_requested: "Refund requested",
+      refund_approved: "Refund paid",
+      refund_declined: "Refund declined"
     };
     var creditDialog = document.getElementById("credit-dialog");
     var creditForm = document.getElementById("credit-form");
@@ -992,6 +1095,158 @@
       return date.toLocaleString();
     }
 
+    function setRefundBadge(count) {
+      var total = Number(count);
+      if (!isFinite(total) || total < 0) total = 0;
+      total = Math.floor(total);
+      refundsBadge.textContent = total > 99 ? "99+" : String(total);
+      refundsBadge.hidden = total === 0;
+      refundsBadgeLabel.textContent = total === 0 ? "" : total + " open refund cases";
+      refundsNavBtn.classList.toggle("has-alerts", total > 0);
+    }
+
+    function refundStatusLabel(status) {
+      if (status === "approved") return "Refunded";
+      if (status === "declined") return "Declined";
+      return "Open";
+    }
+
+    function refundReasonText(row) {
+      var reason = row.reason || "—";
+      var note = String(row.reason_note || "").trim();
+      return note ? reason + " — " + note : reason;
+    }
+
+    function renderRefundRows(rows) {
+      refundsTbody.textContent = "";
+      refundsEmpty.hidden = rows.length > 0;
+      refundsWrap.hidden = rows.length === 0;
+      rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        var when = document.createElement("td");
+        when.textContent = formatTime(row.created_at);
+        tr.appendChild(when);
+        var who = document.createElement("td");
+        who.textContent = usernameLabel(row) || displayName(row) || "—";
+        tr.appendChild(who);
+        var account = document.createElement("td");
+        account.className = "cell-wrap";
+        account.textContent = row.account_login || row.account_username || "—";
+        tr.appendChild(account);
+        var carrier = document.createElement("td");
+        carrier.textContent = String(row.carrier || "—").toUpperCase();
+        tr.appendChild(carrier);
+        var reason = document.createElement("td");
+        reason.className = "cell-wrap";
+        reason.textContent = refundReasonText(row);
+        tr.appendChild(reason);
+        var shot = document.createElement("td");
+        if (row.screenshot_url) {
+          var link = document.createElement("a");
+          link.href = row.screenshot_url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "View";
+          link.style.textDecoration = "underline";
+          shot.appendChild(link);
+        } else {
+          shot.textContent = "—";
+        }
+        tr.appendChild(shot);
+        var amount = document.createElement("td");
+        amount.textContent = row.amount_usd == null || row.amount_usd === ""
+          ? "—"
+          : formatBalance(row.amount_usd);
+        tr.appendChild(amount);
+        var status = document.createElement("td");
+        status.textContent = refundStatusLabel(row.status);
+        tr.appendChild(status);
+        var action = document.createElement("td");
+        if (row.status === "open") {
+          var actions = document.createElement("div");
+          actions.className = "row-actions";
+          var approve = document.createElement("button");
+          approve.type = "button";
+          approve.className = "btn btn--compact";
+          approve.textContent = "Refund";
+          approve.addEventListener("click", function () {
+            decideRefund(row, "approve");
+          });
+          var decline = document.createElement("button");
+          decline.type = "button";
+          decline.className = "btn btn--danger";
+          decline.textContent = "Decline";
+          decline.addEventListener("click", function () {
+            decideRefund(row, "decline");
+          });
+          actions.appendChild(approve);
+          actions.appendChild(decline);
+          action.appendChild(actions);
+        } else {
+          action.textContent = row.resolved_at ? formatTime(row.resolved_at) : "—";
+        }
+        tr.appendChild(action);
+        refundsTbody.appendChild(tr);
+      });
+    }
+
+    function countOpenRefunds(rows) {
+      return (rows || []).filter(function (row) {
+        return row.status === "open";
+      }).length;
+    }
+
+    function refreshRefunds() {
+      if (!accessToken) return Promise.resolve([]);
+      return ListingsApp.adminRequest(accessToken, "/api/admin/refunds").then(function (rows) {
+        var list = Array.isArray(rows) ? rows : [];
+        renderRefundRows(list);
+        setRefundBadge(countOpenRefunds(list));
+        return list;
+      });
+    }
+
+    function scheduleRefundsPoll() {
+      if (refundsPollTimer) clearInterval(refundsPollTimer);
+      refundsPollTimer = setInterval(function () {
+        if (!accessToken) return;
+        refreshRefunds().catch(function () {});
+      }, 60000);
+    }
+
+    function decideRefund(row, decision) {
+      var who = usernameLabel(row) || displayName(row) || "this user";
+      var approving = decision === "approve";
+      askToDelete(
+        approving ? "Refund account" : "Decline refund",
+        approving
+          ? "Refund " + formatBalance(row.amount_usd) + " to " + who +
+            " for " + (row.account_login || "this account") + "? The balance is added immediately."
+          : "Decline the refund for " + (row.account_login || "this account") + " from " + who + "?",
+        approving ? "Refund" : "Decline"
+      ).then(function (ok) {
+        if (!ok) return;
+        note(approving ? "Refunding…" : "Declining…");
+        ListingsApp.adminRequest(
+          accessToken,
+          "/api/admin/refunds/" + encodeURIComponent(row.id) + "/" + (approving ? "approve" : "decline"),
+          { method: "POST" }
+        )
+          .then(function (result) {
+            note(
+              approving
+                ? "Refunded " + formatBalance(result && result.amount) + " to " + who + "."
+                : "Declined the refund for " + who + ".",
+              "ok"
+            );
+            return refreshRefunds();
+          })
+          .catch(function (err) {
+            note(err.message || "Could not update this refund.", "error");
+          });
+      });
+    }
+
     function setView(name) {
       document.querySelectorAll("[data-admin-view]").forEach(function (btn) {
         btn.classList.toggle("is-active", btn.getAttribute("data-admin-view") === name);
@@ -1016,6 +1271,11 @@
           note(err.message || "Could not load purchases.", "error");
         });
       }
+      if (name === "refunds") {
+        refreshRefunds().catch(function (err) {
+          note(err.message || "Could not load refunds.", "error");
+        });
+      }
     }
 
     function showLoggedOut() {
@@ -1027,10 +1287,15 @@
       closeCreditDialog();
       closeConfirmDialog(false);
       showUserDirectory();
+      setRefundBadge(0);
       pendingAnnounce = {};
       if (listsPollTimer) {
         clearTimeout(listsPollTimer);
         listsPollTimer = null;
+      }
+      if (refundsPollTimer) {
+        clearInterval(refundsPollTimer);
+        refundsPollTimer = null;
       }
     }
 
@@ -1043,6 +1308,8 @@
       loadSavedLists().catch(function (err) {
         note(err.message || "Could not load existing lists.", "error");
       });
+      refreshRefunds().catch(function () {});
+      scheduleRefundsPoll();
     }
 
     function displayName(row) {
@@ -1120,7 +1387,11 @@
       if (Array.isArray(d.logins) && d.logins.length) {
         parts.push(d.logins.join(", "));
       }
-      if (d.source === "admin") parts.push("Manual");
+      if (d.account_login) parts.push(String(d.account_login));
+      if (d.carrier) parts.push(String(d.carrier).toUpperCase());
+      if (d.reason) parts.push(String(d.reason));
+      if (d.source === "refund") parts.push("Refund");
+      else if (d.source === "admin") parts.push("Manual");
       if (d.pay_currency) parts.push(String(d.pay_currency));
       if (d.pay_amount != null && String(d.pay_amount).trim()) {
         parts.push(String(d.pay_amount));
@@ -1368,10 +1639,11 @@
       if (resolve) resolve(Boolean(ok));
     }
 
-    function askToDelete(title, message) {
+    function askToDelete(title, message, confirmLabel) {
       if (confirmResolve) closeConfirmDialog(false);
       confirmTitle.textContent = title;
       confirmMessage.textContent = message;
+      confirmOk.textContent = confirmLabel || "Delete";
       confirmDialog.hidden = false;
       confirmOk.focus();
       return new Promise(function (resolve) {
@@ -1729,6 +2001,12 @@
           setView(btn.getAttribute("data-admin-view"));
         });
       });
+
+      setRefundBadge(0);
+      window.AdminRefunds = {
+        setBadgeCount: setRefundBadge,
+        renderCases: renderRefundRows
+      };
 
       document.getElementById("open-paste-dialog").addEventListener("click", openPasteDialog);
       document.getElementById("open-full-list").addEventListener("click", function () {

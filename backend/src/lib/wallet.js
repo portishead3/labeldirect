@@ -148,7 +148,8 @@ export async function applyDepositCredit(depositId) {
   return { credited: true, addCents };
 }
 
-export async function creditWalletManually(ownerKey, dollars) {
+export async function creditWalletManually(ownerKey, dollars, options) {
+  const opts = options || {};
   const key = String(ownerKey || "").trim();
   if (!key) throw new Error("User is required.");
   const parsed = parseCreditAmount(dollars);
@@ -174,13 +175,13 @@ export async function creditWalletManually(ownerKey, dollars) {
     await logUserActivity({
       ownerKey: key,
       telegramUserId,
-      action: "manual_credit",
+      action: opts.action || "manual_credit",
       amountUsd: parsed.dollars,
-      details: { source: "admin" },
+      details: { source: "admin", ...(opts.details || {}) },
       createdAt: now,
     });
   } catch (err) {
-    console.error("manual_credit activity:", err);
+    console.error((opts.action || "manual_credit") + " activity:", err);
   }
 
   return {

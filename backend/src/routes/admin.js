@@ -11,7 +11,8 @@ import {
   TELEGRAM_MESSAGE_MAX,
 } from "../lib/telegramBot.js";
 import { creditWalletManually, dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
-import { backfillDepositActivity } from "../lib/activityLog.js";
+import { backfillDepositActivity, logUserActivity } from "../lib/activityLog.js";
+import { refundReasonLabel } from "../lib/refunds.js";
 
 const LIST_INDEX_COLUMNS = "id,name,created_at,updated_at,process_status,process_error,process_stats";
 const LIST_DETAIL_COLUMNS = LIST_INDEX_COLUMNS + ",content";
@@ -388,6 +389,168 @@ adminRouter.get("/purchases", async (_req, res) => {
     res.json(await attachPurchaseUsers(client, rows));
   } catch (err) {
     res.status(500).json({ error: err.message || "Could not load purchases." });
+  }
+});
+
+const REFUND_COLUMNS =
+  "id, purchase_id, owner_key, telegram_user_id, account_id, account_login, carrier," +
+  " amount_usd, reason_code, reason_note, screenshot_url, status, refunded_usd," +
+  " resolved_at, created_at";
+
+async function usersByOwnerKey(client, ownerKeys) {
+  const usersById = Object.create(null);
+  const chunks = inChunks(ownerKeys, 200);
+  for (let i = 0; i < chunks.length; i++) {
+    if (!chunks[i].length) continue;
+    const { data, error } = await client
+      .from("access_tokens")
+      .select(USER_COLUMNS)
+      .in("id", chunks[i]);
+    if (error) throw error;
+    (data || []).forEach((user) => {
+      usersById[user.id] = user;
+    });
+  }
+  return usersById;
+}
+
+function shapeRefundCase(row, user) {
+  return {
+    id: row.id,
+    created_at: row.created_at,
+    owner_key: row.owner_key,
+    telegram_user_id:
+      row.telegram_user_id != null
+        ? row.telegram_user_id
+        : user && user.telegram_user_id != null
+          ? user.telegram_user_id
+          : null,
+    telegram_username: user ? user.telegram_username : null,
+    telegram_first_name: user ? user.telegram_first_name : null,
+    telegram_last_name: user ? user.telegram_last_name : null,
+    account_login: row.account_login,
+    carrier: row.carrier,
+    reason: refundReasonLabel(row.reason_code),
+    reason_note: row.reason_note,
+    screenshot_url: row.screenshot_url,
+    amount_usd: row.amount_usd,
+    status: row.status,
+    refunded_usd: row.refunded_usd,
+    resolved_at: row.resolved_at,
+  };
+}
+
+adminRouter.get("/refunds", async (_req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const { data, error } = await client
+      .from("refund_cases")
+      .select(REFUND_COLUMNS)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    const rows = data || [];
+    const ownerKeys = uniqueIds(rows.map((row) => row.owner_key));
+    const usersById = rows.length ? await usersByOwnerKey(client, ownerKeys) : {};
+    res.json(rows.map((row) => shapeRefundCase(row, usersById[row.owner_key] || null)));
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Could not load refunds." });
+  }
+});
+
+/** Moves a case out of `open` exactly once, so a double click cannot pay twice. */
+async function claimOpenRefundCase(client, id, status) {
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from("refund_cases")
+    .update({ status, resolved_at: now, updated_at: now })
+    .eq("id", id)
+    .eq("status", "open")
+    .select(REFUND_COLUMNS)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function notifyRefundDecision(refundCase, approved) {
+  if (!refundCase.telegram_user_id || !telegramBotConfigured()) return;
+  const account = refundCase.account_login || "your account";
+  const carrier = String(refundCase.carrier || "").toUpperCase();
+  const message = approved
+    ? `Your refund for the ${carrier} account ${account} was approved. ` +
+      `$${(Number(refundCase.amount_usd) || 0).toFixed(2)} is back in your balance.`
+    : `Your refund for the ${carrier} account ${account} was declined after review.`;
+  try {
+    await sendTelegramMessage(refundCase.telegram_user_id, message);
+  } catch (err) {
+    console.error("refund decision DM:", err);
+  }
+}
+
+adminRouter.post("/refunds/:id/approve", async (req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const refundCase = await claimOpenRefundCase(client, String(req.params.id || "").trim(), "approved");
+    if (!refundCase) {
+      res.status(409).json({ error: "This refund case is no longer open." });
+      return;
+    }
+
+    const amount = Number(refundCase.amount_usd) || 0;
+    let balance = null;
+    if (amount > 0) {
+      const result = await creditWalletManually(refundCase.owner_key, amount, {
+        action: "refund_approved",
+        details: {
+          source: "refund",
+          refund_case_id: refundCase.id,
+          account_login: refundCase.account_login,
+          carrier: refundCase.carrier,
+        },
+      });
+      balance = result.balance;
+      const { error: markError } = await client
+        .from("refund_cases")
+        .update({ refunded_usd: amount, updated_at: new Date().toISOString() })
+        .eq("id", refundCase.id);
+      if (markError) throw markError;
+    }
+
+    await notifyRefundDecision(refundCase, true);
+    res.json({ ok: true, status: "approved", amount, balance });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || "Could not approve the refund." });
+  }
+});
+
+adminRouter.post("/refunds/:id/decline", async (req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const refundCase = await claimOpenRefundCase(client, String(req.params.id || "").trim(), "declined");
+    if (!refundCase) {
+      res.status(409).json({ error: "This refund case is no longer open." });
+      return;
+    }
+
+    try {
+      await logUserActivity({
+        ownerKey: refundCase.owner_key,
+        telegramUserId: refundCase.telegram_user_id,
+        action: "refund_declined",
+        amountUsd: refundCase.amount_usd,
+        details: {
+          refund_case_id: refundCase.id,
+          account_login: refundCase.account_login,
+          carrier: refundCase.carrier,
+        },
+      });
+    } catch (err) {
+      console.error("refund_declined activity:", err);
+    }
+
+    await notifyRefundDecision(refundCase, false);
+    res.json({ ok: true, status: "declined" });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message || "Could not decline the refund." });
   }
 });
 
