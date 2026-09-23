@@ -37,7 +37,7 @@ import {
 export const publicRouter = Router();
 
 const PUBLIC_ACCOUNT_COLUMNS =
-  "id,login,country,state,outbound,inbound,card_number,expiry,price,account_status,created_at,updated_at,list_id,sort_order,lists(name)";
+  "id,country,state,outbound,inbound,price,account_status,created_at,updated_at,list_id,sort_order,lists(name)";
 
 function publicSiteUrl() {
   const raw = String(process.env.PUBLIC_SITE_URL || "").trim().replace(/\/$/, "");
@@ -471,6 +471,8 @@ function orderRowsFromPurchases(purchases, refundCases) {
         purchase_id: purchase.id,
         account_id: acct && acct.id != null ? String(acct.id) : null,
         login,
+        card_number: acct && acct.card_number != null ? String(acct.card_number) : "",
+        expiry: acct && acct.expiry != null ? String(acct.expiry) : "",
         carrier: resolveCarrier(acct, null),
         vendor: acct && acct.vendor != null ? String(acct.vendor) : "",
         country: acct && acct.country != null ? String(acct.country) : "",

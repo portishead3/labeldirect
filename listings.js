@@ -1,5 +1,5 @@
 (function (global) {
-  var COLUMNS = ["login", "account_status", "country", "state", "outbound", "inbound", "card_number", "expiry", "price", "vendor"];
+  var COLUMNS = ["account_status", "country", "state", "outbound", "inbound", "price", "vendor"];
 
   function supabaseConfig() {
     return global.LABELDIRECT_SUPABASE || {};
@@ -323,6 +323,7 @@
 
     rows.forEach(function (row) {
       var tr = document.createElement("tr");
+      tr.className = "accounts-table__row";
       if (row.id) tr.setAttribute("data-account-id", row.id);
       tr.setAttribute("data-price", String(Number(row.price) || 0));
       tr.setAttribute("data-carrier", carrier);
@@ -335,6 +336,7 @@
       cb.setAttribute("data-account-id", row.id || "");
       cb.setAttribute("data-price", String(Number(row.price) || 0));
       cb.setAttribute("data-carrier", carrier);
+      cb.setAttribute("aria-label", "Select account");
       cbTd.appendChild(cb);
       tr.appendChild(cbTd);
 

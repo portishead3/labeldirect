@@ -647,6 +647,14 @@
         border-bottom: none;
       }
 
+      .accounts-table tbody tr.accounts-table__row {
+        cursor: pointer;
+      }
+
+      .accounts-table tbody tr.accounts-table__row:hover td {
+        background: rgba(155, 126, 200, 0.06);
+      }
+
       .accounts-table tbody tr:hover td {
         background: var(--row-hover);
       }
@@ -852,21 +860,52 @@
       }
 
       .account-checkbox {
-        width: 17px;
-        height: 17px;
-        accent-color: var(--accent);
+        appearance: none;
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        border: 1.5px solid rgba(228, 226, 234, 0.28);
+        border-radius: 5px;
+        background: transparent;
         cursor: pointer;
         vertical-align: middle;
+        display: inline-block;
+        position: relative;
+      }
+
+      .account-checkbox:hover {
+        border-color: var(--accent);
+      }
+
+      .account-checkbox:checked {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .account-checkbox:checked::after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 1px;
+        width: 5px;
+        height: 9px;
+        border: solid #0d0818;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
       }
 
       /* ── Selected row highlight ────────────────────────────── */
       .accounts-table tbody tr.is-selected td {
-        background: rgba(155, 126, 200, 0.14);
-        border-bottom-color: rgba(155, 126, 200, 0.28);
+        background: rgba(155, 126, 200, 0.08);
       }
 
       .accounts-table tbody tr.is-selected td:first-child {
         box-shadow: inset 3px 0 0 var(--accent);
+      }
+
+      .accounts-table tbody tr.accounts-table__row.is-selected:hover td {
+        background: rgba(155, 126, 200, 0.1);
       }
 
       /* ── Checkout bar ──────────────────────────────────────── */
@@ -1196,6 +1235,106 @@
         border: 1px solid var(--border-accent);
       }
 
+      .dialog--receipt {
+        width: min(640px, 100%);
+      }
+
+      .receipt-accounts {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .receipt-block {
+        background: var(--bg-surface);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        padding: 14px 16px;
+      }
+
+      .receipt-block__carrier {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 10px;
+      }
+
+      .receipt-field {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--hairline);
+      }
+
+      .receipt-field:last-of-type {
+        border-bottom: none;
+      }
+
+      .receipt-field__meta {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+      }
+
+      .receipt-field__label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .receipt-field__value {
+        font-size: 0.92rem;
+        color: var(--text-primary);
+        word-break: break-all;
+      }
+
+      .receipt-copy {
+        flex-shrink: 0;
+        font-family: var(--font-body);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+        background: transparent;
+        border: 1px solid var(--border-accent);
+        border-radius: 6px;
+        padding: 6px 10px;
+      }
+
+      .receipt-copy:hover {
+        color: var(--text-primary);
+        border-color: var(--accent);
+      }
+
+      .receipt-copy--all {
+        margin-top: 12px;
+      }
+
+      .receipt-total {
+        text-align: center;
+        color: var(--accent-light);
+        font-size: 1.02rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+
+      .receipt-notice {
+        margin-bottom: 16px;
+        padding: 12px 14px;
+        border: 1px solid rgba(200, 160, 80, 0.35);
+        border-radius: 10px;
+        background: rgba(200, 160, 80, 0.1);
+        color: #e4d6b0;
+        font-size: 0.88rem;
+      }
+
       @media (max-width: 599px) {
         .checkout-bar {
           flex-wrap: wrap;
@@ -1336,18 +1475,15 @@
           <p data-empty-default="No UPS accounts listed yet.">No UPS accounts listed yet.</p>
         </div>
         <div class="table-wrap" hidden>
-          <table class="accounts-table">
+          <table class="accounts-table accounts-table--browse">
             <thead>
               <tr>
                 <th scope="col" class="accounts-table__cb-cell"></th>
-                <th scope="col">Login</th>
                 <th scope="col">Account status</th>
                 <th scope="col">Country</th>
                 <th scope="col">State</th>
                 <th scope="col">Outbound</th>
                 <th scope="col">Inbound</th>
-                <th scope="col">Cardnumber</th>
-                <th scope="col">Expiry</th>
                 <th scope="col">Price</th>
                 <th scope="col">Base</th>
               </tr>
@@ -1366,18 +1502,15 @@
           <p data-empty-default="No FedEx accounts listed yet.">No FedEx accounts listed yet.</p>
         </div>
         <div class="table-wrap" hidden>
-          <table class="accounts-table">
+          <table class="accounts-table accounts-table--browse">
             <thead>
               <tr>
                 <th scope="col" class="accounts-table__cb-cell"></th>
-                <th scope="col">Login</th>
                 <th scope="col">Account status</th>
                 <th scope="col">Country</th>
                 <th scope="col">State</th>
                 <th scope="col">Outbound</th>
                 <th scope="col">Inbound</th>
-                <th scope="col">Cardnumber</th>
-                <th scope="col">Expiry</th>
                 <th scope="col">Price</th>
                 <th scope="col">Base</th>
               </tr>
@@ -1402,6 +1535,8 @@
               <tr>
                 <th scope="col">Purchased</th>
                 <th scope="col">Login</th>
+                <th scope="col">Card</th>
+                <th scope="col">Expiry</th>
                 <th scope="col">Type</th>
                 <th scope="col">Price</th>
                 <th scope="col">Refund window</th>
@@ -1413,6 +1548,23 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <div class="dialog-backdrop" id="receipt-dialog" hidden>
+    <div class="dialog dialog--receipt" role="dialog" aria-modal="true" aria-labelledby="receipt-dialog-title">
+      <div class="dialog__header">
+        <h2 id="receipt-dialog-title">Purchase complete</h2>
+        <button type="button" class="dialog__close" id="receipt-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="dialog__muted" id="receipt-meta"></p>
+      <div class="receipt-accounts" id="receipt-accounts"></div>
+      <p class="receipt-total" id="receipt-total"></p>
+      <p class="receipt-notice" id="receipt-notice"></p>
+      <div class="dialog__actions">
+        <button class="dialog__btn" type="button" id="receipt-orders">View in Orders</button>
+        <button class="dialog__btn dialog__btn--ghost" type="button" id="receipt-done">Close</button>
+      </div>
+    </div>
   </div>
 
   <div class="dialog-backdrop" id="refund-dialog" hidden>
@@ -1445,7 +1597,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=orders-refunds"></script>
+  <script src="listings.js?v=hide-secrets"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("login.html");
@@ -1661,35 +1813,37 @@
       ListingsApp.renderAccounts(allRows, currentFilters());
     }
 
+    function activateTab(carrier) {
+      tabs.forEach(function (other) {
+        var on = other.getAttribute('data-carrier') === carrier;
+        other.classList.toggle('is-active', on);
+        other.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+
+      panels.forEach(function (panel) {
+        var on = panel.getAttribute('data-panel') === carrier;
+        panel.classList.toggle('is-active', on);
+        if (on) {
+          panel.removeAttribute('hidden');
+        } else {
+          panel.setAttribute('hidden', '');
+        }
+      });
+
+      if (carrier === 'orders') {
+        setOrdersMode(true);
+        loadOrders();
+        return;
+      }
+
+      setOrdersMode(false);
+      refreshFilterOptions();
+      renderFiltered();
+    }
+
     tabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
-        var carrier = tab.getAttribute('data-carrier');
-
-        tabs.forEach(function (other) {
-          var on = other === tab;
-          other.classList.toggle('is-active', on);
-          other.setAttribute('aria-pressed', on ? 'true' : 'false');
-        });
-
-        panels.forEach(function (panel) {
-          var on = panel.getAttribute('data-panel') === carrier;
-          panel.classList.toggle('is-active', on);
-          if (on) {
-            panel.removeAttribute('hidden');
-          } else {
-            panel.setAttribute('hidden', '');
-          }
-        });
-
-        if (carrier === 'orders') {
-          setOrdersMode(true);
-          loadOrders();
-          return;
-        }
-
-        setOrdersMode(false);
-        refreshFilterOptions();
-        renderFiltered();
+        activateTab(tab.getAttribute('data-carrier'));
       });
     });
 
@@ -1835,36 +1989,43 @@
       updateCheckoutBar();
     }
 
-    document.addEventListener('change', function (e) {
-      var cb = e.target;
-      if (!cb.classList || !cb.classList.contains('account-checkbox')) return;
-
-      var id = cb.getAttribute('data-account-id');
-      var price = Number(cb.getAttribute('data-price')) || 0;
-      var carrier = cb.getAttribute('data-carrier') || 'fedex';
-
-      if (cb.checked) {
+    function toggleAccount(id, price, carrier, forceOn) {
+      if (!id) return;
+      var on = forceOn != null ? Boolean(forceOn) : !isSelected(id);
+      if (on) {
         if (!isSelected(id)) {
           if (selectedAccounts.length >= MAX_SELECTED) {
-            // Remove oldest selection
-            var removed = selectedAccounts.shift();
-            var oldRow = document.querySelector('tr[data-account-id="' + removed.id + '"]');
-            if (oldRow) {
-              oldRow.classList.remove('is-selected');
-              var oldCb = oldRow.querySelector('.account-checkbox');
-              if (oldCb) oldCb.checked = false;
-            }
+            selectedAccounts.shift();
           }
-          selectedAccounts.push({ id: id, price: price, carrier: carrier });
+          selectedAccounts.push({ id: id, price: price, carrier: carrier || 'fedex' });
         }
       } else {
         removeSelected(id);
       }
-
-      var tr = cb.closest('tr');
-      if (tr) tr.classList.toggle('is-selected', cb.checked);
-
+      syncRowHighlights();
       updateCheckoutBar();
+    }
+
+    document.addEventListener('change', function (e) {
+      var cb = e.target;
+      if (!cb.classList || !cb.classList.contains('account-checkbox')) return;
+      toggleAccount(
+        cb.getAttribute('data-account-id'),
+        Number(cb.getAttribute('data-price')) || 0,
+        cb.getAttribute('data-carrier') || 'fedex',
+        cb.checked
+      );
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.account-checkbox')) return;
+      var tr = e.target.closest && e.target.closest('tr.accounts-table__row[data-account-id]');
+      if (!tr) return;
+      toggleAccount(
+        tr.getAttribute('data-account-id'),
+        Number(tr.getAttribute('data-price')) || 0,
+        tr.getAttribute('data-carrier') || 'fedex'
+      );
     });
 
     if (checkoutClear) {
@@ -1905,56 +2066,101 @@
       return parts.join(' | ');
     }
 
-    function escapeHtml(text) {
-      return String(text == null ? '' : text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    var receiptDialog = document.getElementById('receipt-dialog');
+    var receiptAccountsEl = document.getElementById('receipt-accounts');
+    var receiptMeta = document.getElementById('receipt-meta');
+    var receiptTotalEl = document.getElementById('receipt-total');
+    var receiptNotice = document.getElementById('receipt-notice');
+
+    function copyText(text, button) {
+      var value = String(text || '');
+      function markCopied() {
+        if (!button) return;
+        var prev = button.textContent;
+        button.textContent = 'Copied';
+        setTimeout(function () { button.textContent = prev; }, 1200);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(markCopied).catch(function () {
+          window.prompt('Copy', value);
+        });
+      } else {
+        window.prompt('Copy', value);
+      }
     }
 
-    function openPurchaseTab(accounts, total) {
-      var w = window.open('', '_blank');
-      if (!w) {
-        alert('Allow pop-ups to view your purchased accounts.');
-        return;
+    function receiptField(label, value, copyable) {
+      var row = document.createElement('div');
+      row.className = 'receipt-field';
+      var meta = document.createElement('div');
+      meta.className = 'receipt-field__meta';
+      var lab = document.createElement('span');
+      lab.className = 'receipt-field__label';
+      lab.textContent = label;
+      var val = document.createElement('span');
+      val.className = 'receipt-field__value';
+      val.textContent = value == null || value === '' ? '—' : String(value);
+      meta.appendChild(lab);
+      meta.appendChild(val);
+      row.appendChild(meta);
+      if (copyable && value) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'receipt-copy';
+        btn.textContent = 'Copy';
+        btn.addEventListener('click', function () { copyText(value, btn); });
+        row.appendChild(btn);
       }
-      var html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
-        '<meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-        '<title>Purchased Accounts — LABELDIRECT</title>' +
-        '<style>' +
-        '*{margin:0;padding:0;box-sizing:border-box}' +
-        'body{background:#12141a;color:#e4e2ea;font-family:"Jost",system-ui,sans-serif;padding:40px 24px;line-height:1.7}' +
-        'h1{font-size:1.45rem;font-weight:700;margin-bottom:8px;color:#cfc6de}' +
-        '.thanks{font-size:1.05rem;color:#e4e2ea;margin-bottom:22px}' +
-        '.meta{color:#9a96a8;font-size:0.92rem;margin-bottom:24px}' +
-        '.block{background:#181b22;border:1px solid rgba(155,126,200,0.18);border-radius:10px;padding:16px 18px;margin-bottom:14px}' +
-        '.carrier{font-size:0.78rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9b7ec8;margin-bottom:8px}' +
-        '.line{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:0.82rem;color:#e4e2ea;white-space:pre-wrap;word-break:break-all;line-height:1.55}' +
-        '.total{text-align:center;color:#9b7ec8;font-size:1.05rem;font-weight:700;margin-top:16px}' +
-        '.notice{margin-top:18px;padding:14px 16px;border:1px solid rgba(200,160,80,0.35);border-radius:10px;background:rgba(200,160,80,0.1);color:#e4d6b0;font-size:0.92rem}' +
-        '</style></head><body>' +
-        '<h1>Purchased Accounts</h1>' +
-        '<p class="thanks">Thank you for trading with us</p>' +
-        '<p class="meta">' + escapeHtml(new Date().toLocaleString()) + ' — Total: ' + escapeHtml(ListingsApp.formatUsd(total)) + '</p>';
+      return row;
+    }
 
-      for (var i = 0; i < accounts.length; i++) {
-        var a = accounts[i];
-        var label = carrierLabel(a.carrier || a.vendor);
-        html += '<div class="block">' +
-          '<div class="carrier">' + escapeHtml(label) + '</div>' +
-          '<div class="line">' + escapeHtml(formatAccountAsPasteLine(a)) + '</div>' +
-          '</div>';
+    function openReceipt(accounts, total) {
+      if (receiptAccountsEl) receiptAccountsEl.textContent = '';
+      var list = accounts || [];
+      if (receiptMeta) {
+        receiptMeta.textContent =
+          'Thank you for trading with us. ' +
+          new Date().toLocaleString() +
+          ' — ' + list.length + ' account' + (list.length === 1 ? '' : 's');
       }
+      list.forEach(function (acct) {
+        var block = document.createElement('div');
+        block.className = 'receipt-block';
+        var carrier = document.createElement('div');
+        carrier.className = 'receipt-block__carrier';
+        carrier.textContent = carrierLabel(acct.carrier || acct.vendor);
+        block.appendChild(carrier);
+        block.appendChild(receiptField('Login', acct.login, true));
+        block.appendChild(receiptField('Card number', acct.card_number, true));
+        block.appendChild(receiptField('Expiry', acct.expiry, true));
+        block.appendChild(receiptField('Country', acct.country, false));
+        block.appendChild(receiptField('State', acct.state, false));
+        if (acct.account_status) {
+          block.appendChild(receiptField('Status', acct.account_status, false));
+        }
+        var copyAll = document.createElement('button');
+        copyAll.type = 'button';
+        copyAll.className = 'receipt-copy receipt-copy--all';
+        copyAll.textContent = 'Copy paste line';
+        copyAll.addEventListener('click', function () {
+          copyText(formatAccountAsPasteLine(acct), copyAll);
+        });
+        block.appendChild(copyAll);
+        if (receiptAccountsEl) receiptAccountsEl.appendChild(block);
+      });
+      if (receiptTotalEl) {
+        receiptTotalEl.textContent = 'Total paid: ' + ListingsApp.formatUsd(total);
+      }
+      if (receiptNotice) {
+        receiptNotice.textContent =
+          'You have ' + REFUND_WINDOW_MINUTES + ' minutes from now to check these accounts. ' +
+          'After that the refund option in Orders closes.';
+      }
+      if (receiptDialog) receiptDialog.hidden = false;
+    }
 
-      html += '<p class="total">Total paid: ' + escapeHtml(ListingsApp.formatUsd(total)) + '</p>';
-      html += '<p class="notice">You have ' + REFUND_WINDOW_MINUTES + ' minutes from now to check these accounts. ' +
-        'Open Accounts &rarr; Orders to request a refund. After ' + REFUND_WINDOW_MINUTES +
-        ' minutes the refund option closes.</p>';
-      html += '</body></html>';
-
-      w.document.write(html);
-      w.document.close();
+    function closeReceipt() {
+      if (receiptDialog) receiptDialog.hidden = true;
     }
 
     function performCheckout() {
@@ -1979,8 +2185,7 @@
 
       ListingsApp.purchaseAccounts({ ids: ids, carriers: carriers })
         .then(function (result) {
-          // Open new tab with full info
-          openPurchaseTab(result.accounts, result.total);
+          openReceipt(result.accounts, result.total);
 
           // Update balance display
           document.querySelectorAll('[data-balance-display]').forEach(function (el) {
@@ -2000,7 +2205,7 @@
 
           ordersLoaded = false;
           showStatus(
-            'Purchase complete! Account details opened in a new tab. Check them within ' +
+            'Purchase complete. Check the accounts within ' +
               REFUND_WINDOW_MINUTES + ' minutes — after that the refund option in Orders closes.',
             false
           );
@@ -2136,6 +2341,8 @@
         var tr = document.createElement('tr');
         tr.appendChild(orderCell(new Date(order.purchased_at).toLocaleString()));
         tr.appendChild(orderCell(order.login));
+        tr.appendChild(orderCell(order.card_number));
+        tr.appendChild(orderCell(order.expiry));
         tr.appendChild(orderCell(carrierLabel(order.carrier)));
         tr.appendChild(orderCell(ListingsApp.formatUsd(order.price)));
 
@@ -2269,8 +2476,24 @@
     refundDialog.addEventListener('click', function (event) {
       if (event.target === refundDialog) closeRefundDialog();
     });
+    document.getElementById('receipt-close').addEventListener('click', closeReceipt);
+    document.getElementById('receipt-done').addEventListener('click', closeReceipt);
+    document.getElementById('receipt-orders').addEventListener('click', function () {
+      closeReceipt();
+      activateTab('orders');
+    });
+    if (receiptDialog) {
+      receiptDialog.addEventListener('click', function (event) {
+        if (event.target === receiptDialog) closeReceipt();
+      });
+    }
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !refundDialog.hidden) closeRefundDialog();
+      if (event.key !== 'Escape') return;
+      if (receiptDialog && !receiptDialog.hidden) {
+        closeReceipt();
+        return;
+      }
+      if (!refundDialog.hidden) closeRefundDialog();
     });
 
     refundForm.addEventListener('submit', function (event) {
