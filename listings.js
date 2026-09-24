@@ -1,5 +1,5 @@
 (function (global) {
-  var COLUMNS = ["account_status", "country", "state", "outbound", "inbound", "price", "vendor"];
+  var COLUMNS = ["country", "state", "outbound", "inbound", "price", "vendor"];
 
   function supabaseConfig() {
     return global.LABELDIRECT_SUPABASE || {};
@@ -321,31 +321,40 @@
     if (empty) empty.hidden = true;
     if (wrap) wrap.hidden = false;
 
-    rows.forEach(function (row) {
+    rows.forEach(function (row, index) {
       var tr = document.createElement("tr");
       tr.className = "accounts-table__row";
       if (row.id) tr.setAttribute("data-account-id", row.id);
       tr.setAttribute("data-price", String(Number(row.price) || 0));
       tr.setAttribute("data-carrier", carrier);
 
-      var cbTd = document.createElement("td");
-      cbTd.className = "accounts-table__cb-cell";
-      var cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.className = "account-checkbox";
-      cb.setAttribute("data-account-id", row.id || "");
-      cb.setAttribute("data-price", String(Number(row.price) || 0));
-      cb.setAttribute("data-carrier", carrier);
-      cb.setAttribute("aria-label", "Select account");
-      cbTd.appendChild(cb);
-      tr.appendChild(cbTd);
+      var numTd = document.createElement("td");
+      numTd.className = "accounts-table__num-cell";
+      numTd.textContent = String(index + 1);
+      tr.appendChild(numTd);
+
+      var cartTd = document.createElement("td");
+      cartTd.className = "accounts-table__cart-cell";
+      var cart = document.createElement("button");
+      cart.type = "button";
+      cart.className = "account-cart";
+      cart.setAttribute("data-account-id", row.id || "");
+      cart.setAttribute("data-price", String(Number(row.price) || 0));
+      cart.setAttribute("data-carrier", carrier);
+      cart.setAttribute("aria-pressed", "false");
+      cart.setAttribute("aria-label", "Add to cart");
+      cart.innerHTML =
+        '<svg class="account-cart__icon" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<path class="account-cart__fill" d="M7.1 7.4h13.05l-1.55 7.05H8.55z"/>' +
+          '<path class="account-cart__line" d="M3.2 4.2h2.15l1.85 9.2a1.7 1.7 0 0 0 1.67 1.35h8.55a1.7 1.7 0 0 0 1.66-1.3L20.8 7.4H6.35"/>' +
+          '<circle class="account-cart__wheel" cx="9.15" cy="18.85" r="1.35"/>' +
+          '<circle class="account-cart__wheel" cx="16.85" cy="18.85" r="1.35"/>' +
+        "</svg>";
+      cartTd.appendChild(cart);
+      tr.appendChild(cartTd);
 
       COLUMNS.forEach(function (key) {
-        if (key === "account_status") {
-          tr.appendChild(statusTd(row[key]));
-        } else {
-          tr.appendChild(td(row[key]));
-        }
+        tr.appendChild(td(row[key]));
       });
       tbody.appendChild(tr);
     });

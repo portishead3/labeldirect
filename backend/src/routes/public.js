@@ -309,7 +309,7 @@ function formatPurchaseTextFile(accounts, carriersMap) {
     return label + "\n" + formatAccountAsPasteLine(acct);
   });
   return (
-    "Thank you for trading with us\n\n" +
+    "✅ ORDER SUCCESSFULLY COMPLETED 🎉\n\n" +
     blocks.join("\n\n") +
     "\n\n" +
     REFUND_NOTICE +
@@ -411,7 +411,7 @@ publicRouter.post("/accounts/purchase", requireWalletAccess, async (req, res) =>
           telegramUserId,
           buf,
           "labeldirect_accounts.txt",
-          "Thank you for trading with us. " + REFUND_NOTICE
+          "✅ ORDER SUCCESSFULLY COMPLETED 🎉 " + REFUND_NOTICE
         );
       } catch (err) {
         console.error("Telegram sendDocument:", err);
@@ -531,7 +531,7 @@ function formatRefundAlert(parts) {
     `${parts.who} just requested refund for the ${parts.carrier.toUpperCase()} account ${parts.login}`,
     "Issue: " + parts.issue,
     "Amount: " + parts.amount,
-    "Screenshot: " + parts.screenshotUrl,
+    "Screenshot: " + (parts.screenshotUrl || "not provided"),
     "Purchased: " + parts.purchasedAt + " · Requested: " + parts.requestedAt,
   ];
   if (parts.telegramUserId) lines.push("Telegram ID: " + parts.telegramUserId);

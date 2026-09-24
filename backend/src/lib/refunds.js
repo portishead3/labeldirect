@@ -33,9 +33,7 @@ function badRequest(message) {
 
 function parseScreenshotUrl(raw) {
   const value = String(raw == null ? "" : raw).trim();
-  if (!value) {
-    throw badRequest("Add a screenshot link so we can review the issue.");
-  }
+  if (!value) return null;
   let url;
   try {
     url = new URL(value);
