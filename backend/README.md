@@ -53,7 +53,7 @@ Node server between the static site and Supabase. **Service role key stays here 
 | GET | `/api/wallet` | Bearer (session must include wallet `sub` from login) |
 | POST | `/api/wallet/deposits` | Bearer (`{ amount }` USD, min $10 → `{ invoiceUrl, orderId }`) |
 | GET | `/api/orders` | Bearer (one row per purchased account with its refund deadline and case status) |
-| POST | `/api/orders/:purchaseId/refunds` | Bearer (`{ login, reasonCode, note?, screenshotUrl }` within 120 minutes of checkout; alerts `REFUND_GROUP_ID`) |
+| POST | `/api/orders/:purchaseId/refunds` | Bearer (`{ login, reasonCode, note?, screenshotUrl }` within 120 minutes of checkout; sends a numbered text file to `REFUND_GROUP_ID`) |
 | POST | `/api/webhooks/nowpayments` | NOWPayments IPN (`x-nowpayments-sig` HMAC); credits wallet on `finished` / `confirmed` |
 | GET | `/api/admin/lists` | Bearer (id, name, timestamps) |
 | GET | `/api/admin/lists/:id` | Bearer (includes `content` and matching `accounts` `{ id, login, price }`) |
@@ -62,9 +62,8 @@ Node server between the static site and Supabase. **Service role key stays here 
 | GET | `/api/admin/accounts` | Bearer (Supabase session) |
 | GET | `/api/admin/users` | Bearer (Telegram clients from `access_tokens`) |
 | GET | `/api/admin/purchases` | Bearer (purchase history with buyer + accounts) |
-| GET | `/api/admin/refunds` | Bearer (refund cases with buyer, account, carrier, reason, screenshot) |
-| POST | `/api/admin/refunds/:id/approve` | Bearer (credits the account price back to the buyer and DMs them) |
-| POST | `/api/admin/refunds/:id/decline` | Bearer (closes the case and DMs the buyer) |
+| GET | `/api/admin/refunds` | Bearer (refund cases with number, buyer, account, carrier, reason, screenshot, pending or reviewed) |
+| POST | `/api/admin/refunds/:id/review` | Bearer (marks a pending case reviewed; does not credit the buyer) |
 | POST | `/api/admin/notify` | Bearer (`{ message, telegramUserId? }` — DM via bot; omit id to send to all) |
 | PATCH | `/api/admin/accounts/price` | Bearer (`{ ids, price }` — up to 500 account ids) |
 | PATCH | `/api/admin/accounts/order` | Bearer (`{ ids }` — full display order, up to 5000) |

@@ -828,6 +828,7 @@
           <table>
             <thead>
               <tr>
+                <th>Refund</th>
                 <th>When</th>
                 <th>User</th>
                 <th>Account</th>
@@ -1101,14 +1102,21 @@
       total = Math.floor(total);
       refundsBadge.textContent = total > 99 ? "99+" : String(total);
       refundsBadge.hidden = total === 0;
-      refundsBadgeLabel.textContent = total === 0 ? "" : total + " open refund cases";
+      refundsBadgeLabel.textContent = total === 0
+        ? ""
+        : total + " pending refund" + (total === 1 ? "" : "s");
       refundsNavBtn.classList.toggle("has-alerts", total > 0);
     }
 
+    function refundNumberLabel(row) {
+      var n = Number(row && row.refund_number);
+      if (!isFinite(n) || n < 1) return "Refund";
+      return "Refund " + Math.floor(n);
+    }
+
     function refundStatusLabel(status) {
-      if (status === "approved") return "Refunded";
-      if (status === "declined") return "Declined";
-      return "Open";
+      if (status === "reviewed") return "Reviewed";
+      return "Pending";
     }
 
     function refundReasonText(row) {
@@ -1123,6 +1131,9 @@
       refundsWrap.hidden = rows.length === 0;
       rows.forEach(function (row) {
         var tr = document.createElement("tr");
+        var number = document.createElement("td");
+        number.textContent = refundNumberLabel(row);
+        tr.appendChild(number);
         var when = document.createElement("td");
         when.textContent = formatTime(row.created_at);
         tr.appendChild(when);
@@ -1162,26 +1173,15 @@
         status.textContent = refundStatusLabel(row.status);
         tr.appendChild(status);
         var action = document.createElement("td");
-        if (row.status === "open") {
-          var actions = document.createElement("div");
-          actions.className = "row-actions";
-          var approve = document.createElement("button");
-          approve.type = "button";
-          approve.className = "btn btn--compact";
-          approve.textContent = "Refund";
-          approve.addEventListener("click", function () {
-            decideRefund(row, "approve");
+        if (row.status === "pending") {
+          var review = document.createElement("button");
+          review.type = "button";
+          review.className = "btn btn--compact";
+          review.textContent = "Mark reviewed";
+          review.addEventListener("click", function () {
+            markRefundReviewed(row);
           });
-          var decline = document.createElement("button");
-          decline.type = "button";
-          decline.className = "btn btn--danger";
-          decline.textContent = "Decline";
-          decline.addEventListener("click", function () {
-            decideRefund(row, "decline");
-          });
-          actions.appendChild(approve);
-          actions.appendChild(decline);
-          action.appendChild(actions);
+          action.appendChild(review);
         } else {
           action.textContent = row.resolved_at ? formatTime(row.resolved_at) : "—";
         }
@@ -1192,7 +1192,7 @@
 
     function countOpenRefunds(rows) {
       return (rows || []).filter(function (row) {
-        return row.status === "open";
+        return row.status === "pending";
       }).length;
     }
 
@@ -1214,31 +1214,22 @@
       }, 60000);
     }
 
-    function decideRefund(row, decision) {
-      var who = usernameLabel(row) || displayName(row) || "this user";
-      var approving = decision === "approve";
+    function markRefundReviewed(row) {
+      var label = refundNumberLabel(row);
       askToDelete(
-        approving ? "Refund account" : "Decline refund",
-        approving
-          ? "Refund " + formatBalance(row.amount_usd) + " to " + who +
-            " for " + (row.account_login || "this account") + "? The balance is added immediately."
-          : "Decline the refund for " + (row.account_login || "this account") + " from " + who + "?",
-        approving ? "Refund" : "Decline"
+        "Mark reviewed",
+        "Mark " + label + " as reviewed?",
+        "Mark reviewed"
       ).then(function (ok) {
         if (!ok) return;
-        note(approving ? "Refunding…" : "Declining…");
+        note("Marking " + label + " reviewed…");
         ListingsApp.adminRequest(
           accessToken,
-          "/api/admin/refunds/" + encodeURIComponent(row.id) + "/" + (approving ? "approve" : "decline"),
+          "/api/admin/refunds/" + encodeURIComponent(row.id) + "/review",
           { method: "POST" }
         )
-          .then(function (result) {
-            note(
-              approving
-                ? "Refunded " + formatBalance(result && result.amount) + " to " + who + "."
-                : "Declined the refund for " + who + ".",
-              "ok"
-            );
+          .then(function () {
+            note("Marked " + label + " as reviewed.", "ok");
             return refreshRefunds();
           })
           .catch(function (err) {

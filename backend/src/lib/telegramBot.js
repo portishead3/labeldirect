@@ -38,6 +38,15 @@ export async function sendRefundAlert(text) {
   return await sendTelegramMessage(chatId, text);
 }
 
+export async function sendRefundDocument(fileBuffer, filename, caption) {
+  const chatId = refundGroupId();
+  if (!chatId) {
+    console.warn("Refund alert skipped: REFUND_GROUP_ID is not set.");
+    return null;
+  }
+  return await sendTelegramDocument(chatId, fileBuffer, filename, caption);
+}
+
 function apiUrl(method) {
   return "https://api.telegram.org/bot" + botToken() + "/" + method;
 }

@@ -2451,9 +2451,8 @@
     }
 
     function refundStateLabel(status) {
-      if (status === 'approved') return 'Refunded';
-      if (status === 'declined') return 'Declined';
-      if (status === 'open') return 'Under review';
+      if (status === 'reviewed') return 'Reviewed';
+      if (status === 'pending') return 'Pending';
       return '';
     }
 
@@ -2746,7 +2745,7 @@
       })
         .then(function () {
           closeRefundDialog();
-          order.refund_status = 'open';
+          order.refund_status = 'pending';
           renderOrders();
           setOrdersStatus('Refund request sent. We will review it and get back to you.');
         })

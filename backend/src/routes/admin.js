@@ -11,7 +11,7 @@ import {
   TELEGRAM_MESSAGE_MAX,
 } from "../lib/telegramBot.js";
 import { creditWalletManually, dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
-import { backfillDepositActivity, logUserActivity } from "../lib/activityLog.js";
+import { backfillDepositActivity } from "../lib/activityLog.js";
 import { refundReasonLabel } from "../lib/refunds.js";
 
 const LIST_INDEX_COLUMNS = "id,name,created_at,updated_at,process_status,process_error,process_stats";
@@ -394,7 +394,7 @@ adminRouter.get("/purchases", async (_req, res) => {
 
 const REFUND_COLUMNS =
   "id, purchase_id, owner_key, telegram_user_id, account_id, account_login, carrier," +
-  " amount_usd, reason_code, reason_note, screenshot_url, status, refunded_usd," +
+  " amount_usd, reason_code, reason_note, screenshot_url, status, refund_number, refunded_usd," +
   " resolved_at, created_at";
 
 async function usersByOwnerKey(client, ownerKeys) {
@@ -435,6 +435,7 @@ function shapeRefundCase(row, user) {
     screenshot_url: row.screenshot_url,
     amount_usd: row.amount_usd,
     status: row.status,
+    refund_number: row.refund_number,
     refunded_usd: row.refunded_usd,
     resolved_at: row.resolved_at,
   };
@@ -457,100 +458,31 @@ adminRouter.get("/refunds", async (_req, res) => {
   }
 });
 
-/** Moves a case out of `open` exactly once, so a double click cannot pay twice. */
-async function claimOpenRefundCase(client, id, status) {
+/** Moves a case out of `pending` exactly once, so a double click cannot review twice. */
+async function claimPendingRefundCase(client, id) {
   const now = new Date().toISOString();
   const { data, error } = await client
     .from("refund_cases")
-    .update({ status, resolved_at: now, updated_at: now })
+    .update({ status: "reviewed", resolved_at: now, updated_at: now })
     .eq("id", id)
-    .eq("status", "open")
+    .eq("status", "pending")
     .select(REFUND_COLUMNS)
     .maybeSingle();
   if (error) throw error;
   return data;
 }
 
-async function notifyRefundDecision(refundCase, approved) {
-  if (!refundCase.telegram_user_id || !telegramBotConfigured()) return;
-  const account = refundCase.account_login || "your account";
-  const carrier = String(refundCase.carrier || "").toUpperCase();
-  const message = approved
-    ? `Your refund for the ${carrier} account ${account} was approved. ` +
-      `$${(Number(refundCase.amount_usd) || 0).toFixed(2)} is back in your balance.`
-    : `Your refund for the ${carrier} account ${account} was declined after review.`;
-  try {
-    await sendTelegramMessage(refundCase.telegram_user_id, message);
-  } catch (err) {
-    console.error("refund decision DM:", err);
-  }
-}
-
-adminRouter.post("/refunds/:id/approve", async (req, res) => {
+adminRouter.post("/refunds/:id/review", async (req, res) => {
   try {
     const client = getSupabaseAdmin();
-    const refundCase = await claimOpenRefundCase(client, String(req.params.id || "").trim(), "approved");
+    const refundCase = await claimPendingRefundCase(client, String(req.params.id || "").trim());
     if (!refundCase) {
-      res.status(409).json({ error: "This refund case is no longer open." });
+      res.status(409).json({ error: "This refund case is no longer pending." });
       return;
     }
-
-    const amount = Number(refundCase.amount_usd) || 0;
-    let balance = null;
-    if (amount > 0) {
-      const result = await creditWalletManually(refundCase.owner_key, amount, {
-        action: "refund_approved",
-        details: {
-          source: "refund",
-          refund_case_id: refundCase.id,
-          account_login: refundCase.account_login,
-          carrier: refundCase.carrier,
-        },
-      });
-      balance = result.balance;
-      const { error: markError } = await client
-        .from("refund_cases")
-        .update({ refunded_usd: amount, updated_at: new Date().toISOString() })
-        .eq("id", refundCase.id);
-      if (markError) throw markError;
-    }
-
-    await notifyRefundDecision(refundCase, true);
-    res.json({ ok: true, status: "approved", amount, balance });
+    res.json({ ok: true, status: "reviewed", refund_number: refundCase.refund_number });
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message || "Could not approve the refund." });
-  }
-});
-
-adminRouter.post("/refunds/:id/decline", async (req, res) => {
-  try {
-    const client = getSupabaseAdmin();
-    const refundCase = await claimOpenRefundCase(client, String(req.params.id || "").trim(), "declined");
-    if (!refundCase) {
-      res.status(409).json({ error: "This refund case is no longer open." });
-      return;
-    }
-
-    try {
-      await logUserActivity({
-        ownerKey: refundCase.owner_key,
-        telegramUserId: refundCase.telegram_user_id,
-        action: "refund_declined",
-        amountUsd: refundCase.amount_usd,
-        details: {
-          refund_case_id: refundCase.id,
-          account_login: refundCase.account_login,
-          carrier: refundCase.carrier,
-        },
-      });
-    } catch (err) {
-      console.error("refund_declined activity:", err);
-    }
-
-    await notifyRefundDecision(refundCase, false);
-    res.json({ ok: true, status: "declined" });
-  } catch (err) {
-    res.status(err.status || 500).json({ error: err.message || "Could not decline the refund." });
+    res.status(err.status || 500).json({ error: err.message || "Could not mark this refund reviewed." });
   }
 });
 

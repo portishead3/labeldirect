@@ -22,7 +22,7 @@ import {
 import { createInvoice, isNowPaymentsConfigured, verifyIpnSignature } from "../lib/nowpayments.js";
 import { logUserActivity } from "../lib/activityLog.js";
 import {
-  sendRefundAlert,
+  sendRefundDocument,
   sendTelegramDocument,
   telegramBotConfigured,
 } from "../lib/telegramBot.js";
@@ -526,13 +526,16 @@ function buyerLabel(profile, telegramUserId) {
   return telegramUserId ? "User " + telegramUserId : "A user";
 }
 
-function formatRefundAlert(parts) {
+function formatRefundFile(parts) {
   const lines = [
+    "Refund " + parts.refundNumber,
+    "State: " + parts.status,
     `${parts.who} just requested refund for the ${parts.carrier.toUpperCase()} account ${parts.login}`,
     "Issue: " + parts.issue,
     "Amount: " + parts.amount,
     "Screenshot: " + (parts.screenshotUrl || "not provided"),
-    "Purchased: " + parts.purchasedAt + " · Requested: " + parts.requestedAt,
+    "Purchased: " + parts.purchasedAt,
+    "Requested: " + parts.requestedAt,
   ];
   if (parts.telegramUserId) lines.push("Telegram ID: " + parts.telegramUserId);
   return lines.join("\n");
@@ -617,7 +620,7 @@ publicRouter.post("/orders/:purchaseId/refunds", requireWalletAccess, async (req
         screenshot_url: parsed.screenshotUrl,
         updated_at: new Date().toISOString(),
       })
-      .select("id, status, created_at")
+      .select("id, status, created_at, refund_number")
       .single();
     if (insertError) throw insertError;
 
@@ -642,20 +645,27 @@ publicRouter.post("/orders/:purchaseId/refunds", requireWalletAccess, async (req
     if (telegramBotConfigured()) {
       try {
         const profile = await buyerProfile(client, req.accountsSub);
-        await sendRefundAlert(
-          formatRefundAlert({
-            who: buyerLabel(profile, telegramUserId),
-            carrier,
-            login,
-            issue:
-              refundReasonLabel(parsed.reasonCode) +
-              (parsed.note ? " — " + parsed.note : ""),
-            amount: formatUsd(amountUsd),
-            screenshotUrl: parsed.screenshotUrl,
-            purchasedAt: formatAlertTime(purchase.created_at),
-            requestedAt: formatAlertTime(refundCase.created_at),
-            telegramUserId,
-          })
+        const status = refundCase.status || "pending";
+        const refundNumber = refundCase.refund_number;
+        const fileBody = formatRefundFile({
+          refundNumber,
+          status,
+          who: buyerLabel(profile, telegramUserId),
+          carrier,
+          login,
+          issue:
+            refundReasonLabel(parsed.reasonCode) +
+            (parsed.note ? " — " + parsed.note : ""),
+          amount: formatUsd(amountUsd),
+          screenshotUrl: parsed.screenshotUrl,
+          purchasedAt: formatAlertTime(purchase.created_at),
+          requestedAt: formatAlertTime(refundCase.created_at),
+          telegramUserId,
+        });
+        await sendRefundDocument(
+          Buffer.from(fileBody, "utf-8"),
+          "refund-" + refundNumber + ".txt",
+          "Refund " + refundNumber + " — " + status
         );
       } catch (err) {
         console.error("Telegram refund alert:", err);
