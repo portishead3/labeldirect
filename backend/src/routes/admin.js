@@ -10,7 +10,7 @@ import {
   telegramBotConfigured,
   TELEGRAM_MESSAGE_MAX,
 } from "../lib/telegramBot.js";
-import { creditWalletManually, dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
+import { creditWalletManually, debitWalletManually, dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
 import { backfillDepositActivity } from "../lib/activityLog.js";
 import { refundReasonLabel } from "../lib/refunds.js";
 
@@ -544,6 +544,34 @@ adminRouter.post("/users/:id/credit", async (req, res) => {
   } catch (err) {
     const msg = err.message || "Could not add balance.";
     const status = err.status || (/Enter an amount|two decimal|positive amount|too large/i.test(msg) ? 400 : 500);
+    res.status(status).json({ error: msg });
+  }
+});
+
+adminRouter.post("/users/:id/debit", async (req, res) => {
+  try {
+    const client = getSupabaseAdmin();
+    const id = String(req.params.id || "").trim();
+    const { data: user, error } = await client
+      .from("access_tokens")
+      .select(USER_COLUMNS)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    const result = await debitWalletManually(user.id, req.body && req.body.amount);
+    res.json({
+      ok: true,
+      amount: result.amount,
+      balance: result.balance,
+      user: { ...user, balance: result.balance },
+    });
+  } catch (err) {
+    const msg = err.message || "Could not deduct balance.";
+    const status = err.status || (/Enter an amount|two decimal|positive amount|too large|current balance/i.test(msg) ? 400 : 500);
     res.status(status).json({ error: msg });
   }
 });

@@ -189,3 +189,58 @@ export async function creditWalletManually(ownerKey, dollars, options) {
     balance: dollarsFromCents(newBalance),
   };
 }
+
+export async function debitWalletManually(ownerKey, dollars, options) {
+  const opts = options || {};
+  const key = String(ownerKey || "").trim();
+  if (!key) throw new Error("User is required.");
+  const parsed = parseCreditAmount(dollars);
+  if (!parsed.ok) {
+    const err = new Error(parsed.error);
+    err.status = 400;
+    throw err;
+  }
+
+  const wallet = await ensureWallet(key);
+  const telegramUserId = await telegramUserIdForOwner(key);
+  const subCents = centsFromDollars(parsed.dollars);
+  const now = new Date().toISOString();
+  const current = Number(wallet.balance_cents) || 0;
+  if (subCents > current) {
+    const err = new Error("That amount is more than the current balance.");
+    err.status = 400;
+    throw err;
+  }
+
+  const { data: updated, error: balanceError } = await getSupabaseAdmin()
+    .from("wallets")
+    .update({ balance_cents: current - subCents, updated_at: now })
+    .eq("id", wallet.id)
+    .gte("balance_cents", subCents)
+    .select("balance_cents")
+    .maybeSingle();
+  if (balanceError) throw balanceError;
+  if (!updated) {
+    const err = new Error("That amount is more than the current balance.");
+    err.status = 400;
+    throw err;
+  }
+
+  try {
+    await logUserActivity({
+      ownerKey: key,
+      telegramUserId,
+      action: opts.action || "manual_debit",
+      amountUsd: parsed.dollars,
+      details: { source: "admin", ...(opts.details || {}) },
+      createdAt: now,
+    });
+  } catch (err) {
+    console.error((opts.action || "manual_debit") + " activity:", err);
+  }
+
+  return {
+    amount: parsed.dollars,
+    balance: dollarsFromCents(updated.balance_cents),
+  };
+}
