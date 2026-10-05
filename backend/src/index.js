@@ -1,10 +1,34 @@
 import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import { publicRouter } from "./routes/public.js";
 import { adminRouter } from "./routes/admin.js";
 import { resumeIncompleteJobs } from "./lib/listJobs.js";
 import { startTelegramBot } from "./lib/telegramBot.js";
+
+const publicRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const PUBLIC_FILES = new Set([
+  "index.html",
+  "login.html",
+  "accounts.html",
+  "payments.html",
+  "admin.html",
+  "admin-list.html",
+  "admin-full.html",
+  "listings.js",
+  "config.js",
+  "logo.jpeg",
+]);
+
+function publicFile(urlPath) {
+  const name = urlPath === "/" ? "index.html" : decodeURIComponent(urlPath).replace(/^\/+/, "");
+  if (!name || name.includes("..") || name.includes("/") || name.includes("\\")) return null;
+  if (!PUBLIC_FILES.has(name)) return null;
+  return path.join(publicRoot, name);
+}
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -41,6 +65,13 @@ app.use(express.json({ limit: "10mb" }));
 
 app.use("/api", publicRouter);
 app.use("/api/admin", adminRouter);
+
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  const file = publicFile(req.path);
+  if (!file || !fs.existsSync(file)) return next();
+  res.sendFile(file);
+});
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });
