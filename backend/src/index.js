@@ -26,8 +26,10 @@ const PUBLIC_FILES = new Set([
 function publicFile(urlPath) {
   const name = urlPath === "/" ? "index.html" : decodeURIComponent(urlPath).replace(/^\/+/, "");
   if (!name || name.includes("..") || name.includes("/") || name.includes("\\")) return null;
-  if (!PUBLIC_FILES.has(name)) return null;
-  return path.join(publicRoot, name);
+  if (PUBLIC_FILES.has(name)) return path.join(publicRoot, name);
+  const withHtml = name.endsWith(".html") ? name : `${name}.html`;
+  if (!PUBLIC_FILES.has(withHtml)) return null;
+  return path.join(publicRoot, withHtml);
 }
 
 const app = express();
@@ -68,6 +70,11 @@ app.use("/api/admin", adminRouter);
 
 app.use((req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") return next();
+  const query = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+  if (req.path === "/index.html") return res.redirect(301, `/${query}`);
+  if (req.path.endsWith(".html")) {
+    return res.redirect(301, `${req.path.slice(0, -5)}${query}`);
+  }
   const file = publicFile(req.path);
   if (!file || !fs.existsSync(file)) return next();
   res.sendFile(file);

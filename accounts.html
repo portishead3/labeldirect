@@ -1482,18 +1482,18 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <nav class="navbar" id="navbar">
-    <a href="index.html" class="navbar__brand">
+    <a href="/" class="navbar__brand">
       <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
       <span class="navbar__brand-text">LABELDIRECT</span>
     </a>
     <div class="navbar__links">
       <div class="navbar__primary">
-        <a href="index.html" class="navbar__link navbar__link--product">Labels</a>
-        <a href="accounts.html" class="navbar__link navbar__link--product navbar__link--accounts navbar__link--active" aria-current="page">Accounts</a>
+        <a href="/" class="navbar__link navbar__link--product">Labels</a>
+        <a href="/accounts" class="navbar__link navbar__link--product navbar__link--accounts navbar__link--active" aria-current="page">Accounts</a>
       </div>
       <span class="navbar__sep" aria-hidden="true"></span>
       <div class="navbar__actions">
-        <a href="payments.html" class="navbar__balance" data-balance-control aria-label="Balance $0.00, add funds">
+        <a href="/payments" class="navbar__balance" data-balance-control aria-label="Balance $0.00, add funds">
           <span class="navbar__balance-plus" aria-hidden="true">+</span>
           <span class="navbar__balance-label">
             <span class="navbar__balance-caption">Balance</span>
@@ -1719,7 +1719,7 @@
   <script src="listings.js?v=cart-icon"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
-      window.location.replace("login.html");
+      window.location.replace("/login");
     } else {
     var tabs = document.querySelectorAll('.carrier-tab');
     var panels = document.querySelectorAll('.accounts-panel');
@@ -1995,7 +1995,7 @@
 
     function bounceToLogin() {
       ListingsApp.clearAccountsSession();
-      window.location.replace("login.html");
+      window.location.replace("/login");
     }
 
     if (logoutBtn) {

@@ -486,17 +486,17 @@
   <div class="noise-overlay" aria-hidden="true"></div>
 
   <nav class="navbar" id="navbar">
-    <a href="index.html" class="navbar__brand">
+    <a href="/" class="navbar__brand">
       <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
       <span class="navbar__brand-text">LABELDIRECT</span>
     </a>
     <div class="navbar__links">
       <div class="navbar__primary">
-        <a href="index.html" class="navbar__link navbar__link--product">Labels</a>
-        <a href="index.html#how-to-order" class="navbar__link">How to order</a>
-        <a href="index.html#faq" class="navbar__link">FAQ</a>
+        <a href="/" class="navbar__link navbar__link--product">Labels</a>
+        <a href="/#how-to-order" class="navbar__link">How to order</a>
+        <a href="/#faq" class="navbar__link">FAQ</a>
       </div>
-      <a href="login.html" class="navbar__link navbar__link--product navbar__link--accounts navbar__link--active" aria-current="page">Accounts</a>
+      <a href="/login" class="navbar__link navbar__link--product navbar__link--accounts navbar__link--active" aria-current="page">Accounts</a>
     </div>
   </nav>
 
@@ -520,7 +520,7 @@
   <script src="listings.js?v=token"></script>
   <script>
     if (ListingsApp.getAccountsSession()) {
-      window.location.replace("accounts.html");
+      window.location.replace("/accounts");
     } else {
       var gen = document.getElementById("generate-token");
       var tg = window.LABELDIRECT_TELEGRAM || {};
@@ -549,7 +549,7 @@
       submit.disabled = true;
       ListingsApp.loginWithToken(input.value)
         .then(function () {
-          window.location.replace("accounts.html");
+          window.location.replace("/accounts");
         })
         .catch(function (err) {
           submit.disabled = false;

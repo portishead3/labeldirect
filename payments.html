@@ -566,14 +566,14 @@
   <a class="skip-link" href="#main">Skip to content</a>
 
   <nav class="navbar" id="navbar">
-    <a href="index.html" class="navbar__brand">
+    <a href="/" class="navbar__brand">
       <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
       <span class="navbar__brand-text">LABELDIRECT</span>
     </a>
     <div class="navbar__links">
       <div class="navbar__primary">
-        <a href="index.html" class="navbar__link navbar__link--product">Labels</a>
-        <a href="accounts.html" class="navbar__link navbar__link--product navbar__link--accounts">Accounts</a>
+        <a href="/" class="navbar__link navbar__link--product">Labels</a>
+        <a href="/accounts" class="navbar__link navbar__link--product navbar__link--accounts">Accounts</a>
       </div>
       <span class="navbar__sep" aria-hidden="true"></span>
       <div class="navbar__actions">
@@ -614,14 +614,14 @@
         <button type="submit" class="payments-submit" id="deposit-submit">Continue to payment</button>
       </form>
 
-      <a href="accounts.html" class="payments-back">← Back to accounts</a>
+      <a href="/accounts" class="payments-back">← Back to accounts</a>
     </div>
 
     <div class="payments-card" id="deposit-success" hidden>
       <p class="payments-card__eyebrow">Wallet</p>
       <h1 class="payments-card__title">Payment successful</h1>
       <p class="payments-success__message" id="deposit-success-message">Successfully deposited.</p>
-      <a href="accounts.html" class="payments-submit payments-success__btn">Back to account page</a>
+      <a href="/accounts" class="payments-submit payments-success__btn">Back to account page</a>
     </div>
   </main>
 
@@ -648,7 +648,7 @@
       if (successCard) successCard.hidden = false;
       document.title = "Deposit successful — LABELDIRECT";
     } else if (!ListingsApp.getAccountsSession()) {
-      window.location.replace("login.html");
+      window.location.replace("/login");
     } else {
     var statusEl = document.getElementById("page-status");
     var logoutBtn = document.getElementById("logout-btn");
@@ -665,7 +665,7 @@
 
     function bounceToLogin() {
       ListingsApp.clearAccountsSession();
-      window.location.replace("login.html");
+      window.location.replace("/login");
     }
 
     function refreshBalance() {

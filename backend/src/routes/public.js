@@ -172,8 +172,8 @@ publicRouter.post("/wallet/deposits", requireWalletAccess, async (req, res) => {
       priceAmountUsd: parsed.dollars,
       orderId,
       ipnCallbackUrl: ipnUrl,
-      successUrl: `${siteUrl}/payments.html?deposit=success&amount=${encodeURIComponent(String(parsed.dollars))}`,
-      cancelUrl: `${siteUrl}/payments.html?deposit=cancel`,
+      successUrl: `${siteUrl}/payments?deposit=success&amount=${encodeURIComponent(String(parsed.dollars))}`,
+      cancelUrl: `${siteUrl}/payments?deposit=cancel`,
     });
 
     const { error: updateError } = await getSupabaseAdmin()
