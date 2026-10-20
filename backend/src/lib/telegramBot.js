@@ -184,6 +184,38 @@ export function refundRequestedNotice(parts) {
   return lines.join("\n");
 }
 
+export function refundGroupClosedNotice(parts) {
+  const source = parts || {};
+  const carrier = String(source.carrier || "").trim().toUpperCase();
+  const login = String(source.login || "").trim();
+  const where = [carrier, login].filter(Boolean).join(" · ");
+  const reason = String(source.reason || "").trim();
+  const lines = [
+    "✅ <b>Refund closed</b>",
+    "",
+    escapeTelegramHtml(refundLabel(source.refundNumber)),
+    ...identityLines(source.who, source.telegramUserId),
+  ];
+  if (where) lines.push(escapeTelegramHtml(where));
+  if (reason) lines.push("refund closed reason: " + escapeTelegramHtml(reason));
+  else if (source.messagedOnTelegram) lines.push("Messaged on Telegram");
+  const credited = Number(source.refundedUsd);
+  if (credited > 0) lines.push("Refunded " + formatNoticeUsd(credited));
+  return lines.join("\n");
+}
+
+export function refundGroupPaidNotice(parts) {
+  const source = parts || {};
+  const lines = ["💰 <b>Refund paid</b>", "", "+" + formatNoticeUsd(source.amount)];
+  const n = Number(source.refundNumber);
+  if (Number.isFinite(n) && n >= 1) lines.push(escapeTelegramHtml(refundLabel(n)));
+  lines.push(...identityLines(source.who, source.telegramUserId));
+  if (source.balance != null && source.balance !== "") {
+    lines.push("Balance · " + formatNoticeUsd(source.balance));
+  }
+  return lines.join("\n");
+}
+
 export function refundClosedReasonNotice(reason) {
   return "refund closed reason: " + escapeTelegramHtml(String(reason || "").trim());
 }

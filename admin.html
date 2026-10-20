@@ -301,6 +301,7 @@
       #clients-wrap,
       #user-activity-wrap,
       #purchases-wrap,
+      #sales-groups,
       #refunds-open-wrap,
       #refunds-resolved-wrap,
       #refund-case-activity-wrap {
@@ -317,6 +318,58 @@
       #purchases-wrap table,
       #refund-case-activity-wrap table {
         min-width: 860px;
+      }
+
+      #sales-groups table {
+        min-width: 0;
+      }
+
+      #sales-groups th,
+      #sales-groups td {
+        white-space: normal;
+      }
+
+      #sales-groups td:nth-child(3),
+      #sales-groups th:nth-child(3) {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .sales-summary {
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .sales-base {
+        margin-top: 22px;
+        padding-top: 16px;
+        border-top: 1px solid var(--hairline);
+      }
+
+      .sales-base:first-child {
+        margin-top: 8px;
+        padding-top: 0;
+        border-top: none;
+      }
+
+      .sales-base__head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px 16px;
+        margin-bottom: 4px;
+      }
+
+      .sales-base__name {
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .sales-base__meta {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
       }
 
       #refunds-open-wrap table,
@@ -337,17 +390,47 @@
       .refunds-table td:nth-child(5) { width: 14%; }
 
       .refunds-table--select th:nth-child(1),
-      .refunds-table--select td:nth-child(1) { width: 44px; text-align: center; padding-left: 6px; padding-right: 6px; }
+      .refunds-table--select td:nth-child(1) {
+        width: 0;
+        padding: 0;
+        border: 0;
+        font-size: 0;
+      }
+      .refunds-table--select.is-selecting th:nth-child(1),
+      .refunds-table--select.is-selecting td:nth-child(1) {
+        width: 5%;
+        padding: 12px 4px;
+        border-bottom: 1px solid var(--hairline);
+        font-size: inherit;
+        text-align: center;
+      }
       .refunds-table--select th:nth-child(2),
-      .refunds-table--select td:nth-child(2) { width: 13%; }
+      .refunds-table--select td:nth-child(2) { width: 14%; }
       .refunds-table--select th:nth-child(3),
-      .refunds-table--select td:nth-child(3) { width: 21%; }
+      .refunds-table--select td:nth-child(3) { width: 20%; }
       .refunds-table--select th:nth-child(4),
-      .refunds-table--select td:nth-child(4) { width: 19%; }
+      .refunds-table--select td:nth-child(4) { width: 18%; }
       .refunds-table--select th:nth-child(5),
-      .refunds-table--select td:nth-child(5) { width: 27%; }
+      .refunds-table--select td:nth-child(5) { width: 14%; }
       .refunds-table--select th:nth-child(6),
-      .refunds-table--select td:nth-child(6) { width: 12%; }
+      .refunds-table--select td:nth-child(6) { width: 15%; }
+      .refunds-table--select th:nth-child(7),
+      .refunds-table--select td:nth-child(7) { width: 19%; text-align: right; padding-right: 0; }
+      .refund-pay-cell .btn {
+        padding: 6px 8px;
+      }
+      .refunds-table--select.is-selecting th:nth-child(2),
+      .refunds-table--select.is-selecting td:nth-child(2) { width: 13%; }
+      .refunds-table--select.is-selecting th:nth-child(5),
+      .refunds-table--select.is-selecting td:nth-child(5) { width: 14%; }
+
+      .refunds-table--select td:nth-child(2),
+      .refunds-table--select td:nth-child(6),
+      .refunds-table--select td:nth-child(7) {
+        white-space: nowrap;
+        word-break: normal;
+        overflow-wrap: normal;
+      }
 
       .refunds-table td {
         white-space: normal;
@@ -869,7 +952,7 @@
 
   <main class="wrap">
     <h1>Admin</h1>
-    <p class="lede">Add accounts shown on the Accounts page, message registered clients on Telegram, or review user activity.</p>
+    <p class="lede">Add accounts shown on the Accounts page, message registered clients on Telegram, or review activity and sales.</p>
     <p id="page-status" class="status" hidden></p>
 
     <section class="card" id="login-card">
@@ -893,6 +976,7 @@
           <button type="button" class="admin-nav__btn" data-admin-view="notify">Send notification</button>
           <button type="button" class="admin-nav__btn" data-admin-view="users">Users</button>
           <button type="button" class="admin-nav__btn" data-admin-view="purchases">Purchases</button>
+          <button type="button" class="admin-nav__btn" data-admin-view="sales">Sales</button>
           <button type="button" class="admin-nav__btn admin-nav__btn--refunds" data-admin-view="refunds" id="refunds-nav-btn">
             <span>Refunds</span>
             <span class="admin-nav__badge" id="refunds-badge" aria-hidden="true" hidden>0</span>
@@ -1017,13 +1101,22 @@
         </div>
       </section>
 
+      <section class="card" data-view-panel="sales" hidden>
+        <h2>Sales</h2>
+        <p class="muted">Purchases grouped by base. A checkout that includes more than one base is split by the accounts in each base.</p>
+        <p class="sales-summary" id="sales-summary" hidden></p>
+        <p class="empty" id="sales-empty">No sales yet.</p>
+        <div id="sales-groups" hidden></div>
+      </section>
+
       <section class="card" data-view-panel="refunds" hidden>
         <div id="refunds-board">
           <h2>Refunds</h2>
           <p class="muted">Open cases. Closing a case moves it to Resolved.</p>
           <div class="refund-bulk-bar" id="refunds-bulk-bar" hidden>
-            <button type="button" class="btn btn--ghost btn--compact" id="refunds-select-toggle">Select</button>
-            <button type="button" class="btn btn--danger" id="refunds-close-selected" hidden disabled>Close selected</button>
+                <button type="button" class="btn btn--ghost btn--compact" id="refunds-select-toggle">Select</button>
+                <button type="button" class="btn btn--compact" id="refunds-pay-selected" hidden disabled>Refund selected</button>
+                <button type="button" class="btn btn--danger" id="refunds-close-selected" hidden disabled>Close selected</button>
             <p class="muted" id="refunds-selected-count" hidden></p>
           </div>
           <p class="empty" id="refunds-open-empty">No open refunds.</p>
@@ -1031,12 +1124,13 @@
             <table class="refunds-table refunds-table--select" id="refunds-open-table">
               <thead>
                 <tr>
-                  <th id="refunds-check-th" hidden><input type="checkbox" class="refund-check" id="refunds-select-all" aria-label="Select all open refunds"></th>
-                  <th>Refund</th>
-                  <th>When</th>
-                  <th>User</th>
-                  <th>Account</th>
-                  <th>Amount</th>
+                      <th id="refunds-check-th" hidden><input type="checkbox" class="refund-check" id="refunds-select-all" aria-label="Select all open refunds"></th>
+                      <th>Refund</th>
+                      <th>When</th>
+                      <th>User</th>
+                      <th>Account</th>
+                      <th>Amount</th>
+                      <th></th>
                 </tr>
               </thead>
               <tbody id="refunds-open-tbody"></tbody>
@@ -1070,7 +1164,8 @@
       <section class="card" id="refund-case" hidden>
           <div class="toolbar user-activity-toolbar refund-case-toolbar">
             <button class="btn btn--ghost" type="button" id="refund-case-back">Back</button>
-            <button class="btn" type="button" id="refund-case-credit">Add balance</button>
+            <button class="btn" type="button" id="refund-case-pay">Refund</button>
+            <button class="btn btn--ghost" type="button" id="refund-case-credit">Add balance</button>
             <button class="btn btn--ghost" type="button" id="refund-case-debit">Deduct balance</button>
             <button class="btn btn--danger" type="button" id="refund-case-close">Close refund</button>
           </div>
@@ -1344,6 +1439,9 @@
     var purchasesEmpty = document.getElementById("purchases-empty");
     var purchasesWrap = document.getElementById("purchases-wrap");
     var purchasesTbody = document.getElementById("purchases-tbody");
+    var salesSummary = document.getElementById("sales-summary");
+    var salesEmpty = document.getElementById("sales-empty");
+    var salesGroups = document.getElementById("sales-groups");
     var refundsNavBtn = document.getElementById("refunds-nav-btn");
     var refundsBadge = document.getElementById("refunds-badge");
     var refundsBadgeLabel = document.getElementById("refunds-badge-label");
@@ -1363,6 +1461,7 @@
     var refundCaseShotLink = document.getElementById("refund-case-shot-link");
     var refundCaseShotMissing = document.getElementById("refund-case-shot-missing");
     var refundCaseCredit = document.getElementById("refund-case-credit");
+    var refundCasePay = document.getElementById("refund-case-pay");
     var refundCaseDebit = document.getElementById("refund-case-debit");
     var refundCaseClose = document.getElementById("refund-case-close");
     var refundCaseActivityEmpty = document.getElementById("refund-case-activity-empty");
@@ -1475,6 +1574,7 @@
     var refundsBulkBar = document.getElementById("refunds-bulk-bar");
     var refundsSelectToggle = document.getElementById("refunds-select-toggle");
     var refundsCloseSelected = document.getElementById("refunds-close-selected");
+    var refundsPaySelected = document.getElementById("refunds-pay-selected");
     var refundsSelectedCount = document.getElementById("refunds-selected-count");
     var refundsCheckTh = document.getElementById("refunds-check-th");
     var refundsSelectAll = document.getElementById("refunds-select-all");
@@ -1492,12 +1592,20 @@
       refundsSelectToggle.textContent = refundSelectMode ? "Cancel" : "Select";
       refundsCloseSelected.hidden = !refundSelectMode;
       refundsCloseSelected.disabled = ids.length === 0;
+      var payable = selectedRefundRows().filter(canRefundOrder);
+      refundsPaySelected.hidden = !refundSelectMode;
+      refundsPaySelected.disabled = payable.length === 0;
+      refundsPaySelected.textContent = payable.length
+        ? "Refund selected (" + payable.length + ")"
+        : "Refund selected";
       refundsCloseSelected.textContent = ids.length > 0
         ? "Close selected (" + ids.length + ")"
         : "Close selected";
       refundsSelectedCount.hidden = !refundSelectMode;
       refundsSelectedCount.textContent = ids.length + " of " + total + " selected";
       refundsCheckTh.hidden = !refundSelectMode;
+      var openTable = document.getElementById("refunds-open-table");
+      if (openTable) openTable.classList.toggle("is-selecting", refundSelectMode);
       refundsSelectAll.checked = total > 0 && ids.length === total;
       refundsSelectAll.indeterminate = ids.length > 0 && ids.length < total;
       Array.prototype.forEach.call(
@@ -1520,6 +1628,120 @@
 
     function selectedRefundRows() {
       return openRefundRows.filter(function (row) { return refundSelected[row.id]; });
+    }
+
+    function orderAmount(row) {
+      var amount = Number(row && row.amount_usd);
+      if (!isFinite(amount) || amount <= 0) return 0;
+      return Math.round(amount * 100) / 100;
+    }
+
+    function orderFullyRefunded(row) {
+      var amount = orderAmount(row);
+      var already = Number(row && row.refunded_usd);
+      if (!isFinite(already) || already < 0) already = 0;
+      return amount > 0 && already + 0.001 >= amount;
+    }
+
+    var refundPayInFlight = {};
+
+    function canRefundOrder(row) {
+      return !!(
+        row && row.id && !refundPayInFlight[row.id] &&
+        row.owner_key && row.status === "pending" &&
+        orderAmount(row) > 0 && !orderFullyRefunded(row)
+      );
+    }
+
+    function syncCaseRefundButton(row) {
+      if (!refundCasePay) return;
+      var pending = row && row.status === "pending" && orderAmount(row) > 0;
+      refundCasePay.hidden = !pending;
+      refundCasePay.disabled = !canRefundOrder(row);
+      refundCasePay.textContent = row && orderFullyRefunded(row)
+        ? "Refunded"
+        : "Refund " + formatBalance(orderAmount(row));
+    }
+
+    function paintRowRefundButton(row) {
+      if (!row || !refundsOpenTbody) return;
+      var tr = refundsOpenTbody.querySelector('tr[data-refund-id="' + row.id + '"]');
+      var btn = tr && tr.querySelector(".refund-pay-cell button");
+      if (!btn) return;
+      var done = orderFullyRefunded(row);
+      btn.disabled = done || !!refundPayInFlight[row.id] || !canRefundOrder(row);
+      btn.textContent = done ? "Refunded" : "Refund";
+    }
+
+    function creditOrderRefund(row) {
+      return ListingsApp.adminRequest(
+        accessToken,
+        "/api/admin/users/" + encodeURIComponent(row.owner_key) + "/credit",
+        { method: "POST", body: { amount: orderAmount(row).toFixed(2), refundCaseId: row.id } }
+      );
+    }
+
+    function refundOrdersToBuyers(rows) {
+      var payable = (rows || []).filter(canRefundOrder);
+      if (!payable.length) {
+        note("Nothing to refund. The order amount is already back with the buyer, or there is no amount.", "error");
+        return;
+      }
+      var message = payable.length === 1
+        ? "Add " + formatBalance(orderAmount(payable[0])) + " back to " +
+          (usernameLabel(payable[0]) || displayName(payable[0]) || "the buyer") +
+          "? This is the order amount."
+        : "Add each order amount back to its buyer? " + payable.length + " refunds.";
+      askToDelete(
+        "Refund",
+        message,
+        payable.length === 1 ? "Refund" : "Refund " + payable.length
+      ).then(function (ok) {
+        if (!ok) return;
+        payable.forEach(function (row) {
+          refundPayInFlight[row.id] = true;
+          paintRowRefundButton(row);
+        });
+        if (refundsPaySelected) refundsPaySelected.disabled = true;
+        if (refundCasePay) refundCasePay.disabled = true;
+        var done = 0;
+        var failed = 0;
+        var notified = 0;
+        var lastError = "";
+        var lastBalance = null;
+        note("Refunding " + payable.length + " order" + (payable.length === 1 ? "" : "s") + "…");
+        payable.reduce(function (chain, row) {
+          return chain.then(function () {
+            return creditOrderRefund(row).then(function (result) {
+              done += 1;
+              if (result && result.notified) notified += 1;
+              if (result && result.balance != null) lastBalance = result.balance;
+              row.refunded_usd = Math.round(((Number(row.refunded_usd) || 0) + orderAmount(row)) * 100) / 100;
+              if (result && result.balance != null) row.balance = result.balance;
+            }).catch(function (err) {
+              failed += 1;
+              lastError = (err && err.message) || "";
+            });
+          });
+        }, Promise.resolve()).then(function () {
+          var msg = "Refunded " + done + " order" + (done === 1 ? "" : "s") + ".";
+          if (done === 1 && lastBalance != null) msg += " New balance " + formatBalance(lastBalance) + ".";
+          if (notified) msg += " " + notified + " buyer" + (notified === 1 ? "" : "s") + " notified.";
+          if (failed) msg += " " + failed + " could not be refunded" + (lastError ? " (" + lastError + ")" : "") + ".";
+          note(msg, failed ? "error" : "ok");
+          payable.forEach(function (row) {
+            delete refundPayInFlight[row.id];
+            paintRowRefundButton(row);
+            if (openRefundCase && openRefundCase.id === row.id) {
+              openRefundCase.refunded_usd = row.refunded_usd;
+              if (row.balance != null) openRefundCase.balance = row.balance;
+              syncCaseRefundButton(openRefundCase);
+              refundCaseUserMeta.textContent = refundUserMeta(openRefundCase, openRefundCase.balance);
+            }
+          });
+          return refreshRefunds().catch(function () {});
+        });
+      });
     }
 
     function refundOrderLabel(row) {
@@ -1644,6 +1866,9 @@
       beginCloseRefunds(selectedRefundRows());
     }
 
+    refundsPaySelected.addEventListener("click", function () {
+      refundOrdersToBuyers(selectedRefundRows());
+    });
     refundsSelectToggle.addEventListener("click", function () {
       setRefundSelectMode(!refundSelectMode);
     });
@@ -1739,6 +1964,28 @@
           ? "—"
           : formatBalance(row.amount_usd);
         tr.appendChild(amount);
+        if (selectable) {
+          var payCell = document.createElement("td");
+          payCell.className = "refund-pay-cell";
+          var payBtn = document.createElement("button");
+          payBtn.type = "button";
+          payBtn.className = "btn btn--compact";
+          var payable = canRefundOrder(row);
+          payBtn.textContent = orderFullyRefunded(row) ? "Refunded" : "Refund";
+          payBtn.disabled = !payable;
+          payBtn.setAttribute(
+            "aria-label",
+            (orderFullyRefunded(row) ? "Already refunded " : "Refund ") +
+              refundNumberLabel(row) +
+              (orderAmount(row) > 0 ? " " + formatBalance(orderAmount(row)) : "")
+          );
+          payBtn.addEventListener("click", function (event) {
+            event.stopPropagation();
+            refundOrdersToBuyers([row]);
+          });
+          payCell.appendChild(payBtn);
+          tr.appendChild(payCell);
+        }
         tbody.appendChild(tr);
       });
     }
@@ -1787,7 +2034,13 @@
             }
           }
           if (fresh && fresh.status !== openRefundCase.status) paintRefundCase(fresh);
-          else if (fresh) openRefundCase = fresh;
+          else if (fresh) {
+            var keptBalance = fresh.balance != null ? fresh.balance : openRefundCase.balance;
+            openRefundCase = fresh;
+            openRefundCase.balance = keptBalance;
+            syncCaseRefundButton(openRefundCase);
+            refundCaseUserMeta.textContent = refundUserMeta(openRefundCase, openRefundCase.balance);
+          }
         }
         return list;
       });
@@ -1839,6 +2092,7 @@
       refundCaseTitle.textContent = refundNumberLabel(row);
       refundCaseCredit.hidden = !pending;
       refundCaseDebit.hidden = !pending;
+      syncCaseRefundButton(row);
       refundCaseClose.hidden = !pending;
       refundCaseResolved.hidden = pending;
       refundCaseResolved.textContent = pending
@@ -1918,7 +2172,7 @@
       openUserActivity(buyer);
     }
 
-    var ADMIN_VIEWS = { add: true, notify: true, users: true, purchases: true, refunds: true, resolved: true };
+    var ADMIN_VIEWS = { add: true, notify: true, users: true, purchases: true, sales: true, refunds: true, resolved: true };
 
     function viewFromLocation() {
       var name = String(location.hash || "").replace(/^#/, "");
@@ -1952,6 +2206,11 @@
       if (name === "purchases") {
         refreshPurchases().catch(function (err) {
           note(err.message || "Could not load purchases.", "error");
+        });
+      }
+      if (name === "sales") {
+        refreshSales().catch(function (err) {
+          note(err.message || "Could not load sales.", "error");
         });
       }
       if (!opts.keepCase && refundCase && !refundCase.hidden && name !== "refunds" && name !== "resolved") {
@@ -2210,6 +2469,119 @@
     function refreshPurchases() {
       return ListingsApp.adminRequest(accessToken, "/api/admin/purchases").then(function (rows) {
         renderPurchaseRows(Array.isArray(rows) ? rows : []);
+      });
+    }
+
+    function salesBaseKey(name) {
+      return String(name || "").trim().toLowerCase() || "__unknown__";
+    }
+
+    function salesFromPurchases(rows) {
+      var groups = Object.create(null);
+      (rows || []).forEach(function (row) {
+        var accounts = row && Array.isArray(row.accounts) ? row.accounts : [];
+        var shares = Object.create(null);
+        accounts.forEach(function (acct) {
+          var name = String((acct && acct.vendor) || "").trim() || "Unknown";
+          var key = salesBaseKey(name);
+          if (!shares[key]) shares[key] = { name: name, count: 0, total: 0 };
+          shares[key].count += 1;
+          shares[key].total += Number(acct && acct.price) || 0;
+        });
+        var keys = Object.keys(shares);
+        if (!keys.length) {
+          shares.__unknown__ = {
+            name: "Unknown",
+            count: Number(row && row.account_count) || 0,
+            total: Number(row && row.total_usd) || 0
+          };
+          keys = ["__unknown__"];
+        }
+        keys.forEach(function (key) {
+          var share = shares[key];
+          if (!groups[key]) {
+            groups[key] = { name: share.name, total: 0, count: 0, sales: [] };
+          }
+          groups[key].total += share.total;
+          groups[key].count += share.count;
+          groups[key].sales.push({
+            created_at: row.created_at,
+            user: usernameLabel(row) || displayName(row) || "—",
+            accounts: share.count,
+            total: share.total
+          });
+        });
+      });
+      return Object.keys(groups)
+        .map(function (key) { return groups[key]; })
+        .sort(function (a, b) {
+          if (b.total !== a.total) return b.total - a.total;
+          return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        });
+    }
+
+    function salesCell(text) {
+      var td = document.createElement("td");
+      td.textContent = text;
+      return td;
+    }
+
+    function renderSales(rows) {
+      var bases = salesFromPurchases(rows);
+      var grand = 0;
+      salesGroups.textContent = "";
+      bases.forEach(function (base) { grand += base.total; });
+      salesEmpty.hidden = bases.length > 0;
+      salesGroups.hidden = bases.length === 0;
+      salesSummary.hidden = bases.length === 0;
+      salesSummary.textContent = bases.length
+        ? "Total " + formatBalance(grand)
+        : "";
+      bases.forEach(function (base) {
+        var block = document.createElement("section");
+        block.className = "sales-base";
+        var head = document.createElement("div");
+        head.className = "sales-base__head";
+        var title = document.createElement("h3");
+        title.className = "sales-base__name";
+        title.textContent = base.name;
+        var meta = document.createElement("p");
+        meta.className = "sales-base__meta";
+        meta.textContent = base.count + (base.count === 1 ? " account" : " accounts") + " · " + formatBalance(base.total);
+        head.appendChild(title);
+        head.appendChild(meta);
+        block.appendChild(head);
+        var wrap = document.createElement("div");
+        wrap.className = "table-wrap";
+        var table = document.createElement("table");
+        var thead = document.createElement("thead");
+        var headRow = document.createElement("tr");
+        ["Date", "Accounts", "Total", "User"].forEach(function (label) {
+          var th = document.createElement("th");
+          th.textContent = label;
+          headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+        var tbody = document.createElement("tbody");
+        base.sales.forEach(function (sale) {
+          var tr = document.createElement("tr");
+          tr.appendChild(salesCell(formatTime(sale.created_at)));
+          tr.appendChild(salesCell(String(sale.accounts)));
+          tr.appendChild(salesCell(formatBalance(sale.total)));
+          tr.appendChild(salesCell(sale.user || "—"));
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        wrap.appendChild(table);
+        block.appendChild(wrap);
+        salesGroups.appendChild(block);
+      });
+    }
+
+    function refreshSales() {
+      return ListingsApp.adminRequest(accessToken, "/api/admin/purchases").then(function (rows) {
+        renderSales(Array.isArray(rows) ? rows : []);
       });
     }
 
@@ -2744,6 +3116,9 @@
         openCreditDialog(activityUser);
       });
       document.getElementById("refund-case-back").addEventListener("click", showRefundBoard);
+      document.getElementById("refund-case-pay").addEventListener("click", function () {
+        if (openRefundCase) refundOrdersToBuyers([openRefundCase]);
+      });
       document.getElementById("refund-case-credit").addEventListener("click", function () {
         openCreditDialog(buyerFromRefund(openRefundCase));
       });

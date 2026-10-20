@@ -7,11 +7,15 @@ import { enqueueListProcess } from "../lib/listJobs.js";
 import { fetchAccountRows } from "../lib/withVendor.js";
 import {
   balanceAddedNotice,
+  notifyRefundGroup,
   notifyTelegramUser,
   refundClosedNotice,
   refundClosedReasonNotice,
+  refundGroupClosedNotice,
+  refundGroupPaidNotice,
   sendTelegramMessage,
   telegramBotConfigured,
+  telegramDisplayName,
   TELEGRAM_MESSAGE_MAX,
 } from "../lib/telegramBot.js";
 import {
@@ -498,6 +502,27 @@ async function recordRefundCredit(client, ownerKey, refundCaseId, amount) {
   return data.refund_number;
 }
 
+async function refundBuyerLabel(client, ownerKey, telegramUserId) {
+  let profile = null;
+  const key = String(ownerKey || "").trim();
+  if (key) {
+    const { data, error } = await client
+      .from("access_tokens")
+      .select("telegram_username, telegram_first_name, telegram_last_name, telegram_user_id")
+      .eq("id", key)
+      .maybeSingle();
+    if (error) throw error;
+    profile = data;
+  }
+  const id =
+    telegramUserId != null
+      ? telegramUserId
+      : profile && profile.telegram_user_id != null
+        ? profile.telegram_user_id
+        : null;
+  return { who: telegramDisplayName(profile, id), telegramUserId: id };
+}
+
 /** Moves a case out of `pending` exactly once, so a double click cannot review twice. */
 async function claimPendingRefundCase(client, id) {
   const now = new Date().toISOString();
@@ -529,6 +554,23 @@ adminRouter.post("/refunds/:id/review", async (req, res) => {
     const skipNotice = body.notify === false;
     const notice = reason ? refundClosedReasonNotice(reason) : refundClosedNotice(refundCase);
     const notified = skipNotice ? false : await notifyTelegramUser(telegramUserId, notice);
+    try {
+      const buyer = await refundBuyerLabel(client, refundCase.owner_key, telegramUserId);
+      await notifyRefundGroup(
+        refundGroupClosedNotice({
+          refundNumber: refundCase.refund_number,
+          who: buyer.who,
+          telegramUserId: buyer.telegramUserId,
+          carrier: refundCase.carrier,
+          login: refundCase.account_login,
+          reason,
+          messagedOnTelegram: skipNotice,
+          refundedUsd: refundCase.refunded_usd,
+        })
+      );
+    } catch (err) {
+      console.error("refund group status:", err);
+    }
     res.json({
       ok: true,
       status: "reviewed",
@@ -599,6 +641,17 @@ adminRouter.post("/users/:id/credit", async (req, res) => {
       user.telegram_user_id,
       balanceAddedNotice(result.amount, result.balance, refundNumber)
     );
+    if (refundNumber) {
+      await notifyRefundGroup(
+        refundGroupPaidNotice({
+          amount: result.amount,
+          balance: result.balance,
+          refundNumber,
+          who: telegramDisplayName(user, user.telegram_user_id),
+          telegramUserId: user.telegram_user_id,
+        })
+      );
+    }
     res.json({
       ok: true,
       amount: result.amount,
