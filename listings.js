@@ -1,5 +1,5 @@
 (function (global) {
-  var COLUMNS = ["country", "state", "outbound", "inbound", "price", "vendor"];
+  var COLUMNS = ["country", "state", "outbound", "inbound", "address", "price", "vendor"];
 
   function supabaseConfig() {
     return global.LABELDIRECT_SUPABASE || {};
@@ -354,7 +354,9 @@
       tr.appendChild(cartTd);
 
       COLUMNS.forEach(function (key) {
-        tr.appendChild(td(row[key]));
+        var cell = td(row[key]);
+        if (key === "address") cell.className = "accounts-table__address";
+        tr.appendChild(cell);
       });
       tbody.appendChild(tr);
     });

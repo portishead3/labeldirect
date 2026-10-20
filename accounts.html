@@ -868,6 +868,13 @@
         padding: 8px 10px;
       }
 
+      .accounts-table__address {
+        white-space: normal;
+        min-width: 180px;
+        max-width: 280px;
+        line-height: 1.35;
+      }
+
       .account-cart {
         display: inline-flex;
         align-items: center;
@@ -1598,11 +1605,12 @@
             <thead>
               <tr>
                 <th scope="col" class="accounts-table__num-cell">#</th>
-                
+                <th scope="col" class="accounts-table__cart-cell">Cart</th>
                 <th scope="col">Country</th>
                 <th scope="col">State</th>
                 <th scope="col">Outbound</th>
                 <th scope="col">Inbound</th>
+                <th scope="col">Address</th>
                 <th scope="col">Price</th>
                 <th scope="col">Base</th>
               </tr>
@@ -1630,6 +1638,7 @@
                 <th scope="col">State</th>
                 <th scope="col">Outbound</th>
                 <th scope="col">Inbound</th>
+                <th scope="col">Address</th>
                 <th scope="col">Price</th>
                 <th scope="col">Base</th>
               </tr>
@@ -1716,7 +1725,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=cart-icon"></script>
+  <script src="listings.js?v=address-col"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("/login");
