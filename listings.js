@@ -296,8 +296,131 @@
     return select.value;
   }
 
+  var ACCOUNT_PAGE_SIZE = 25;
+  var afterAccountsRender = null;
+
+  function accountRowsKey(rows) {
+    return (rows || [])
+      .map(function (row) {
+        return row && row.id != null ? String(row.id) : "";
+      })
+      .join("\0");
+  }
+
+  function accountPageWindow(current, total) {
+    if (total <= 7) {
+      var all = [];
+      for (var i = 0; i < total; i++) all.push(i);
+      return all;
+    }
+    var start = Math.max(1, current - 1);
+    var end = Math.min(total - 2, current + 1);
+    if (current <= 2) {
+      start = 1;
+      end = Math.min(total - 2, 3);
+    } else if (current >= total - 3) {
+      start = Math.max(1, total - 4);
+      end = total - 2;
+    }
+    var pages = [0];
+    if (start > 1) pages.push(-1);
+    for (var p = start; p <= end; p++) pages.push(p);
+    if (end < total - 2) pages.push(-1);
+    pages.push(total - 1);
+    return pages;
+  }
+
+  function hideAccountPager(panel) {
+    var pager = panel.querySelector(".accounts-pager");
+    if (pager) {
+      pager.hidden = true;
+      pager.textContent = "";
+    }
+  }
+
+  function ensureAccountPager(panel) {
+    var pager = panel.querySelector(".accounts-pager");
+    if (pager) return pager;
+    pager = document.createElement("nav");
+    pager.className = "accounts-pager";
+    pager.hidden = true;
+    var wrap = panel.querySelector(".table-wrap");
+    if (wrap && wrap.parentNode) wrap.parentNode.insertBefore(pager, wrap.nextSibling);
+    else panel.appendChild(pager);
+    pager.addEventListener("click", function (event) {
+      var btn = event.target.closest("button[data-page]");
+      if (!btn || btn.disabled) return;
+      var next = parseInt(btn.getAttribute("data-page"), 10);
+      if (!Number.isFinite(next)) return;
+      panel.dataset.accountPage = String(next);
+      panel.dataset.accountPageScroll = "1";
+      renderPanel(panel, panel._accountRows || [], panel._accountOptions || {});
+    });
+    return pager;
+  }
+
+  function renderAccountPager(panel, page, pageCount, start, count, total) {
+    var pager = ensureAccountPager(panel);
+    if (pageCount <= 1) {
+      hideAccountPager(panel);
+      return;
+    }
+    pager.hidden = false;
+    var carrierName = panel.getAttribute("data-panel") === "ups" ? "UPS" : "FedEx";
+    pager.setAttribute("aria-label", carrierName + " account pages");
+    pager.textContent = "";
+
+    var status = document.createElement("p");
+    status.className = "accounts-pager__status";
+    status.textContent = "Showing " + (start + 1) + "–" + (start + count) + " of " + total;
+    pager.appendChild(status);
+
+    var controls = document.createElement("div");
+    controls.className = "accounts-pager__controls";
+
+    function addButton(label, pageIndex, opts) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "accounts-pager__btn";
+      btn.textContent = label;
+      btn.setAttribute("data-page", String(pageIndex));
+      if (opts && opts.label) btn.setAttribute("aria-label", opts.label);
+      if (opts && opts.current) btn.setAttribute("aria-current", "page");
+      if (opts && opts.disabled) btn.disabled = true;
+      controls.appendChild(btn);
+    }
+
+    addButton("Previous", page - 1, { disabled: page <= 0, label: "Previous page" });
+    accountPageWindow(page, pageCount).forEach(function (item) {
+      if (item < 0) {
+        var gap = document.createElement("span");
+        gap.className = "accounts-pager__gap";
+        gap.setAttribute("aria-hidden", "true");
+        gap.textContent = "…";
+        controls.appendChild(gap);
+        return;
+      }
+      addButton(String(item + 1), item, {
+        current: item === page,
+        label: "Page " + (item + 1)
+      });
+    });
+    addButton("Next", page + 1, {
+      disabled: page >= pageCount - 1,
+      label: "Next page"
+    });
+    pager.appendChild(controls);
+  }
+
+  function notifyAccountsRendered() {
+    if (afterAccountsRender) afterAccountsRender();
+  }
+
   function renderPanel(panel, rows, options) {
     if (!panel) return;
+    var list = rows || [];
+    panel._accountRows = list;
+    panel._accountOptions = options || {};
     var empty = panel.querySelector(".empty-state");
     var wrap = panel.querySelector(".table-wrap");
     var tbody = panel.querySelector("tbody");
@@ -305,7 +428,7 @@
     tbody.textContent = "";
     var carrier = (options && options.carrier) || panel.getAttribute("data-panel") || "fedex";
 
-    if (!rows.length) {
+    if (!list.length) {
       if (empty) {
         empty.hidden = false;
         var p = empty.querySelector("p");
@@ -315,13 +438,30 @@
         }
       }
       if (wrap) wrap.hidden = true;
+      hideAccountPager(panel);
+      panel.dataset.accountKey = "";
+      panel.dataset.accountPage = "0";
+      notifyAccountsRendered();
       return;
     }
 
     if (empty) empty.hidden = true;
     if (wrap) wrap.hidden = false;
 
-    rows.forEach(function (row, index) {
+    var key = accountRowsKey(list);
+    if (panel.dataset.accountKey !== key) {
+      panel.dataset.accountKey = key;
+      panel.dataset.accountPage = "0";
+    }
+    var pageCount = Math.ceil(list.length / ACCOUNT_PAGE_SIZE);
+    var page = parseInt(panel.dataset.accountPage || "0", 10);
+    if (!Number.isFinite(page) || page < 0) page = 0;
+    if (page > pageCount - 1) page = pageCount - 1;
+    panel.dataset.accountPage = String(page);
+    var start = page * ACCOUNT_PAGE_SIZE;
+    var visible = list.slice(start, start + ACCOUNT_PAGE_SIZE);
+
+    visible.forEach(function (row, index) {
       var tr = document.createElement("tr");
       tr.className = "accounts-table__row";
       if (row.id) tr.setAttribute("data-account-id", row.id);
@@ -330,7 +470,7 @@
 
       var numTd = document.createElement("td");
       numTd.className = "accounts-table__num-cell";
-      numTd.textContent = String(index + 1);
+      numTd.textContent = String(start + index + 1);
       tr.appendChild(numTd);
 
       var cartTd = document.createElement("td");
@@ -368,6 +508,15 @@
       });
       tbody.appendChild(tr);
     });
+
+    renderAccountPager(panel, page, pageCount, start, visible.length, list.length);
+    if (panel.dataset.accountPageScroll === "1") {
+      panel.dataset.accountPageScroll = "";
+      if (!panel.hidden && wrap && wrap.scrollIntoView) {
+        wrap.scrollIntoView({ block: "start" });
+      }
+    }
+    notifyAccountsRendered();
   }
 
   function renderAccounts(rows, filters) {
@@ -538,6 +687,9 @@
     loginWithToken: loginWithToken,
     adminRequest: adminRequest,
     renderAccounts: renderAccounts,
+    onAccountsRendered: function (fn) {
+      afterAccountsRender = typeof fn === "function" ? fn : null;
+    },
     applyAccountFilters: applyAccountFilters,
     countryOptions: countryOptions,
     baseOptions: baseOptions,

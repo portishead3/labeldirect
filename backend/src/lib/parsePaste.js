@@ -279,6 +279,23 @@ export async function fetchByLogins(client, logins, columns) {
   return rows;
 }
 
+async function frontSortOrders(client, count) {
+  if (!count) return [];
+  const { data, error } = await client
+    .from("accounts")
+    .select("sort_order")
+    .not("sort_order", "is", null)
+    .order("sort_order", { ascending: true })
+    .limit(1);
+  if (error) throw error;
+  const hasMin = data && data.length && Number.isFinite(Number(data[0].sort_order));
+  const currentMin = hasMin ? Number(data[0].sort_order) : count;
+  const start = currentMin - count;
+  const orders = [];
+  for (let i = 0; i < count; i++) orders.push(start + i);
+  return orders;
+}
+
 export async function processParsed(client, parsed, listId, price) {
   const grouped = groupByLogin(parsed);
   const logins = Object.keys(grouped);
@@ -303,15 +320,16 @@ export async function processParsed(client, parsed, listId, price) {
         id: accountMap[login].id,
         payload: mergeAccount(accountMap[login], payload),
       });
-      if (occurrences.length > 1) duped += occurrences.length - 1;
-      continue;
+    } else {
+      accountInserts.push(payload);
     }
-    if (occurrences.length > 1) {
-      duped += occurrences.length;
-      continue;
-    }
-    accountInserts.push(payload);
+    if (occurrences.length > 1) duped += occurrences.length - 1;
   }
+
+  const frontOrders = await frontSortOrders(client, accountInserts.length);
+  accountInserts.forEach((payload, index) => {
+    payload.sort_order = frontOrders[index];
+  });
 
   for (const chunk of inChunks(accountUpdates, 200)) {
     const rows = chunk.map((item) => ({ id: item.id, ...item.payload }));

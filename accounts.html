@@ -672,6 +672,67 @@
         font-size: 1rem;
       }
 
+      .accounts-pager {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px 16px;
+        margin-top: 14px;
+      }
+
+      .accounts-pager[hidden] {
+        display: none;
+      }
+
+      .accounts-pager__status {
+        margin: 0;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+      }
+
+      .accounts-pager__controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .accounts-pager__btn {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid var(--hairline);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .accounts-pager__btn:hover:not(:disabled) {
+        border-color: var(--border-accent);
+        background: rgba(155, 126, 200, 0.12);
+      }
+
+      .accounts-pager__btn[aria-current="page"] {
+        color: var(--accent-light);
+        border-color: rgba(155, 126, 200, 0.45);
+        background: rgba(155, 126, 200, 0.14);
+      }
+
+      .accounts-pager__btn:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+
+      .accounts-pager__gap {
+        color: var(--text-secondary);
+        padding: 0 2px;
+      }
+
       .status-pill {
         display: inline-flex;
         align-items: center;
@@ -1744,7 +1805,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=address-clip"></script>
+  <script src="listings.js?v=account-pages"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("/login");
@@ -2235,6 +2296,7 @@
       origRenderFiltered();
       syncRowHighlights();
     };
+    ListingsApp.onAccountsRendered(syncRowHighlights);
 
     // ── Checkout action ─────────────────────────────────────────────────────
     function carrierLabel(value) {
