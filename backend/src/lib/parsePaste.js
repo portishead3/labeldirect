@@ -171,6 +171,7 @@ export function parseLine(line) {
     outbound: parseIntSafe(firstFilled(fields, ["outbound"])),
     inbound: parseIntSafe(firstFilled(fields, ["inbound"])),
     address: firstFilled(fields, ["address"]),
+    billing: firstFilled(fields, ["companyname", "billingfullname"]),
     card_number: card.replace(/\s+/g, ""),
     expiry:
       expiryFromText(
@@ -213,6 +214,7 @@ export function accountPayload(row, listId) {
     outbound: row.outbound,
     inbound: row.inbound,
     address: row.address || "",
+    billing: row.billing || "",
     card_number: row.card_number,
     expiry: row.expiry,
     updated_at: new Date().toISOString(),
@@ -229,7 +231,7 @@ function filled(value) {
 
 function mergeAccount(existing, payload) {
   const next = { ...payload };
-  ["country", "state", "address", "card_number", "expiry"].forEach((key) => {
+  ["country", "state", "address", "billing", "card_number", "expiry"].forEach((key) => {
     if (!filled(next[key]) && filled(existing[key])) next[key] = existing[key];
   });
   return next;
@@ -260,7 +262,7 @@ export function loginsFromContent(raw) {
 
 export async function fetchByLogins(client, logins, columns) {
   if (!logins.length) return [];
-  const select = columns || "id,login,country,state,address,card_number,expiry,account_status";
+  const select = columns || "id,login,country,state,address,billing,card_number,expiry,account_status";
   const rows = [];
   const chunks = inChunks(logins, 120);
   for (let i = 0; i < chunks.length; i += 4) {

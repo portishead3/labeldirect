@@ -69,6 +69,7 @@ create table if not exists public.accounts (
   outbound integer not null default 0,
   inbound integer not null default 0,
   address text not null default '',
+  billing text not null default '',
   card_number text not null default '',
   expiry text not null default '',
   price numeric(10,2) not null default 0,

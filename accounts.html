@@ -875,6 +875,13 @@
         line-height: 1.35;
       }
 
+      .accounts-table__billing {
+        white-space: normal;
+        min-width: 140px;
+        max-width: 220px;
+        line-height: 1.35;
+      }
+
       .account-cart {
         display: inline-flex;
         align-items: center;
@@ -1611,6 +1618,7 @@
                 <th scope="col">Outbound</th>
                 <th scope="col">Inbound</th>
                 <th scope="col">Address</th>
+                <th scope="col">Billing</th>
                 <th scope="col">Price</th>
                 <th scope="col">Base</th>
               </tr>
@@ -1639,6 +1647,7 @@
                 <th scope="col">Outbound</th>
                 <th scope="col">Inbound</th>
                 <th scope="col">Address</th>
+                <th scope="col">Billing</th>
                 <th scope="col">Price</th>
                 <th scope="col">Base</th>
               </tr>
@@ -1725,7 +1734,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=address-col"></script>
+  <script src="listings.js?v=billing-col"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("/login");
