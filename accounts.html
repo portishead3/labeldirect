@@ -868,10 +868,20 @@
         padding: 8px 10px;
       }
 
-      .accounts-table__address {
+      .accounts-table td.accounts-table__address {
+        width: 1%;
+        max-width: 252px;
+        vertical-align: top;
         white-space: normal;
-        min-width: 180px;
-        max-width: 280px;
+      }
+
+      .accounts-table__address-text {
+        display: block;
+        width: 220px;
+        max-width: 220px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
         line-height: 1.35;
       }
 
@@ -1734,7 +1744,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=billing-col"></script>
+  <script src="listings.js?v=address-clip"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("/login");

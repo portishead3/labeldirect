@@ -355,7 +355,14 @@
 
       COLUMNS.forEach(function (key) {
         var cell = td(row[key]);
-        if (key === "address") cell.className = "accounts-table__address";
+        if (key === "address") {
+          cell.className = "accounts-table__address";
+          var text = document.createElement("span");
+          text.className = "accounts-table__address-text";
+          text.textContent = cell.textContent;
+          cell.textContent = "";
+          cell.appendChild(text);
+        }
         if (key === "billing") cell.className = "accounts-table__billing";
         tr.appendChild(cell);
       });
