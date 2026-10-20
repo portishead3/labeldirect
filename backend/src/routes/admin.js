@@ -6,11 +6,20 @@ import { acceptListImport, friendlyListError, parseAccountStatus } from "../lib/
 import { enqueueListProcess } from "../lib/listJobs.js";
 import { fetchAccountRows } from "../lib/withVendor.js";
 import {
+  balanceAddedNotice,
+  notifyTelegramUser,
+  refundClosedNotice,
   sendTelegramMessage,
   telegramBotConfigured,
   TELEGRAM_MESSAGE_MAX,
 } from "../lib/telegramBot.js";
-import { creditWalletManually, debitWalletManually, dollarsFromCents, getWalletByOwnerKey } from "../lib/wallet.js";
+import {
+  creditWalletManually,
+  debitWalletManually,
+  dollarsFromCents,
+  getWalletByOwnerKey,
+  telegramUserIdForOwner,
+} from "../lib/wallet.js";
 import { backfillDepositActivity } from "../lib/activityLog.js";
 import { refundReasonLabel } from "../lib/refunds.js";
 
@@ -467,6 +476,27 @@ adminRouter.get("/refunds", async (_req, res) => {
   }
 });
 
+/** Adds this credit onto the open refund so the close notice can show the amount. */
+async function recordRefundCredit(client, ownerKey, refundCaseId, amount) {
+  const id = String(refundCaseId || "").trim();
+  if (!id) return null;
+  const { data, error } = await client
+    .from("refund_cases")
+    .select("id, owner_key, status, refund_number, refunded_usd")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data || data.owner_key !== ownerKey || data.status !== "pending") return null;
+  const next = Math.round(((Number(data.refunded_usd) || 0) + Number(amount)) * 100) / 100;
+  const { error: updateError } = await client
+    .from("refund_cases")
+    .update({ refunded_usd: next, updated_at: new Date().toISOString() })
+    .eq("id", data.id)
+    .eq("status", "pending");
+  if (updateError) throw updateError;
+  return data.refund_number;
+}
+
 /** Moves a case out of `pending` exactly once, so a double click cannot review twice. */
 async function claimPendingRefundCase(client, id) {
   const now = new Date().toISOString();
@@ -489,7 +519,17 @@ adminRouter.post("/refunds/:id/review", async (req, res) => {
       res.status(409).json({ error: "This refund case is no longer pending." });
       return;
     }
-    res.json({ ok: true, status: "reviewed", refund_number: refundCase.refund_number });
+    const telegramUserId =
+      refundCase.telegram_user_id != null
+        ? refundCase.telegram_user_id
+        : await telegramUserIdForOwner(refundCase.owner_key);
+    const notified = await notifyTelegramUser(telegramUserId, refundClosedNotice(refundCase));
+    res.json({
+      ok: true,
+      status: "reviewed",
+      refund_number: refundCase.refund_number,
+      notified,
+    });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message || "Could not mark this refund reviewed." });
   }
@@ -544,10 +584,21 @@ adminRouter.post("/users/:id/credit", async (req, res) => {
       return;
     }
     const result = await creditWalletManually(user.id, req.body && req.body.amount);
+    let refundNumber = null;
+    try {
+      refundNumber = await recordRefundCredit(client, user.id, req.body && req.body.refundCaseId, result.amount);
+    } catch (err) {
+      console.error("refund credit note:", err);
+    }
+    const notified = await notifyTelegramUser(
+      user.telegram_user_id,
+      balanceAddedNotice(result.amount, result.balance, refundNumber)
+    );
     res.json({
       ok: true,
       amount: result.amount,
       balance: result.balance,
+      notified,
       user: { ...user, balance: result.balance },
     });
   } catch (err) {

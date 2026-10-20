@@ -22,9 +22,12 @@ import {
 import { createInvoice, isNowPaymentsConfigured, verifyIpnSignature } from "../lib/nowpayments.js";
 import { logUserActivity } from "../lib/activityLog.js";
 import {
-  sendRefundDocument,
+  newSignInNotice,
+  notifyRefundGroup,
+  refundRequestedNotice,
   sendTelegramDocument,
   telegramBotConfigured,
+  telegramDisplayName,
 } from "../lib/telegramBot.js";
 import {
   isRefundWindowOpen,
@@ -81,9 +84,10 @@ publicRouter.post("/auth/login", async (req, res) => {
     return;
   }
   try {
-    const { data, error } = await getSupabaseAdmin()
+    const client = getSupabaseAdmin();
+    const { data, error } = await client
       .from("access_tokens")
-      .select("id, telegram_user_id")
+      .select("id, telegram_user_id, telegram_username, telegram_first_name, telegram_last_name")
       .eq("token_hash", hashAccessToken(token))
       .maybeSingle();
     if (error) throw error;
@@ -92,11 +96,31 @@ publicRouter.post("/auth/login", async (req, res) => {
       return;
     }
     const ownerKey = String(data.id);
+    let firstSignIn = false;
+    try {
+      const { count, error: countError } = await client
+        .from("user_activity")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_key", ownerKey)
+        .eq("action", "login");
+      if (countError) throw countError;
+      firstSignIn = !count;
+    } catch (err) {
+      console.error("login count:", err);
+    }
     await loginWithOwnerKey(res, ownerKey, {
       ownerKey,
       telegramUserId: data.telegram_user_id,
       action: "login",
     });
+    if (firstSignIn) {
+      await notifyRefundGroup(
+        newSignInNotice({
+          who: telegramDisplayName(data, data.telegram_user_id),
+          telegramUserId: data.telegram_user_id,
+        })
+      );
+    }
   } catch (err) {
     console.error("POST /api/auth/login:", err);
     res.status(500).json({ error: err.message || "Could not sign in." });
@@ -526,31 +550,6 @@ function buyerLabel(profile, telegramUserId) {
   return telegramUserId ? "User " + telegramUserId : "A user";
 }
 
-function formatRefundFile(parts) {
-  const lines = [
-    "Refund " + parts.refundNumber,
-    "State: " + parts.status,
-    `${parts.who} just requested refund for the ${parts.carrier.toUpperCase()} account ${parts.login}`,
-    "Issue: " + parts.issue,
-    "Amount: " + parts.amount,
-    "Screenshot: " + (parts.screenshotUrl || "not provided"),
-    "Purchased: " + parts.purchasedAt,
-    "Requested: " + parts.requestedAt,
-  ];
-  if (parts.telegramUserId) lines.push("Telegram ID: " + parts.telegramUserId);
-  return lines.join("\n");
-}
-
-function formatUsd(dollars) {
-  return "$" + (Math.round((Number(dollars) || 0) * 100) / 100).toFixed(2);
-}
-
-function formatAlertTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value || "");
-  return date.toISOString().replace("T", " ").slice(0, 16) + " UTC";
-}
-
 publicRouter.post("/orders/:purchaseId/refunds", requireWalletAccess, async (req, res) => {
   try {
     const parsed = parseRefundRequest(req.body);
@@ -642,34 +641,23 @@ publicRouter.post("/orders/:purchaseId/refunds", requireWalletAccess, async (req
       console.error("refund_requested activity:", err);
     }
 
-    if (telegramBotConfigured()) {
-      try {
-        const profile = await buyerProfile(client, req.accountsSub);
-        const status = refundCase.status || "pending";
-        const refundNumber = refundCase.refund_number;
-        const fileBody = formatRefundFile({
-          refundNumber,
-          status,
+    try {
+      const profile = await buyerProfile(client, req.accountsSub);
+      await notifyRefundGroup(
+        refundRequestedNotice({
+          refundNumber: refundCase.refund_number,
           who: buyerLabel(profile, telegramUserId),
+          telegramUserId,
           carrier,
           login,
-          issue:
-            refundReasonLabel(parsed.reasonCode) +
-            (parsed.note ? " — " + parsed.note : ""),
-          amount: formatUsd(amountUsd),
+          issue: refundReasonLabel(parsed.reasonCode),
+          note: parsed.note,
+          amount: amountUsd,
           screenshotUrl: parsed.screenshotUrl,
-          purchasedAt: formatAlertTime(purchase.created_at),
-          requestedAt: formatAlertTime(refundCase.created_at),
-          telegramUserId,
-        });
-        await sendRefundDocument(
-          Buffer.from(fileBody, "utf-8"),
-          "refund-" + refundNumber + ".txt",
-          "Refund " + refundNumber + " — " + status
-        );
-      } catch (err) {
-        console.error("Telegram refund alert:", err);
-      }
+        })
+      );
+    } catch (err) {
+      console.error("Telegram refund alert:", err);
     }
 
     res.json({ ok: true, status: refundCase.status, id: refundCase.id });

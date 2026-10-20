@@ -1,5 +1,12 @@
 import { getSupabaseAdmin } from "../supabaseAdmin.js";
 import { detailsFromDeposit, fromAddressFromIpn, logUserActivity } from "./activityLog.js";
+import {
+  balanceAddedNotice,
+  groupBalanceAddedNotice,
+  notifyRefundGroup,
+  notifyTelegramUser,
+  telegramDisplayName,
+} from "./telegramBot.js";
 
 export const WALLET_MIN_DEPOSIT_USD = 10;
 
@@ -144,6 +151,36 @@ export async function applyDepositCredit(depositId) {
   } catch (err) {
     console.error("funds_added activity:", err);
   }
+
+  const telegramUserId =
+    deposit.telegram_user_id != null
+      ? deposit.telegram_user_id
+      : await telegramUserIdForOwner(wallet.owner_key);
+  const balance = dollarsFromCents(newBalance);
+  await notifyTelegramUser(telegramUserId, balanceAddedNotice(deposit.amount_usd, balance));
+
+  let who = "";
+  try {
+    if (wallet.owner_key && wallet.owner_key !== "shared") {
+      const { data: profile, error: profileError } = await client
+        .from("access_tokens")
+        .select("telegram_username, telegram_first_name, telegram_last_name")
+        .eq("id", wallet.owner_key)
+        .maybeSingle();
+      if (profileError) throw profileError;
+      who = telegramDisplayName(profile, telegramUserId);
+    }
+  } catch (err) {
+    console.error("deposit profile:", err);
+  }
+  await notifyRefundGroup(
+    groupBalanceAddedNotice({
+      amount: deposit.amount_usd,
+      balance,
+      who,
+      telegramUserId,
+    })
+  );
 
   return { credited: true, addCents };
 }

@@ -35,7 +35,17 @@ export async function sendRefundAlert(text) {
     console.warn("Refund alert skipped: REFUND_GROUP_ID is not set.");
     return null;
   }
-  return await sendTelegramMessage(chatId, text);
+  return await sendTelegramMessage(chatId, text, { parseMode: "HTML", disablePreview: true });
+}
+
+export async function notifyRefundGroup(text) {
+  if (!telegramBotConfigured()) return false;
+  try {
+    return Boolean(await sendRefundAlert(text));
+  } catch (err) {
+    console.error("Telegram refund group:", err.message || err);
+    return false;
+  }
 }
 
 export async function sendRefundDocument(fileBuffer, filename, caption) {
@@ -64,7 +74,7 @@ async function telegramApi(method, body) {
   return data.result;
 }
 
-export async function sendTelegramMessage(chatId, text) {
+export async function sendTelegramMessage(chatId, text, options) {
   if (!botToken()) {
     throw new Error("Telegram bot token is not set.");
   }
@@ -75,10 +85,131 @@ export async function sendTelegramMessage(chatId, text) {
   if (message.length > TELEGRAM_MESSAGE_MAX) {
     throw new Error("Message is too long. Telegram allows 4096 characters.");
   }
-  return await telegramApi("sendMessage", {
+  const opts = options || {};
+  const body = {
     chat_id: chatId,
     text: message,
-  });
+  };
+  if (opts.parseMode) body.parse_mode = opts.parseMode;
+  if (opts.disablePreview) body.disable_web_page_preview = true;
+  return await telegramApi("sendMessage", body);
+}
+
+function escapeTelegramHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function formatNoticeUsd(dollars) {
+  const amount = Math.round((Number(dollars) || 0) * 100) / 100;
+  return "$" + amount.toFixed(2);
+}
+
+function refundLabel(refundNumber) {
+  const n = Number(refundNumber);
+  if (!Number.isFinite(n) || n < 1) return "Refund";
+  return "Refund " + Math.floor(n);
+}
+
+export function telegramDisplayName(profile, telegramUserId) {
+  const username = String((profile && profile.telegram_username) || "").replace(/^@/, "").trim();
+  if (username) return "@" + username;
+  const name = [profile && profile.telegram_first_name, profile && profile.telegram_last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  if (name) return name;
+  return telegramUserId ? "User " + telegramUserId : "A user";
+}
+
+function identityLines(who, telegramUserId) {
+  const lines = [];
+  const name = String(who || "").trim();
+  const id = telegramUserId == null ? "" : String(telegramUserId).trim();
+  if (name) lines.push(escapeTelegramHtml(name));
+  if (id) lines.push("ID " + escapeTelegramHtml(id));
+  return lines;
+}
+
+export function newSignInNotice(parts) {
+  const source = parts || {};
+  return ["👤 <b>New sign in</b>", "", ...identityLines(source.who, source.telegramUserId)].join("\n");
+}
+
+export function groupBalanceAddedNotice(parts) {
+  const source = parts || {};
+  return [
+    "💰 <b>Balance added</b>",
+    "",
+    "+" + formatNoticeUsd(source.amount),
+    ...identityLines(source.who, source.telegramUserId),
+    "Balance · " + formatNoticeUsd(source.balance),
+  ].join("\n");
+}
+
+export function balanceAddedNotice(amount, balance, refundNumber) {
+  const lines = ["💰 <b>Balance added</b>", "", "+" + formatNoticeUsd(amount)];
+  const n = Number(refundNumber);
+  if (Number.isFinite(n) && n >= 1) lines.push(refundLabel(n));
+  lines.push("Balance · " + formatNoticeUsd(balance));
+  return lines.join("\n");
+}
+
+export function refundRequestedNotice(parts) {
+  const source = parts || {};
+  const who = String(source.who || "").trim();
+  const telegramId = source.telegramUserId == null ? "" : String(source.telegramUserId).trim();
+  const carrier = String(source.carrier || "").trim().toUpperCase();
+  const login = String(source.login || "").trim();
+  const where = [carrier, login].filter(Boolean).join(" · ");
+  const issue = String(source.issue || "").trim();
+  const note = String(source.note || "").trim();
+  const lines = [
+    "🧾 <b>Refund requested</b>",
+    "",
+    escapeTelegramHtml(refundLabel(source.refundNumber)),
+  ];
+  if (who) lines.push(escapeTelegramHtml(who));
+  if (telegramId) lines.push("ID " + escapeTelegramHtml(telegramId));
+  if (where) lines.push(escapeTelegramHtml(where));
+  if (issue) lines.push(escapeTelegramHtml(issue));
+  if (note) lines.push(escapeTelegramHtml(note));
+  if (source.amount != null && source.amount !== "") {
+    lines.push(typeof source.amount === "number" ? formatNoticeUsd(source.amount) : escapeTelegramHtml(source.amount));
+  }
+  const shot = String(source.screenshotUrl || "").trim();
+  if (shot) lines.push('<a href="' + escapeTelegramHtml(shot) + '">Screenshot</a>');
+  return lines.join("\n");
+}
+
+export function refundClosedNotice(row) {
+  const source = row || {};
+  const label = refundLabel(source.refundNumber != null ? source.refundNumber : source.refund_number);
+  const carrier = String(source.carrier || "").trim().toUpperCase();
+  const login = String(source.accountLogin || source.account_login || "").trim();
+  const where = [carrier, login].filter(Boolean).join(" · ");
+  const credited = Number(source.refundedUsd != null ? source.refundedUsd : source.refunded_usd);
+  const lines = [];
+  if (credited > 0) {
+    lines.push("💰 <b>Balance added</b>", "", "+" + formatNoticeUsd(credited), "");
+  }
+  lines.push("✅ <b>Refund closed</b>", "", escapeTelegramHtml(label));
+  if (where) lines.push(escapeTelegramHtml(where));
+  return lines.join("\n");
+}
+
+export async function notifyTelegramUser(chatId, text) {
+  if (chatId == null || String(chatId).trim() === "") return false;
+  if (!telegramBotConfigured()) return false;
+  try {
+    await sendTelegramMessage(chatId, text, { parseMode: "HTML", disablePreview: true });
+    return true;
+  } catch (err) {
+    console.error("Telegram user notice:", err.message || err);
+    return false;
+  }
 }
 
 export async function sendTelegramDocument(chatId, fileBuffer, filename, caption) {
