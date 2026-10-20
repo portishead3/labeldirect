@@ -216,11 +216,109 @@
     return true;
   }
 
+  var STATE_NAMES = {
+    al: "Alabama",
+    ak: "Alaska",
+    az: "Arizona",
+    ar: "Arkansas",
+    ca: "California",
+    co: "Colorado",
+    ct: "Connecticut",
+    de: "Delaware",
+    dc: "District of Columbia",
+    fl: "Florida",
+    ga: "Georgia",
+    hi: "Hawaii",
+    id: "Idaho",
+    il: "Illinois",
+    in: "Indiana",
+    ia: "Iowa",
+    ks: "Kansas",
+    ky: "Kentucky",
+    la: "Louisiana",
+    me: "Maine",
+    md: "Maryland",
+    ma: "Massachusetts",
+    mi: "Michigan",
+    mn: "Minnesota",
+    ms: "Mississippi",
+    mo: "Missouri",
+    mt: "Montana",
+    ne: "Nebraska",
+    nv: "Nevada",
+    nh: "New Hampshire",
+    nj: "New Jersey",
+    nm: "New Mexico",
+    ny: "New York",
+    nc: "North Carolina",
+    nd: "North Dakota",
+    oh: "Ohio",
+    ok: "Oklahoma",
+    or: "Oregon",
+    pa: "Pennsylvania",
+    ri: "Rhode Island",
+    sc: "South Carolina",
+    sd: "South Dakota",
+    tn: "Tennessee",
+    tx: "Texas",
+    ut: "Utah",
+    vt: "Vermont",
+    va: "Virginia",
+    wa: "Washington",
+    wv: "West Virginia",
+    wi: "Wisconsin",
+    wy: "Wyoming",
+    ab: "Alberta",
+    bc: "British Columbia",
+    mb: "Manitoba",
+    nb: "New Brunswick",
+    nl: "Newfoundland and Labrador",
+    ns: "Nova Scotia",
+    nt: "Northwest Territories",
+    nu: "Nunavut",
+    on: "Ontario",
+    pe: "Prince Edward Island",
+    qc: "Quebec",
+    sk: "Saskatchewan",
+    yt: "Yukon"
+  };
+
+  var STATE_BY_NAME = {};
+  Object.keys(STATE_NAMES).forEach(function (code) {
+    STATE_BY_NAME[code] = code;
+    STATE_BY_NAME[STATE_NAMES[code].toLowerCase()] = code;
+  });
+
+  function normalizeStateText(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\./g, "")
+      .replace(/\s+/g, " ");
+  }
+
+  function matchesState(row, query) {
+    var q = normalizeStateText(query);
+    if (!q) return true;
+    var raw = normalizeStateText(row && row.state);
+    if (!raw) return false;
+    if (raw.indexOf(q) === 0) return true;
+    var rowCode = STATE_BY_NAME[raw] || raw;
+    var queryCode = STATE_BY_NAME[q];
+    if (queryCode && rowCode === queryCode) return true;
+    if (q.length >= 3) {
+      var name = STATE_NAMES[rowCode];
+      if (name && name.toLowerCase().indexOf(q) !== -1) return true;
+    }
+    return false;
+  }
+
   function applyAccountFilters(rows, filters) {
     var f = filters || {};
     return (rows || []).filter(function (row) {
       return (
         matchesCountry(row, f.country) &&
+        matchesState(row, f.state) &&
         matchesBase(row, f.base) &&
         matchesOutboundBand(row, f.outbound)
       );
@@ -247,6 +345,28 @@
       })
       .map(function (key) {
         return { value: key, label: labels[key] };
+      });
+  }
+
+  function stateOptions(rows) {
+    var seen = {};
+    (rows || []).forEach(function (row) {
+      var text = String((row && row.state) || "").trim();
+      if (!text) return;
+      var key = text.toLowerCase();
+      if (!seen[key]) seen[key] = text;
+    });
+    return Object.keys(seen)
+      .map(function (key) {
+        var value = seen[key];
+        var code = STATE_BY_NAME[normalizeStateText(value)] || "";
+        var name = code ? STATE_NAMES[code] : "";
+        var label =
+          name && name.toLowerCase() !== value.toLowerCase() ? value + " — " + name : value;
+        return { value: value, label: label };
+      })
+      .sort(function (a, b) {
+        return a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
       });
   }
 
@@ -692,6 +812,7 @@
     },
     applyAccountFilters: applyAccountFilters,
     countryOptions: countryOptions,
+    stateOptions: stateOptions,
     baseOptions: baseOptions,
     rowsForCarrier: rowsForCarrier,
     fillFilterSelect: fillFilterSelect,

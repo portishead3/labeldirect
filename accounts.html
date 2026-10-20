@@ -440,6 +440,31 @@
         outline-offset: 2px;
       }
 
+      .accounts-filters__input {
+        width: 100%;
+        background-color: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+      }
+
+      .accounts-filters__input::placeholder {
+        color: var(--text-secondary);
+      }
+
+      .accounts-filters__input:hover {
+        border-color: var(--border-accent);
+      }
+
+      .accounts-filters__input:focus {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 2px;
+      }
+
       .accounts-filters__field--action {
         flex: 0 0 auto;
         max-width: none;
@@ -1639,6 +1664,20 @@
           </div>
         </div>
         <div class="accounts-filters__field">
+          <label class="accounts-filters__label" for="filter-state">State</label>
+          <input
+            type="text"
+            id="filter-state"
+            name="state"
+            class="accounts-filters__input"
+            placeholder="Search state"
+            autocomplete="off"
+            spellcheck="false"
+            list="filter-state-list"
+          >
+          <datalist id="filter-state-list"></datalist>
+        </div>
+        <div class="accounts-filters__field">
           <label class="accounts-filters__label" for="filter-base">Base</label>
           <select id="filter-base" name="base" class="accounts-filters__select">
             <option value="">All bases</option>
@@ -1805,7 +1844,7 @@
   </div>
 
   <script src="config.js"></script>
-  <script src="listings.js?v=account-pages"></script>
+  <script src="listings.js?v=state-search"></script>
   <script>
     if (!ListingsApp.getAccountsSession()) {
       window.location.replace("/login");
@@ -1815,6 +1854,8 @@
     var statusEl = document.getElementById('page-status');
     var logoutBtn = document.getElementById('logout-btn');
     var filtersForm = document.getElementById('accounts-filters');
+    var stateInput = document.getElementById('filter-state');
+    var stateList = document.getElementById('filter-state-list');
     var baseSelect = document.getElementById('filter-base');
     var outboundSelect = document.getElementById('filter-outbound');
     var resetBtn = document.getElementById('filter-reset');
@@ -2001,14 +2042,27 @@
     function currentFilters() {
       return {
         country: countryComboValue,
+        state: stateInput ? stateInput.value : '',
         base: baseSelect ? baseSelect.value : '',
         outbound: outboundSelect ? outboundSelect.value : ''
       };
     }
 
+    function setStateOptions(options) {
+      if (!stateList) return;
+      stateList.textContent = '';
+      (options || []).forEach(function (opt) {
+        var el = document.createElement('option');
+        el.value = opt.value;
+        if (opt.label && opt.label !== opt.value) el.label = opt.label;
+        stateList.appendChild(el);
+      });
+    }
+
     function refreshFilterOptions() {
       var carrierRows = ListingsApp.rowsForCarrier(allRows, activeCarrier());
       setCountryOptions(ListingsApp.countryOptions(carrierRows), countryComboValue);
+      setStateOptions(ListingsApp.stateOptions(carrierRows));
       ListingsApp.fillFilterSelect(
         baseSelect,
         ListingsApp.baseOptions(carrierRows),
@@ -2057,6 +2111,7 @@
 
     function resetFilters() {
       selectCountry('', '');
+      if (stateInput) stateInput.value = '';
       if (baseSelect) baseSelect.value = '';
       if (outboundSelect) outboundSelect.value = '';
       renderFiltered();
@@ -2068,6 +2123,12 @@
       });
       // base + outbound selects still fire change on the form
       filtersForm.addEventListener('change', function () {
+        renderFiltered();
+      });
+    }
+
+    if (stateInput) {
+      stateInput.addEventListener('input', function () {
         renderFiltered();
       });
     }
