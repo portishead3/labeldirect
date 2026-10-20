@@ -11,7 +11,6 @@ import {
 } from "../lib/accountsAccess.js";
 import {
   applyDepositCredit,
-  centsFromDollars,
   dollarsFromCents,
   ensureWallet,
   getWalletByOwnerKey,
@@ -36,6 +35,7 @@ import {
   refundReasonLabel,
   REFUND_WINDOW_MINUTES,
 } from "../lib/refunds.js";
+import { parseLine } from "../lib/parsePaste.js";
 
 export const publicRouter = Router();
 
@@ -282,10 +282,8 @@ publicRouter.post("/webhooks/nowpayments", async (req, res) => {
   }
 });
 
-const ALL_ACCOUNT_COLUMNS =
-  "id,login,country,state,outbound,inbound,card_number,expiry,price,account_status,created_at,updated_at,list_id,sort_order,lists(name)";
-
 const MAX_PURCHASE_ACCOUNTS = 3;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function bracket(value) {
   return "[" + String(value == null ? "" : value) + "]";
@@ -313,9 +311,15 @@ function formatAccountAsPasteLine(acct) {
     "StateOrProvinceCode=" + bracket(acct && acct.state),
     "Outbound=" + bracket(acct && acct.outbound != null ? acct.outbound : 0),
     "Inbound=" + bracket(acct && acct.inbound != null ? acct.inbound : 0),
-    "CreditCardNumber=" + bracket(acct && acct.card_number),
-    "ExpirationDate=" + bracket(acct && acct.expiry),
   ];
+  const address = String((acct && acct.address) || "").trim();
+  const billing = String((acct && acct.billing) || "").trim();
+  if (address) parts.push("Address=" + bracket(address));
+  if (billing) parts.push("Billing=" + bracket(billing));
+  parts.push(
+    "CreditCardNumber=" + bracket(acct && acct.card_number),
+    "ExpirationDate=" + bracket(acct && acct.expiry)
+  );
   if (acct && acct.account_status) {
     parts.push("AccountStatus=" + bracket(acct.account_status));
   }
@@ -357,60 +361,43 @@ publicRouter.post("/accounts/purchase", requireWalletAccess, async (req, res) =>
       return;
     }
 
-    const client = getSupabaseAdmin();
-
-    const { data: accounts, error: acctError } = await client
-      .from("accounts")
-      .select(ALL_ACCOUNT_COLUMNS)
-      .in("id", uniqueIds);
-    if (acctError) throw acctError;
-
-    if (!accounts || accounts.length !== uniqueIds.length) {
+    if (!uniqueIds.every((id) => UUID_RE.test(id))) {
       res.status(400).json({ error: "One or more accounts are no longer available." });
       return;
     }
 
-    const accountsWithVendor = accounts.map((row) => {
-      const vendor = row.lists && row.lists.name ? row.lists.name : "";
-      const { lists, ...rest } = row;
-      const carrier = resolveCarrier({ ...rest, vendor }, carriersMap);
-      return { ...rest, vendor, carrier };
-    });
-
-    const totalDollars = accountsWithVendor.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
-    const totalCents = centsFromDollars(totalDollars);
-
-    const wallet = await getWalletByOwnerKey(req.accountsSub);
-    if (!wallet || wallet.balance_cents < totalCents) {
-      res.status(400).json({ error: "Insufficient balance.", required: totalDollars });
-      return;
-    }
-
-    const newBalanceCents = Number(wallet.balance_cents) - totalCents;
-    const now = new Date().toISOString();
-
-    const { error: balanceError } = await client
-      .from("wallets")
-      .update({ balance_cents: newBalanceCents, updated_at: now })
-      .eq("id", wallet.id);
-    if (balanceError) throw balanceError;
-
+    const client = getSupabaseAdmin();
     const telegramUserId = await telegramUserIdForOwner(req.accountsSub);
 
-    const { error: purchaseError } = await client.from("purchases").insert({
-      owner_key: req.accountsSub,
-      telegram_user_id: telegramUserId,
-      account_data: accountsWithVendor,
-      total_usd: totalDollars,
+    // Balance check, debit, purchase record and account removal happen in ONE
+    // database transaction with row locks, so parallel requests cannot spend the
+    // same balance twice or buy the same account twice.
+    const { data: purchase, error: purchaseError } = await client.rpc("purchase_accounts", {
+      p_owner_key: req.accountsSub,
+      p_ids: uniqueIds,
+      p_telegram_user_id: telegramUserId,
+      p_carriers: carriersMap,
     });
-    if (purchaseError) throw purchaseError;
+    if (purchaseError) {
+      const text = String(purchaseError.message || "");
+      if (text.includes("insufficient_balance")) {
+        res.status(400).json({
+          error: "Insufficient balance.",
+          required: Number(purchaseError.details) || 0,
+        });
+        return;
+      }
+      if (text.includes("accounts_unavailable")) {
+        res.status(400).json({ error: "One or more accounts are no longer available." });
+        return;
+      }
+      throw purchaseError;
+    }
 
+    const accountsWithVendor = Array.isArray(purchase.account_data) ? purchase.account_data : [];
+    const totalDollars = Number(purchase.total_usd) || 0;
+    const newBalanceCents = Number(purchase.balance_cents) || 0;
     const deleteIds = accountsWithVendor.map((a) => a.id);
-    const { error: deleteError } = await client
-      .from("accounts")
-      .delete()
-      .in("id", deleteIds);
-    if (deleteError) throw deleteError;
 
     try {
       await logUserActivity({
@@ -468,7 +455,9 @@ async function fetchOwnerPurchases(client, ownerKey) {
 async function fetchOwnerRefundCases(client, ownerKey) {
   const { data, error } = await client
     .from("refund_cases")
-    .select("id, purchase_id, account_login, reason_code, reason_note, status, created_at")
+    .select(
+      "id, purchase_id, account_login, reason_code, reason_note, screenshot_url, status, refund_number, created_at"
+    )
     .eq("owner_key", ownerKey);
   if (error) throw error;
   return data || [];
@@ -476,6 +465,24 @@ async function fetchOwnerRefundCases(client, ownerKey) {
 
 function refundCaseKey(purchaseId, login) {
   return String(purchaseId) + "::" + String(login || "").trim().toLowerCase();
+}
+
+function textField(acct, key) {
+  if (!acct || acct[key] == null) return "";
+  return String(acct[key]);
+}
+
+function lineForLogin(content, login) {
+  const wanted = String(login || "").trim().toLowerCase();
+  if (!wanted) return "";
+  const lines = String(content || "").split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const head = line.split("|")[0].trim().toLowerCase();
+    if (head === wanted) return line;
+  }
+  return "";
 }
 
 function orderRowsFromPurchases(purchases, refundCases) {
@@ -495,21 +502,79 @@ function orderRowsFromPurchases(purchases, refundCases) {
         purchase_id: purchase.id,
         account_id: acct && acct.id != null ? String(acct.id) : null,
         login,
-        card_number: acct && acct.card_number != null ? String(acct.card_number) : "",
-        expiry: acct && acct.expiry != null ? String(acct.expiry) : "",
+        card_number: textField(acct, "card_number"),
+        expiry: textField(acct, "expiry"),
         carrier: resolveCarrier(acct, null),
-        vendor: acct && acct.vendor != null ? String(acct.vendor) : "",
-        country: acct && acct.country != null ? String(acct.country) : "",
+        vendor: textField(acct, "vendor"),
+        country: textField(acct, "country"),
+        state: textField(acct, "state"),
+        outbound: acct && acct.outbound != null ? Number(acct.outbound) || 0 : 0,
+        inbound: acct && acct.inbound != null ? Number(acct.inbound) || 0 : 0,
+        address: textField(acct, "address"),
+        billing: textField(acct, "billing"),
+        account_status: textField(acct, "account_status"),
         price: acct && acct.price != null ? Number(acct.price) || 0 : 0,
         purchased_at: purchase.created_at,
+        account_created_at: textField(acct, "created_at"),
+        account_updated_at: textField(acct, "updated_at"),
+        list_id: acct && acct.list_id != null ? String(acct.list_id) : "",
+        purchase_total: Number(purchase.total_usd) || 0,
+        purchase_count: accounts.length,
         refund_deadline: deadline ? deadline.toISOString() : null,
         refund_open: isRefundWindowOpen(purchase.created_at),
         refund_status: existing ? existing.status : null,
         refund_reason: existing ? refundReasonLabel(existing.reason_code) : null,
+        refund_note: existing && existing.reason_note ? String(existing.reason_note) : "",
+        refund_screenshot: existing && existing.screenshot_url ? String(existing.screenshot_url) : "",
+        refund_number: existing && existing.refund_number != null ? existing.refund_number : null,
       });
     });
   });
   return rows;
+}
+
+async function attachAccountDetails(client, rows) {
+  const listIds = [];
+  const seen = Object.create(null);
+  rows.forEach((row) => {
+    if (!row.list_id || seen[row.list_id]) return;
+    seen[row.list_id] = true;
+    listIds.push(row.list_id);
+  });
+
+  const listsById = Object.create(null);
+  if (listIds.length) {
+    const { data, error } = await client.from("lists").select("id, name, content").in("id", listIds);
+    if (error) {
+      console.error("order list lookup:", error);
+    } else {
+      (data || []).forEach((list) => {
+        listsById[list.id] = list;
+      });
+    }
+  }
+
+  return rows.map((row) => {
+    const list = row.list_id ? listsById[row.list_id] : null;
+    const source = list ? lineForLogin(list.content, row.login) : "";
+    const parsed = source ? parseLine(source) : null;
+    const address = row.address || (parsed && parsed.address) || "";
+    const billing = row.billing || (parsed && parsed.billing) || "";
+    const state = row.state || (parsed && parsed.state) || "";
+    const country = row.country || (parsed && parsed.country) || "";
+    const vendor = row.vendor || (list && list.name) || "";
+    const next = {
+      ...row,
+      address,
+      billing,
+      state,
+      country,
+      vendor,
+      data: source || formatAccountAsPasteLine({ ...row, address, billing, state, country }),
+    };
+    delete next.list_id;
+    return next;
+  });
 }
 
 publicRouter.get("/orders", requireWalletAccess, async (req, res) => {
@@ -521,7 +586,7 @@ publicRouter.get("/orders", requireWalletAccess, async (req, res) => {
       : [];
     res.json({
       refundWindowMinutes: REFUND_WINDOW_MINUTES,
-      orders: orderRowsFromPurchases(purchases, refundCases),
+      orders: await attachAccountDetails(client, orderRowsFromPurchases(purchases, refundCases)),
     });
   } catch (err) {
     console.error("GET /api/orders:", err);

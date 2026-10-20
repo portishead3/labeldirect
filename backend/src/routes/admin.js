@@ -9,6 +9,7 @@ import {
   balanceAddedNotice,
   notifyTelegramUser,
   refundClosedNotice,
+  refundClosedReasonNotice,
   sendTelegramMessage,
   telegramBotConfigured,
   TELEGRAM_MESSAGE_MAX,
@@ -523,7 +524,11 @@ adminRouter.post("/refunds/:id/review", async (req, res) => {
       refundCase.telegram_user_id != null
         ? refundCase.telegram_user_id
         : await telegramUserIdForOwner(refundCase.owner_key);
-    const notified = await notifyTelegramUser(telegramUserId, refundClosedNotice(refundCase));
+    const body = req.body || {};
+    const reason = String(body.reason || "").trim().slice(0, 500);
+    const skipNotice = body.notify === false;
+    const notice = reason ? refundClosedReasonNotice(reason) : refundClosedNotice(refundCase);
+    const notified = skipNotice ? false : await notifyTelegramUser(telegramUserId, notice);
     res.json({
       ok: true,
       status: "reviewed",

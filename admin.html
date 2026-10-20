@@ -406,13 +406,6 @@
         font-size: 0.78rem;
       }
 
-      .refunds-split {
-        display: grid;
-        gap: 28px;
-        margin-top: 8px;
-      }
-
-      .refunds-column h3,
       .refund-case-block h3 {
         font-size: 0.78rem;
         font-weight: 700;
@@ -676,6 +669,38 @@
         margin-top: 40px;
       }
 
+      .close-refund-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 12px 0 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--text-primary);
+      }
+
+      .close-refund-option input {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        accent-color: var(--accent);
+      }
+
+      #close-refund-reason {
+        min-height: 72px;
+        margin-top: 4px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      .close-refund-preview {
+        margin: 0 0 8px 28px;
+        font-size: 0.88rem;
+      }
+
       .dialog .btn--danger {
         padding: 10px 16px;
         font-size: 0.78rem;
@@ -873,6 +898,7 @@
             <span class="admin-nav__badge" id="refunds-badge" aria-hidden="true" hidden>0</span>
             <span class="visually-hidden" id="refunds-badge-label"></span>
           </button>
+          <button type="button" class="admin-nav__btn" data-admin-view="resolved">Resolved</button>
         </nav>
       </aside>
 
@@ -994,53 +1020,54 @@
       <section class="card" data-view-panel="refunds" hidden>
         <div id="refunds-board">
           <h2>Refunds</h2>
-          <p class="muted">Open cases stay under Open. Closing a case moves it to Resolved.</p>
-          <div class="refunds-split">
-            <div class="refunds-column">
-              <h3>Open</h3>
-              <div class="refund-bulk-bar" id="refunds-bulk-bar" hidden>
-                <button type="button" class="btn btn--ghost btn--compact" id="refunds-select-toggle">Select</button>
-                <button type="button" class="btn btn--danger" id="refunds-close-selected" hidden disabled>Close selected</button>
-                <p class="muted" id="refunds-selected-count" hidden></p>
-              </div>
-              <p class="empty" id="refunds-open-empty">No open refunds.</p>
-              <div class="table-wrap" id="refunds-open-wrap" hidden>
-                <table class="refunds-table refunds-table--select" id="refunds-open-table">
-                  <thead>
-                    <tr>
-                      <th id="refunds-check-th" hidden><input type="checkbox" class="refund-check" id="refunds-select-all" aria-label="Select all open refunds"></th>
-                      <th>Refund</th>
-                      <th>When</th>
-                      <th>User</th>
-                      <th>Account</th>
-                      <th>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody id="refunds-open-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-            <div class="refunds-column">
-              <h3>Resolved</h3>
-              <p class="empty" id="refunds-resolved-empty">No resolved refunds.</p>
-              <div class="table-wrap" id="refunds-resolved-wrap" hidden>
-                <table class="refunds-table">
-                  <thead>
-                    <tr>
-                      <th>Refund</th>
-                      <th>When</th>
-                      <th>User</th>
-                      <th>Account</th>
-                      <th>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody id="refunds-resolved-tbody"></tbody>
-                </table>
-              </div>
-            </div>
+          <p class="muted">Open cases. Closing a case moves it to Resolved.</p>
+          <div class="refund-bulk-bar" id="refunds-bulk-bar" hidden>
+            <button type="button" class="btn btn--ghost btn--compact" id="refunds-select-toggle">Select</button>
+            <button type="button" class="btn btn--danger" id="refunds-close-selected" hidden disabled>Close selected</button>
+            <p class="muted" id="refunds-selected-count" hidden></p>
+          </div>
+          <p class="empty" id="refunds-open-empty">No open refunds.</p>
+          <div class="table-wrap" id="refunds-open-wrap" hidden>
+            <table class="refunds-table refunds-table--select" id="refunds-open-table">
+              <thead>
+                <tr>
+                  <th id="refunds-check-th" hidden><input type="checkbox" class="refund-check" id="refunds-select-all" aria-label="Select all open refunds"></th>
+                  <th>Refund</th>
+                  <th>When</th>
+                  <th>User</th>
+                  <th>Account</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="refunds-open-tbody"></tbody>
+            </table>
           </div>
         </div>
-        <div id="refund-case" hidden>
+      </section>
+
+      <section class="card" data-view-panel="resolved" hidden>
+        <div id="refunds-resolved-board">
+          <h2>Resolved</h2>
+          <p class="muted">Closed refunds. Click a row to open the case.</p>
+          <p class="empty" id="refunds-resolved-empty">No resolved refunds.</p>
+          <div class="table-wrap" id="refunds-resolved-wrap" hidden>
+            <table class="refunds-table">
+              <thead>
+                <tr>
+                  <th>Refund</th>
+                  <th>Resolved</th>
+                  <th>User</th>
+                  <th>Account</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="refunds-resolved-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="refund-case" hidden>
           <div class="toolbar user-activity-toolbar refund-case-toolbar">
             <button class="btn btn--ghost" type="button" id="refund-case-back">Back</button>
             <button class="btn" type="button" id="refund-case-credit">Add balance</button>
@@ -1080,7 +1107,6 @@
               </table>
             </div>
           </div>
-        </div>
       </section>
       </div>
     </section>
@@ -1196,6 +1222,34 @@
     </div>
   </div>
 
+  <div class="dialog-backdrop" id="close-refund-dialog" hidden>
+    <div class="dialog dialog--confirm" role="dialog" aria-modal="true" aria-labelledby="close-refund-title">
+      <div class="dialog__header">
+        <h2 id="close-refund-title">Close refund</h2>
+        <button type="button" class="dialog__close" id="close-refund-dismiss" aria-label="Close">&times;</button>
+      </div>
+      <p class="muted" id="close-refund-copy"></p>
+      <p id="close-refund-status" class="status" hidden role="alert"></p>
+      <label class="close-refund-option">
+        <input type="radio" name="close-refund-mode" value="reason" checked>
+        <span>Add a reason</span>
+      </label>
+      <p class="muted close-refund-preview" id="close-refund-reason-help">The bot messages the buyer: refund closed reason: and the reason you type.</p>
+      <textarea id="close-refund-reason" rows="3" placeholder="Reason"></textarea>
+      <div id="close-refund-telegram-option">
+        <label class="close-refund-option">
+          <input type="radio" name="close-refund-mode" value="telegram">
+          <span>Message on Telegram</span>
+        </label>
+        <p class="muted close-refund-preview" id="close-refund-telegram-preview"></p>
+      </div>
+      <div class="toolbar">
+        <button class="btn" type="button" id="close-refund-proceed">Proceed</button>
+        <button class="btn btn--ghost" type="button" id="close-refund-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="dialog-backdrop" id="confirm-dialog" hidden>
     <div class="dialog dialog--confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
       <div class="dialog__header">
@@ -1233,6 +1287,16 @@
     var notifyStatusEl = document.getElementById("notify-status");
     var notifyAllBtn = document.getElementById("open-notify-all");
     var notifyTarget = null;
+    var closeRefundDialog = document.getElementById("close-refund-dialog");
+    var closeRefundTitle = document.getElementById("close-refund-title");
+    var closeRefundCopy = document.getElementById("close-refund-copy");
+    var closeRefundStatus = document.getElementById("close-refund-status");
+    var closeRefundReason = document.getElementById("close-refund-reason");
+    var closeRefundReasonHelp = document.getElementById("close-refund-reason-help");
+    var closeRefundTelegramOption = document.getElementById("close-refund-telegram-option");
+    var closeRefundTelegramPreview = document.getElementById("close-refund-telegram-preview");
+    var closeRefundResolve = null;
+    var closeRefundRows = [];
     var confirmDialog = document.getElementById("confirm-dialog");
     var confirmTitle = document.getElementById("confirm-dialog-title");
     var confirmMessage = document.getElementById("confirm-dialog-message");
@@ -1283,7 +1347,6 @@
     var refundsNavBtn = document.getElementById("refunds-nav-btn");
     var refundsBadge = document.getElementById("refunds-badge");
     var refundsBadgeLabel = document.getElementById("refunds-badge-label");
-    var refundsBoard = document.getElementById("refunds-board");
     var refundsOpenEmpty = document.getElementById("refunds-open-empty");
     var refundsOpenWrap = document.getElementById("refunds-open-wrap");
     var refundsOpenTbody = document.getElementById("refunds-open-tbody");
@@ -1392,10 +1455,18 @@
       };
     }
 
+    var refundCaseFrom = "refunds";
+
     function showRefundBoard() {
       if (refundCase) refundCase.hidden = true;
-      if (refundsBoard) refundsBoard.hidden = false;
       openRefundCase = null;
+      var name = refundCaseFrom === "resolved" ? "resolved" : "refunds";
+      document.querySelectorAll("[data-view-panel]").forEach(function (panel) {
+        panel.hidden = panel.getAttribute("data-view-panel") !== name;
+      });
+      document.querySelectorAll("[data-admin-view]").forEach(function (btn) {
+        btn.classList.toggle("is-active", btn.getAttribute("data-admin-view") === name);
+      });
     }
 
     var refundSelectMode = false;
@@ -1447,47 +1518,130 @@
       updateRefundSelectionUi();
     }
 
-    function closeSelectedRefunds() {
-      var ids = selectedRefundIds();
-      if (!ids.length) return;
-      var count = ids.length;
-      askToDelete(
-        "Close refunds",
-        "Close " + count + " refund" + (count === 1 ? "" : "s") +
-          "? They will move to Resolved. This does not change any balances.",
-        "Close " + count
-      ).then(function (ok) {
-        if (!ok) return;
-        refundsCloseSelected.disabled = true;
-        var done = 0;
-        var failed = 0;
-        var notified = 0;
-        var lastError = "";
-        note("Closing " + count + " refund" + (count === 1 ? "" : "s") + "…");
-        ids.reduce(function (chain, id) {
-          return chain.then(function () {
-            return ListingsApp.adminRequest(
-              accessToken,
-              "/api/admin/refunds/" + encodeURIComponent(id) + "/review",
-              { method: "POST" }
-            ).then(function (result) {
-              done += 1;
-              if (result && result.notified) notified += 1;
-            }).catch(function (err) {
-              failed += 1;
-              lastError = (err && err.message) || "";
-            });
-          });
-        }, Promise.resolve()).then(function () {
-          refundSelected = {};
-          refundSelectMode = false;
-          var msg = "Closed " + done + " refund" + (done === 1 ? "" : "s") + ".";
-          if (notified) msg += " " + notified + " buyer" + (notified === 1 ? "" : "s") + " notified.";
-          if (failed) msg += " " + failed + " could not be closed" + (lastError ? " (" + lastError + ")" : "") + ".";
-          note(msg, failed ? "error" : "ok");
-          return refreshRefunds().catch(function () {});
-        });
+    function selectedRefundRows() {
+      return openRefundRows.filter(function (row) { return refundSelected[row.id]; });
+    }
+
+    function refundOrderLabel(row) {
+      var login = String((row && (row.account_login || row.account_username)) || "").trim();
+      return login || refundNumberLabel(row);
+    }
+
+    function telegramDraftForRefund(row) {
+      return "you requested refund for the order " + refundOrderLabel(row);
+    }
+
+    function telegramChatUrl(row, text) {
+      var username = String((row && row.telegram_username) || "").replace(/^@/, "").trim();
+      if (!/^[A-Za-z0-9_]{5,32}$/.test(username)) return "";
+      return "https://t.me/" + username + "?text=" + encodeURIComponent(text);
+    }
+
+    function closeRefundMode() {
+      var picked = document.querySelector('input[name="close-refund-mode"]:checked');
+      return picked ? picked.value : "reason";
+    }
+
+    function syncCloseRefundMode() {
+      var reasonMode = closeRefundMode() !== "telegram";
+      closeRefundReason.hidden = !reasonMode;
+      closeRefundReasonHelp.hidden = !reasonMode;
+      closeRefundTelegramPreview.hidden = reasonMode;
+    }
+
+    function setCloseRefundStatus(message) {
+      closeRefundStatus.hidden = !message;
+      closeRefundStatus.textContent = message || "";
+      closeRefundStatus.className = message ? "status is-error" : "status";
+    }
+
+    function finishCloseRefundDialog(result) {
+      closeRefundDialog.hidden = true;
+      var resolve = closeRefundResolve;
+      closeRefundResolve = null;
+      closeRefundRows = [];
+      if (resolve) resolve(result);
+    }
+
+    function askCloseRefund(rows) {
+      if (closeRefundResolve) finishCloseRefundDialog(null);
+      closeRefundRows = rows.slice();
+      var count = closeRefundRows.length;
+      var single = count === 1 ? closeRefundRows[0] : null;
+      closeRefundTitle.textContent = count === 1 ? "Close refund" : "Close " + count + " refunds";
+      closeRefundCopy.textContent = count === 1
+        ? "Close " + refundNumberLabel(single) + "? It will move to Resolved. This does not change the balance."
+        : "Close " + count + " refunds? They will move to Resolved. This does not change any balances.";
+      closeRefundReason.value = "";
+      setCloseRefundStatus("");
+      var reasonRadio = document.querySelector('input[name="close-refund-mode"][value="reason"]');
+      if (reasonRadio) reasonRadio.checked = true;
+      var draft = single ? telegramDraftForRefund(single) : "";
+      var chatUrl = single ? telegramChatUrl(single, draft) : "";
+      closeRefundTelegramOption.hidden = !single;
+      closeRefundTelegramPreview.textContent = chatUrl
+        ? "Opens their Telegram chat with: " + draft
+        : "This buyer has no Telegram username, so the chat cannot be opened with a message.";
+      var telegramRadio = document.querySelector('input[name="close-refund-mode"][value="telegram"]');
+      if (telegramRadio) telegramRadio.disabled = !chatUrl;
+      syncCloseRefundMode();
+      closeRefundDialog.hidden = false;
+      closeRefundReason.focus();
+      return new Promise(function (resolve) {
+        closeRefundResolve = resolve;
       });
+    }
+
+    function postRefundReview(row, body) {
+      return ListingsApp.adminRequest(
+        accessToken,
+        "/api/admin/refunds/" + encodeURIComponent(row.id) + "/review",
+        { method: "POST", body: body }
+      );
+    }
+
+    function runCloseRefunds(rows, choice) {
+      var count = rows.length;
+      var done = 0;
+      var failed = 0;
+      var notified = 0;
+      var lastError = "";
+      var body = choice.mode === "telegram" ? { notify: false } : { reason: choice.reason };
+      if (refundsCloseSelected) refundsCloseSelected.disabled = true;
+      note("Closing " + count + " refund" + (count === 1 ? "" : "s") + "…");
+      return rows.reduce(function (chain, row) {
+        return chain.then(function () {
+          return postRefundReview(row, body).then(function (result) {
+            done += 1;
+            if (result && result.notified) notified += 1;
+          }).catch(function (err) {
+            failed += 1;
+            lastError = (err && err.message) || "";
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        refundSelected = {};
+        refundSelectMode = false;
+        var msg = "Closed " + done + " refund" + (done === 1 ? "" : "s") + ".";
+        if (choice.mode === "telegram" && done > 0) msg += " Telegram chat opened.";
+        else if (notified) msg += " " + notified + " buyer" + (notified === 1 ? "" : "s") + " notified.";
+        if (failed) msg += " " + failed + " could not be closed" + (lastError ? " (" + lastError + ")" : "") + ".";
+        note(msg, failed ? "error" : "ok");
+        if (rows.length === 1 && openRefundCase && openRefundCase.id === rows[0].id) showRefundBoard();
+        return refreshRefunds().catch(function () {});
+      });
+    }
+
+    function beginCloseRefunds(rows) {
+      if (!rows.length) return;
+      askCloseRefund(rows).then(function (choice) {
+        if (!choice) return;
+        return runCloseRefunds(rows, choice);
+      });
+    }
+
+    function closeSelectedRefunds() {
+      beginCloseRefunds(selectedRefundRows());
     }
 
     refundsSelectToggle.addEventListener("click", function () {
@@ -1555,7 +1709,9 @@
         number.textContent = refundNumberLabel(row);
         tr.appendChild(number);
         var when = document.createElement("td");
-        when.textContent = formatTime(row.created_at);
+        when.textContent = formatTime(
+          selectable ? row.created_at : (row.resolved_at || row.created_at)
+        );
         tr.appendChild(when);
         var who = document.createElement("td");
         var buyer = buyerFromRefund(row);
@@ -1646,32 +1802,8 @@
     }
 
     function markRefundReviewed(row) {
-      var label = refundNumberLabel(row);
-      askToDelete(
-        "Close refund",
-        "Close " + label + "? It will move to Resolved. This does not change the buyer’s balance.",
-        "Close refund"
-      ).then(function (ok) {
-        if (!ok) return;
-        note("Closing " + label + "…");
-        ListingsApp.adminRequest(
-          accessToken,
-          "/api/admin/refunds/" + encodeURIComponent(row.id) + "/review",
-          { method: "POST" }
-        )
-          .then(function (result) {
-            note(
-              "Closed " + label + ". It is now under Resolved." +
-              (result && result.notified ? " Buyer notified." : ""),
-              "ok"
-            );
-            showRefundBoard();
-            return refreshRefunds();
-          })
-          .catch(function (err) {
-            note(err.message || "Could not close this refund.", "error");
-          });
-      });
+      if (!row || !row.id) return;
+      beginCloseRefunds([row]);
     }
 
     function refundMetaRow(label, value) {
@@ -1696,7 +1828,12 @@
     function paintRefundCase(row) {
       if (!row) return;
       openRefundCase = row;
-      refundsBoard.hidden = true;
+      var resolvedPanel = document.querySelector('[data-view-panel="resolved"]');
+      if (resolvedPanel && !resolvedPanel.hidden) refundCaseFrom = "resolved";
+      else if (!refundCase || refundCase.hidden) refundCaseFrom = "refunds";
+      document.querySelectorAll("[data-view-panel]").forEach(function (panel) {
+        panel.hidden = true;
+      });
       refundCase.hidden = false;
       var pending = row.status === "pending";
       refundCaseTitle.textContent = refundNumberLabel(row);
@@ -1781,7 +1918,7 @@
       openUserActivity(buyer);
     }
 
-    var ADMIN_VIEWS = { add: true, notify: true, users: true, purchases: true, refunds: true };
+    var ADMIN_VIEWS = { add: true, notify: true, users: true, purchases: true, refunds: true, resolved: true };
 
     function viewFromLocation() {
       var name = String(location.hash || "").replace(/^#/, "");
@@ -1817,8 +1954,16 @@
           note(err.message || "Could not load purchases.", "error");
         });
       }
-      if (name === "refunds") {
-        if (!opts.keepCase) showRefundBoard();
+      if (!opts.keepCase && refundCase && !refundCase.hidden && name !== "refunds" && name !== "resolved") {
+        refundCase.hidden = true;
+        openRefundCase = null;
+      }
+      if (name === "refunds" || name === "resolved") {
+        refundCaseFrom = name;
+        if (!opts.keepCase && refundCase) {
+          refundCase.hidden = true;
+          openRefundCase = null;
+        }
         refreshRefunds().catch(function (err) {
           note(err.message || "Could not load refunds.", "error");
         });
@@ -1834,6 +1979,7 @@
       closeCreditDialog();
       closeConfirmDialog(false);
       showUserDirectory();
+      if (closeRefundResolve) finishCloseRefundDialog(null);
       showRefundBoard();
       setRefundBadge(0);
       pendingAnnounce = {};
@@ -2630,6 +2776,42 @@
       pasteDialog.addEventListener("click", function (event) {
         if (event.target === pasteDialog) closePasteDialog();
       });
+      document.getElementById("close-refund-proceed").addEventListener("click", function () {
+        var mode = closeRefundMode();
+        if (mode === "reason") {
+          var reason = closeRefundReason.value.trim();
+          if (!reason) {
+            setCloseRefundStatus("Type a reason to send.");
+            closeRefundReason.focus();
+            return;
+          }
+          finishCloseRefundDialog({ mode: "reason", reason: reason });
+          return;
+        }
+        var row = closeRefundRows[0];
+        var url = row ? telegramChatUrl(row, telegramDraftForRefund(row)) : "";
+        if (!url) {
+          setCloseRefundStatus("This buyer has no Telegram username.");
+          return;
+        }
+        window.open(url, "_blank", "noopener,noreferrer");
+        finishCloseRefundDialog({ mode: "telegram", reason: "" });
+      });
+      document.getElementById("close-refund-cancel").addEventListener("click", function () {
+        finishCloseRefundDialog(null);
+      });
+      document.getElementById("close-refund-dismiss").addEventListener("click", function () {
+        finishCloseRefundDialog(null);
+      });
+      closeRefundDialog.addEventListener("click", function (event) {
+        if (event.target === closeRefundDialog) finishCloseRefundDialog(null);
+      });
+      document.querySelectorAll('input[name="close-refund-mode"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          setCloseRefundStatus("");
+          syncCloseRefundMode();
+        });
+      });
       document.getElementById("confirm-ok").addEventListener("click", function () {
         closeConfirmDialog(true);
       });
@@ -2644,6 +2826,10 @@
       });
       document.addEventListener("keydown", function (event) {
         if (event.key !== "Escape") return;
+        if (closeRefundDialog && !closeRefundDialog.hidden) {
+          finishCloseRefundDialog(null);
+          return;
+        }
         if (!confirmDialog.hidden) {
           closeConfirmDialog(false);
           return;
@@ -2664,8 +2850,7 @@
           closePasteDialog();
           return;
         }
-        var refundsPanel = document.querySelector('[data-view-panel="refunds"]');
-        if (refundsPanel && !refundsPanel.hidden && refundCase && !refundCase.hidden) {
+        if (refundCase && !refundCase.hidden) {
           showRefundBoard();
           return;
         }

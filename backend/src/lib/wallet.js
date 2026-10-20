@@ -98,45 +98,26 @@ export function shouldCreditDeposit(paymentStatus) {
 
 export async function applyDepositCredit(depositId) {
   const client = getSupabaseAdmin();
+
+  // Locks the deposit row, credits the wallet and marks it credited in one
+  // transaction: a repeated/parallel webhook can never credit twice, and a
+  // failure cannot leave the deposit marked credited without the funds added.
+  const { data: result, error: creditError } = await client.rpc("apply_deposit_credit", {
+    p_deposit_id: depositId,
+  });
+  if (creditError) throw creditError;
+  if (!result || !result.credited) return { credited: false };
+
+  const addCents = Number(result.add_cents) || 0;
+  const now = new Date().toISOString();
+
   const { data: deposit, error: depError } = await client
     .from("deposits")
-    .select("id, wallet_id, amount_usd, credited_at, payment_status, telegram_user_id, order_id, raw_ipn")
+    .select("id, amount_usd, telegram_user_id, order_id, raw_ipn")
     .eq("id", depositId)
     .maybeSingle();
   if (depError) throw depError;
-  if (!deposit || deposit.credited_at) return { credited: false };
-
-  if (!shouldCreditDeposit(deposit.payment_status)) {
-    return { credited: false };
-  }
-
-  const addCents = centsFromDollars(deposit.amount_usd);
-  const now = new Date().toISOString();
-
-  const { data: wallet, error: walletError } = await client
-    .from("wallets")
-    .select("owner_key, balance_cents")
-    .eq("id", deposit.wallet_id)
-    .single();
-  if (walletError) throw walletError;
-
-  const newBalance = Number(wallet.balance_cents) + addCents;
-
-  const { data: marked, error: markError } = await client
-    .from("deposits")
-    .update({ credited_at: now, updated_at: now })
-    .eq("id", depositId)
-    .is("credited_at", null)
-    .select("id")
-    .maybeSingle();
-  if (markError) throw markError;
-  if (!marked) return { credited: false };
-
-  const { error: balanceError } = await client
-    .from("wallets")
-    .update({ balance_cents: newBalance, updated_at: now })
-    .eq("id", deposit.wallet_id);
-  if (balanceError) throw balanceError;
+  const wallet = { owner_key: result.owner_key };
 
   try {
     await logUserActivity({
@@ -156,7 +137,7 @@ export async function applyDepositCredit(depositId) {
     deposit.telegram_user_id != null
       ? deposit.telegram_user_id
       : await telegramUserIdForOwner(wallet.owner_key);
-  const balance = dollarsFromCents(newBalance);
+  const balance = dollarsFromCents(result.balance_cents);
   await notifyTelegramUser(telegramUserId, balanceAddedNotice(deposit.amount_usd, balance));
 
   let who = "";
@@ -200,12 +181,12 @@ export async function creditWalletManually(ownerKey, dollars, options) {
   const telegramUserId = await telegramUserIdForOwner(key);
   const addCents = centsFromDollars(parsed.dollars);
   const now = new Date().toISOString();
-  const newBalance = Number(wallet.balance_cents) + addCents;
 
-  const { error: balanceError } = await getSupabaseAdmin()
-    .from("wallets")
-    .update({ balance_cents: newBalance, updated_at: now })
-    .eq("id", wallet.id);
+  // Atomic increment in the database (no read-modify-write race).
+  const { data: newBalance, error: balanceError } = await getSupabaseAdmin().rpc("wallet_adjust", {
+    p_wallet_id: wallet.id,
+    p_delta_cents: addCents,
+  });
   if (balanceError) throw balanceError;
 
   try {
@@ -242,26 +223,21 @@ export async function debitWalletManually(ownerKey, dollars, options) {
   const telegramUserId = await telegramUserIdForOwner(key);
   const subCents = centsFromDollars(parsed.dollars);
   const now = new Date().toISOString();
-  const current = Number(wallet.balance_cents) || 0;
-  if (subCents > current) {
-    const err = new Error("That amount is more than the current balance.");
-    err.status = 400;
-    throw err;
-  }
 
-  const { data: updated, error: balanceError } = await getSupabaseAdmin()
-    .from("wallets")
-    .update({ balance_cents: current - subCents, updated_at: now })
-    .eq("id", wallet.id)
-    .gte("balance_cents", subCents)
-    .select("balance_cents")
-    .maybeSingle();
-  if (balanceError) throw balanceError;
-  if (!updated) {
-    const err = new Error("That amount is more than the current balance.");
-    err.status = 400;
-    throw err;
+  // Atomic decrement; the wallets balance check rejects anything below zero.
+  const { data: newBalanceCents, error: balanceError } = await getSupabaseAdmin().rpc("wallet_adjust", {
+    p_wallet_id: wallet.id,
+    p_delta_cents: -subCents,
+  });
+  if (balanceError) {
+    if (balanceError.code === "23514" || /balance_cents_check/i.test(String(balanceError.message))) {
+      const err = new Error("That amount is more than the current balance.");
+      err.status = 400;
+      throw err;
+    }
+    throw balanceError;
   }
+  const updated = { balance_cents: newBalanceCents };
 
   try {
     await logUserActivity({

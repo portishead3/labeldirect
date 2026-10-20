@@ -57,6 +57,13 @@ export async function requireAdmin(req, res, next) {
       res.status(401).json({ error: "Invalid or expired session." });
       return;
     }
+    // app_metadata can only be written with the service role, never by the user
+    // themselves (unlike user_metadata), so this cannot be self-granted at signup.
+    const role = data.user.app_metadata && data.user.app_metadata.role;
+    if (role !== "admin") {
+      res.status(403).json({ error: "This account is not authorized for admin access." });
+      return;
+    }
     req.adminUser = data.user;
     next();
   } catch (err) {

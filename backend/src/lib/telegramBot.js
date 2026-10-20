@@ -184,6 +184,10 @@ export function refundRequestedNotice(parts) {
   return lines.join("\n");
 }
 
+export function refundClosedReasonNotice(reason) {
+  return "refund closed reason: " + escapeTelegramHtml(String(reason || "").trim());
+}
+
 export function refundClosedNotice(row) {
   const source = row || {};
   const label = refundLabel(source.refundNumber != null ? source.refundNumber : source.refund_number);

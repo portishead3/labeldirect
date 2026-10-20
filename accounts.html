@@ -1284,6 +1284,147 @@
         color: var(--text-secondary);
       }
 
+      .orders-row {
+        cursor: pointer;
+      }
+
+      .orders-row:hover td {
+        background: var(--row-hover);
+      }
+
+      .order-detail__back {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 18px;
+        padding: 0;
+        color: var(--accent-light);
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+
+      .order-detail__back:hover {
+        color: var(--text-primary);
+      }
+
+      .order-detail .accounts-panel__title {
+        word-break: break-word;
+      }
+
+      .order-detail__section {
+        margin-top: 26px;
+      }
+
+      .order-detail__section h2 {
+        margin-bottom: 12px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .order-detail__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+      }
+
+      .order-field {
+        min-width: 0;
+        padding: 12px 14px;
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+      }
+
+      .order-field--wide {
+        grid-column: 1 / -1;
+      }
+
+      .order-field--action {
+        display: flex;
+        align-items: center;
+      }
+
+      .order-field__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .order-field__label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .order-field__value {
+        margin-top: 6px;
+        font-size: 0.95rem;
+        line-height: 1.45;
+        color: var(--text-primary);
+        word-break: break-word;
+      }
+
+      .order-field__value--mono {
+        font-variant-numeric: tabular-nums;
+        word-break: break-all;
+      }
+
+      .order-field__value.is-live {
+        color: #e4d6b0;
+      }
+
+      .order-field__value a {
+        color: var(--accent-light);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+
+      .order-copy {
+        flex-shrink: 0;
+        padding: 2px 8px;
+        border: 1px solid var(--hairline);
+        border-radius: 6px;
+        color: var(--text-secondary);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .order-copy:hover {
+        color: var(--text-primary);
+        border-color: var(--accent);
+      }
+
+      .order-detail__also {
+        margin-top: 22px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .order-detail__sibling {
+        max-width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 0.88rem;
+        text-align: left;
+        word-break: break-all;
+      }
+
+      .order-detail__sibling:hover {
+        border-color: var(--accent);
+      }
+
       /* ── Refund dialog ─────────────────────────────────────── */
       .dialog-backdrop {
         position: fixed;
@@ -1768,30 +1909,36 @@
       </section>
 
       <section class="accounts-panel" id="panel-orders" data-panel="orders" hidden>
-        <div class="accounts-panel__header">
-          <h1 class="accounts-panel__title">Orders</h1>
-          <p class="accounts-panel__meta">Accounts you purchased. You have 120 minutes after checkout to request a refund on an account.</p>
-        </div>
         <p class="orders-status" id="orders-status" hidden></p>
-        <div class="empty-state" id="orders-empty">
-          <p>No purchases yet.</p>
+        <div id="orders-list-view">
+          <div class="accounts-panel__header">
+            <h1 class="accounts-panel__title">Orders</h1>
+            <p class="accounts-panel__meta">Accounts you purchased. You have 120 minutes after checkout to request a refund on an account.</p>
+          </div>
+          <div class="empty-state" id="orders-empty">
+            <p>No purchases yet.</p>
+          </div>
+          <div class="table-wrap" id="orders-wrap" hidden>
+            <table class="accounts-table">
+              <thead>
+                <tr>
+                  <th scope="col">Purchased</th>
+                  <th scope="col">Login</th>
+                  <th scope="col">Card</th>
+                  <th scope="col">Expiry</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Price</th>
+                  <th scope="col">Refund window</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-wrap" id="orders-wrap" hidden>
-          <table class="accounts-table">
-            <thead>
-              <tr>
-                <th scope="col">Purchased</th>
-                <th scope="col">Login</th>
-                <th scope="col">Card</th>
-                <th scope="col">Expiry</th>
-                <th scope="col">Type</th>
-                <th scope="col">Price</th>
-                <th scope="col">Refund window</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody id="orders-tbody"></tbody>
-          </table>
+        <div class="order-detail" id="order-detail" hidden>
+          <button type="button" class="order-detail__back" id="order-detail-back">← Orders</button>
+          <div id="order-detail-body"></div>
         </div>
       </section>
     </main>
@@ -2076,6 +2223,7 @@
     }
 
     function activateTab(carrier) {
+      if (carrier !== 'orders' && typeof closeOrderDetail === 'function') closeOrderDetail();
       tabs.forEach(function (other) {
         var on = other.getAttribute('data-carrier') === carrier;
         other.classList.toggle('is-active', on);
@@ -2105,7 +2253,9 @@
 
     tabs.forEach(function (tab) {
       tab.addEventListener('click', function () {
-        activateTab(tab.getAttribute('data-carrier'));
+        var carrier = tab.getAttribute('data-carrier');
+        if (carrier === 'orders' && typeof closeOrderDetail === 'function') closeOrderDetail();
+        activateTab(carrier);
       });
     });
 
@@ -2659,6 +2809,7 @@
 
     function tickOrders() {
       var now = Date.now();
+      var detailExpired = false;
       ordersCountdowns = ordersCountdowns.filter(function (entry) {
         var left = entry.deadline - now;
         if (left <= 0) {
@@ -2668,8 +2819,15 @@
         entry.windowCell.textContent = formatCountdown(left);
         return true;
       });
+      if (detailOrder && detailWindowEl && !detailOrder.refund_status) {
+        var detailDeadline = detailOrder.refund_deadline ? new Date(detailOrder.refund_deadline).getTime() : 0;
+        var detailLeft = detailDeadline - now;
+        if (detailLeft > 0) detailWindowEl.textContent = formatCountdown(detailLeft);
+        else detailExpired = true;
+      }
       updateRefundBadge(now);
-      if (!ordersCountdowns.length && ordersTimer) {
+      if (detailExpired) renderOrderDetail(detailOrder);
+      if (!ordersCountdowns.length && !detailWindowEl && ordersTimer) {
         clearInterval(ordersTimer);
         ordersTimer = null;
       }
@@ -2680,10 +2838,16 @@
         clearInterval(ordersTimer);
         ordersTimer = null;
       }
-      if (ordersCountdowns.length) {
+      if (ordersCountdowns.length || detailWindowEl) {
         ordersTimer = setInterval(tickOrders, 1000);
       }
     }
+
+    var ordersListView = document.getElementById('orders-list-view');
+    var orderDetail = document.getElementById('order-detail');
+    var orderDetailBody = document.getElementById('order-detail-body');
+    var detailOrder = null;
+    var detailWindowEl = null;
 
     function orderCell(text) {
       var cell = document.createElement('td');
@@ -2700,6 +2864,10 @@
       var now = Date.now();
       orderRows.forEach(function (order) {
         var tr = document.createElement('tr');
+        tr.className = 'orders-row';
+        tr.addEventListener('click', function () {
+          openOrderDetail(order);
+        });
         tr.appendChild(orderCell(new Date(order.purchased_at).toLocaleString()));
         tr.appendChild(orderCell(order.login));
         tr.appendChild(orderCell(order.card_number));
@@ -2727,7 +2895,8 @@
           refundBtn.type = 'button';
           refundBtn.className = 'refund-btn';
           refundBtn.textContent = 'Refund';
-          refundBtn.addEventListener('click', function () {
+          refundBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
             openRefundDialog(order);
           });
           actionCell.appendChild(refundBtn);
@@ -2751,6 +2920,254 @@
 
       startOrdersTimer();
       updateRefundBadge(now);
+    }
+
+    function accountDataLine(order) {
+      var parts = [
+        String(order.login || '').trim(),
+        'CountryCode=[' + (order.country || '') + ']',
+        'StateOrProvinceCode=[' + (order.state || '') + ']',
+        'Outbound=[' + (order.outbound == null ? '' : order.outbound) + ']',
+        'Inbound=[' + (order.inbound == null ? '' : order.inbound) + ']'
+      ];
+      if (order.address) parts.push('Address=[' + order.address + ']');
+      if (order.billing) parts.push('Billing=[' + order.billing + ']');
+      parts.push('CreditCardNumber=[' + (order.card_number || '') + ']');
+      parts.push('ExpirationDate=[' + (order.expiry || '') + ']');
+      if (order.account_status) parts.push('AccountStatus=[' + order.account_status + ']');
+      return parts.join(' | ');
+    }
+
+    function splitLogin(login) {
+      var text = String(login || '');
+      var idx = text.indexOf(':');
+      if (idx === -1) return { username: text, password: '' };
+      return { username: text.slice(0, idx), password: text.slice(idx + 1) };
+    }
+
+    function shown(value) {
+      if (value == null) return '—';
+      var text = String(value);
+      return text.trim() ? text : '—';
+    }
+
+    function formatWhen(value) {
+      if (!value) return '';
+      var date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString();
+    }
+
+    function copyText(value, button) {
+      var text = String(value || '');
+      var previous = button.textContent;
+      function done() {
+        button.textContent = 'Copied';
+        setTimeout(function () {
+          if (button.textContent === 'Copied') button.textContent = previous;
+        }, 1200);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {
+          if (fallbackCopy(text)) done();
+        });
+        return;
+      }
+      if (fallbackCopy(text)) done();
+    }
+
+    function fallbackCopy(text) {
+      var area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.left = '-9999px';
+      document.body.appendChild(area);
+      area.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(area);
+      return ok;
+    }
+
+    function addDetailSection(title) {
+      var section = document.createElement('section');
+      section.className = 'order-detail__section';
+      var heading = document.createElement('h2');
+      heading.textContent = title;
+      section.appendChild(heading);
+      var grid = document.createElement('div');
+      grid.className = 'order-detail__grid';
+      section.appendChild(grid);
+      orderDetailBody.appendChild(section);
+      return grid;
+    }
+
+    function addDetailField(grid, label, value, opts) {
+      opts = opts || {};
+      var field = document.createElement('div');
+      field.className = 'order-field' + (opts.wide ? ' order-field--wide' : '');
+      var top = document.createElement('div');
+      top.className = 'order-field__top';
+      var lab = document.createElement('span');
+      lab.className = 'order-field__label';
+      lab.textContent = label;
+      top.appendChild(lab);
+      var text = value == null || String(value).trim() === '' ? '—' : String(value);
+      if (opts.copy && text !== '—') {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'order-copy';
+        btn.textContent = 'Copy';
+        btn.addEventListener('click', function () {
+          copyText(text, btn);
+        });
+        top.appendChild(btn);
+      }
+      field.appendChild(top);
+      var val = document.createElement('div');
+      val.className = 'order-field__value' + (opts.mono ? ' order-field__value--mono' : '');
+      if (opts.href && text !== '—') {
+        var link = document.createElement('a');
+        link.href = text;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = text;
+        val.appendChild(link);
+      } else {
+        val.textContent = text;
+      }
+      field.appendChild(val);
+      grid.appendChild(field);
+      return val;
+    }
+
+    function renderOrderDetail(order) {
+      if (!orderDetailBody) return;
+      detailOrder = order;
+      detailWindowEl = null;
+      orderDetailBody.textContent = '';
+
+      var title = document.createElement('h1');
+      title.className = 'accounts-panel__title';
+      title.textContent = carrierLabel(order.carrier) + ' order';
+      orderDetailBody.appendChild(title);
+
+      var meta = document.createElement('p');
+      meta.className = 'accounts-panel__meta';
+      var purchased = formatWhen(order.purchased_at);
+      meta.textContent = (purchased ? 'Purchased ' + purchased + ' · ' : '') + ListingsApp.formatUsd(order.price);
+      orderDetailBody.appendChild(meta);
+
+      var orderGrid = addDetailSection('Order');
+      addDetailField(orderGrid, 'Purchased', purchased || '—');
+      addDetailField(orderGrid, 'Login', order.login, { mono: true, copy: true, wide: true });
+      addDetailField(orderGrid, 'Card', order.card_number, { mono: true, copy: true });
+      addDetailField(orderGrid, 'Expiry', order.expiry, { mono: true, copy: true });
+      addDetailField(orderGrid, 'Type', carrierLabel(order.carrier));
+      addDetailField(orderGrid, 'Price', ListingsApp.formatUsd(order.price));
+      if (Number(order.purchase_count) > 1) {
+        addDetailField(orderGrid, 'Checkout total', ListingsApp.formatUsd(order.purchase_total));
+      }
+
+      var deadline = order.refund_deadline ? new Date(order.refund_deadline).getTime() : 0;
+      var left = deadline - Date.now();
+      var windowText = '—';
+      if (!order.refund_status && left > 0) windowText = formatCountdown(left);
+      var windowVal = addDetailField(orderGrid, 'Refund window', windowText);
+      if (!order.refund_status && left > 0) {
+        windowVal.classList.add('is-live');
+        detailWindowEl = windowVal;
+      }
+      if (order.refund_status) {
+        addDetailField(orderGrid, 'Refund', refundStateLabel(order.refund_status) || order.refund_status);
+        if (order.refund_number != null && order.refund_number !== '') {
+          addDetailField(orderGrid, 'Refund number', String(order.refund_number));
+        }
+        if (order.refund_reason) addDetailField(orderGrid, 'Reason', order.refund_reason);
+        if (order.refund_note) addDetailField(orderGrid, 'Note', order.refund_note, { wide: true });
+        if (order.refund_screenshot) {
+          addDetailField(orderGrid, 'Screenshot', order.refund_screenshot, { wide: true, href: true });
+        }
+      } else if (left > 0) {
+        var action = document.createElement('div');
+        action.className = 'order-field order-field--action';
+        var refundBtn = document.createElement('button');
+        refundBtn.type = 'button';
+        refundBtn.className = 'refund-btn';
+        refundBtn.textContent = 'Request refund';
+        refundBtn.addEventListener('click', function () {
+          openRefundDialog(order);
+        });
+        action.appendChild(refundBtn);
+        orderGrid.appendChild(action);
+      } else {
+        addDetailField(orderGrid, 'Refund', 'Window closed');
+      }
+
+      var accountGrid = addDetailSection('Account');
+      addDetailField(accountGrid, 'Country', shown(order.country));
+      addDetailField(accountGrid, 'State', shown(order.state));
+      addDetailField(accountGrid, 'Outbound', order.outbound == null || order.outbound === '' ? '—' : String(order.outbound));
+      addDetailField(accountGrid, 'Inbound', order.inbound == null || order.inbound === '' ? '—' : String(order.inbound));
+      addDetailField(accountGrid, 'Address', shown(order.address), { wide: true, copy: true });
+      addDetailField(accountGrid, 'Billing', shown(order.billing), { wide: true, copy: true });
+      addDetailField(accountGrid, 'Price', ListingsApp.formatUsd(order.price));
+      addDetailField(accountGrid, 'Base', shown(order.vendor));
+      addDetailField(accountGrid, 'Account status', shown(ListingsApp.formatAccountStatus(order.account_status)));
+      var created = formatWhen(order.account_created_at);
+      var updated = formatWhen(order.account_updated_at);
+      if (created) addDetailField(accountGrid, 'Account created', created);
+      if (updated) addDetailField(accountGrid, 'Account updated', updated);
+
+      var parts = splitLogin(order.login);
+      var dataGrid = addDetailSection('Data');
+      addDetailField(dataGrid, 'Username', shown(parts.username), { mono: true, copy: true });
+      addDetailField(dataGrid, 'Password', shown(parts.password), { mono: true, copy: true });
+      addDetailField(dataGrid, 'Card number', shown(order.card_number), { mono: true, copy: true, wide: true });
+      addDetailField(dataGrid, 'Expiration', shown(order.expiry), { mono: true, copy: true });
+      addDetailField(dataGrid, 'Login', shown(order.login), { mono: true, copy: true, wide: true });
+      addDetailField(dataGrid, 'Account data', shown(order.data || accountDataLine(order)), { mono: true, copy: true, wide: true });
+
+      var siblings = orderRows.filter(function (row) {
+        return row.purchase_id === order.purchase_id && row.login !== order.login;
+      });
+      if (siblings.length) {
+        var also = document.createElement('div');
+        also.className = 'order-detail__also';
+        var alsoLabel = document.createElement('p');
+        alsoLabel.className = 'order-field__label';
+        alsoLabel.textContent = 'Also in this checkout';
+        also.appendChild(alsoLabel);
+        siblings.forEach(function (row) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'order-detail__sibling';
+          btn.textContent = carrierLabel(row.carrier) + ' · ' + row.login;
+          btn.addEventListener('click', function () {
+            openOrderDetail(row);
+          });
+          also.appendChild(btn);
+        });
+        orderDetailBody.appendChild(also);
+      }
+      startOrdersTimer();
+    }
+
+    function openOrderDetail(order) {
+      renderOrderDetail(order);
+      if (ordersListView) ordersListView.hidden = true;
+      if (orderDetail) orderDetail.hidden = false;
+      var back = document.getElementById('order-detail-back');
+      if (back) back.focus();
+      window.scrollTo(0, 0);
+    }
+
+    function closeOrderDetail() {
+      detailOrder = null;
+      detailWindowEl = null;
+      if (orderDetail) orderDetail.hidden = true;
+      if (ordersListView) ordersListView.hidden = false;
     }
 
     function loadOrders(force) {
@@ -2863,7 +3280,11 @@
         closeReceipt();
         return;
       }
-      if (!refundDialog.hidden) closeRefundDialog();
+      if (!refundDialog.hidden) {
+        closeRefundDialog();
+        return;
+      }
+      if (orderDetail && !orderDetail.hidden) closeOrderDetail();
     });
 
     refundForm.addEventListener('submit', function (event) {
@@ -2897,7 +3318,12 @@
         .then(function () {
           closeRefundDialog();
           order.refund_status = 'pending';
+          var reasonText = picked.closest('label');
+          order.refund_reason = reasonText ? reasonText.textContent.trim() : '';
+          order.refund_note = note;
+          order.refund_screenshot = screenshotUrl;
           renderOrders();
+          if (detailOrder === order) renderOrderDetail(order);
           setOrdersStatus('Refund request sent. We will review it and get back to you.');
         })
         .catch(function (err) {
@@ -2909,6 +3335,8 @@
           setRefundStatus(err.message || 'Could not send the refund request.', true);
         });
     });
+
+    document.getElementById('order-detail-back').addEventListener('click', closeOrderDetail);
 
     loadOrders();
 
