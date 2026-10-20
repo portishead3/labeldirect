@@ -271,17 +271,26 @@ adminRouter.patch("/lists/:id", async (req, res) => {
 adminRouter.delete("/lists/:id", async (req, res) => {
   try {
     const client = getSupabaseAdmin();
-    const { data, error } = await client
+    const listId = req.params.id;
+
+    const { data: existing, error: findError } = await client
       .from("lists")
-      .delete()
-      .eq("id", req.params.id)
       .select("id")
+      .eq("id", listId)
       .maybeSingle();
-    if (error) throw error;
-    if (!data) {
+    if (findError) throw findError;
+    if (!existing) {
       res.status(404).json({ error: "List not found." });
       return;
     }
+
+    // Remove list accounts first so they disappear from the public accounts page.
+    // (DB FK also cascades; this keeps the API clear if the constraint is missing.)
+    const { error: accountsError } = await client.from("accounts").delete().eq("list_id", listId);
+    if (accountsError) throw accountsError;
+
+    const { error } = await client.from("lists").delete().eq("id", listId);
+    if (error) throw error;
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message || "Could not delete list." });

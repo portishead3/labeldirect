@@ -2197,7 +2197,7 @@
       var label = row.name || "Untitled list";
       askToDelete(
         "Delete list",
-        "Delete list “" + label + "”? This cannot be undone."
+        "Delete list “" + label + "”? Its accounts will also be removed from the accounts page. This cannot be undone."
       ).then(function (ok) {
         if (!ok) return;
         note("Deleting…");
