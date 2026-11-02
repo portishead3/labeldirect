@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labels — Admin — LABELDIRECT</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#12141a">
+    <link rel="icon" href="logo.jpeg" type="image/jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        background: #12141a;
+        color: #e4e2ea;
+        font-family: 'Jost', sans-serif;
+        line-height: 1.6;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      input {
+        font-family: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #cfc6de;
+        outline-offset: 3px;
+      }
+
+      :root {
+        --bg-primary: #12141a;
+        --bg-card: #181b22;
+        --bg-surface: #1e222b;
+        --accent: #9b7ec8;
+        --text-primary: #e4e2ea;
+        --text-secondary: #9a96a8;
+        --border-accent: rgba(155, 126, 200, 0.18);
+        --hairline: rgba(255, 255, 255, 0.06);
+        --nav-h: 64px;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(18, 20, 26, 0.96);
+        border-bottom: 1px solid var(--hairline);
+        padding: 0 20px;
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+      }
+
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid var(--border-accent);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .navbar__link,
+      .navbar__cta {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 8px 14px;
+        border-radius: 6px;
+      }
+
+      .navbar__link {
+        color: var(--text-secondary);
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(155, 126, 200, 0.1);
+      }
+
+      .navbar__cta {
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: calc(var(--nav-h) + 28px) 20px 48px;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .lede {
+        color: var(--text-secondary);
+        margin-bottom: 22px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        padding: 22px;
+        margin-bottom: 20px;
+      }
+
+      .card h2 {
+        font-size: 0.95rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+
+      .status {
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        border: 1px solid var(--hairline);
+        background: var(--bg-surface);
+        color: var(--text-secondary);
+      }
+
+      .status.is-error {
+        color: #f0c4c4;
+        border-color: rgba(220, 90, 90, 0.35);
+      }
+
+      .status.is-ok {
+        color: #c6e4c9;
+        border-color: rgba(90, 180, 110, 0.35);
+      }
+
+      label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      input {
+        width: 100%;
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        margin-bottom: 14px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .btn {
+        background: var(--accent);
+        color: #12141a;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        padding: 10px 16px;
+        border-radius: 8px;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn--ghost {
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-accent);
+      }
+
+      .muted {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        margin-bottom: 14px;
+      }
+
+      .empty {
+        color: var(--text-secondary);
+        padding: 12px 0 0;
+      }
+
+      .card--rows {
+        padding-bottom: 0;
+        overflow: hidden;
+      }
+
+      .card--rows .empty {
+        margin-bottom: 22px;
+      }
+
+      .label-rows {
+        list-style: none;
+        margin: 16px -22px 0;
+        border-top: 1px solid var(--hairline);
+      }
+
+      #labels-directory .label-rows {
+        margin-top: 0;
+        border-top: none;
+      }
+
+      .label-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        width: 100%;
+        padding: 16px 22px;
+        text-align: left;
+        color: inherit;
+        border-bottom: 1px solid var(--hairline);
+      }
+
+      .label-rows li:last-child .label-row {
+        border-bottom: none;
+      }
+
+      .label-row:hover {
+        background: rgba(155, 126, 200, 0.08);
+      }
+
+      .label-row__copy {
+        min-width: 0;
+      }
+
+      .label-row__title {
+        display: block;
+        font-weight: 700;
+      }
+
+      .label-row__meta {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+      }
+
+      .label-row__action {
+        flex-shrink: 0;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      #labels-detail {
+        padding-bottom: 22px;
+      }
+
+      .refund-case-block h3 {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin: 0 0 8px;
+      }
+
+      .refund-case-block {
+        margin-top: 22px;
+      }
+
+      .refund-meta {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+      }
+
+      .refund-meta div {
+        display: grid;
+        grid-template-columns: 108px minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .refund-meta dt {
+        color: var(--text-secondary);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .refund-meta dd {
+        margin: 0;
+        word-break: break-word;
+      }
+
+      .label-paste {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: inherit;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .label-track {
+        color: var(--accent);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (min-width: 768px) {
+        :root { --nav-h: 72px; }
+        .navbar { padding: 0 40px; height: 72px; }
+      }
+    </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar__brand">
+      <img src="logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+      <span>LABELDIRECT</span>
+    </a>
+    <div class="navbar__links">
+      <a href="/admin" class="navbar__link">Admin</a>
+      <button type="button" class="navbar__cta" id="logout-btn" hidden>Log out</button>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <h1>Labels</h1>
+    <p class="lede">Customers who ordered from the orders page. Click a customer to see their orders.</p>
+    <p id="page-status" class="status" hidden></p>
+
+    <section class="card" id="login-card">
+      <h2>Sign in</h2>
+      <p class="lede" style="margin-bottom: 14px;">Sign in to view label orders.</p>
+      <form id="login-form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <div class="toolbar">
+          <button class="btn" type="submit" id="login-submit">Sign in</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card card--rows" id="labels-board" hidden>
+      <div id="labels-directory">
+        <p class="empty" id="labels-empty">No label orders yet.</p>
+        <ul class="label-rows" id="labels-users" hidden></ul>
+      </div>
+      <div id="labels-orders" hidden>
+        <div class="toolbar">
+          <button class="btn btn--ghost" type="button" id="labels-orders-back">Back</button>
+        </div>
+        <h2 id="labels-orders-title">Orders</h2>
+        <p class="muted" id="labels-orders-copy"></p>
+        <ul class="label-rows" id="labels-order-list"></ul>
+      </div>
+      <div id="labels-detail" hidden>
+        <div class="toolbar">
+          <button class="btn btn--ghost" type="button" id="labels-detail-back">Back</button>
+          <button class="btn btn--ghost" type="button" id="labels-detail-label" hidden>Label</button>
+          <button class="btn btn--ghost" type="button" id="labels-detail-invoice" hidden>Invoice</button>
+        </div>
+        <h2 id="labels-detail-title">Order</h2>
+        <p class="muted" id="labels-detail-status"></p>
+        <div class="refund-case-block">
+          <h3>Shipment</h3>
+          <dl class="refund-meta" id="labels-detail-shipment"></dl>
+        </div>
+        <div class="refund-case-block" id="labels-detail-receiver-block">
+          <h3>Receiver</h3>
+          <dl class="refund-meta" id="labels-detail-receiver"></dl>
+        </div>
+        <div class="refund-case-block" id="labels-detail-sender-block">
+          <h3>Sender</h3>
+          <dl class="refund-meta" id="labels-detail-sender"></dl>
+        </div>
+        <div class="refund-case-block" id="labels-detail-paste-block" hidden>
+          <h3>Pasted details</h3>
+          <pre class="label-paste" id="labels-detail-paste"></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="listings.js?v=orders-refunds"></script>
+  <script>
+    var statusEl = document.getElementById("page-status");
+    var loginCard = document.getElementById("login-card");
+    var labelsBoard = document.getElementById("labels-board");
+    var logoutBtn = document.getElementById("logout-btn");
+    var loginForm = document.getElementById("login-form");
+    var loginSubmit = document.getElementById("login-submit");
+    var client = null;
+    var accessToken = null;
+    var labelCustomers = [];
+    var labelCustomer = null;
+    var labelOrder = null;
+
+    function note(message, kind) {
+      ListingsApp.setStatus(statusEl, message, kind || "");
+    }
+
+    function formatTime(value) {
+      if (!value) return "—";
+      var date = new Date(value);
+      if (isNaN(date.getTime())) return String(value);
+      return date.toLocaleString();
+    }
+
+    function displayName(row) {
+      var parts = [row.telegramFirstName, row.telegramLastName].filter(Boolean);
+      return parts.length ? parts.join(" ") : "";
+    }
+
+    function usernameLabel(row) {
+      var username = String((row && row.telegramUsername) || "").replace(/^@/, "").trim();
+      return username ? "@" + username : "";
+    }
+
+    function showLabelsDirectory() {
+      document.getElementById("labels-directory").hidden = false;
+      document.getElementById("labels-orders").hidden = true;
+      document.getElementById("labels-detail").hidden = true;
+      labelCustomer = null;
+      labelOrder = null;
+    }
+
+    function labelCustomerTitle(customer) {
+      return usernameLabel(customer) || displayName(customer) || (customer.telegramUserId == null ? "Customer" : String(customer.telegramUserId));
+    }
+
+    function labelCustomerMeta(customer) {
+      var named = usernameLabel(customer) || displayName(customer);
+      return named && customer.telegramUserId != null ? String(customer.telegramUserId) : "";
+    }
+
+    function orderCountLabel(count) {
+      return count === 1 ? "1 order" : count + " orders";
+    }
+
+    function labelOrderMeta(order) {
+      return [order.carrier || "Label", order.trackingNumber || "—", order.receiverName || "—"].join(" · ");
+    }
+
+    function labelRow(title, meta, action, onClick) {
+      var item = document.createElement("li");
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "label-row";
+      button.addEventListener("click", onClick);
+      var copy = document.createElement("span");
+      copy.className = "label-row__copy";
+      var strong = document.createElement("span");
+      strong.className = "label-row__title";
+      strong.textContent = title;
+      copy.appendChild(strong);
+      if (meta) {
+        var small = document.createElement("span");
+        small.className = "label-row__meta";
+        small.textContent = meta;
+        copy.appendChild(small);
+      }
+      var act = document.createElement("span");
+      act.className = "label-row__action";
+      act.textContent = action;
+      button.appendChild(copy);
+      button.appendChild(act);
+      item.appendChild(button);
+      return item;
+    }
+
+    function renderLabelCustomers(rows) {
+      var list = document.getElementById("labels-users");
+      var empty = document.getElementById("labels-empty");
+      list.textContent = "";
+      empty.hidden = rows.length > 0;
+      list.hidden = rows.length === 0;
+      rows.forEach(function (customer) {
+        list.appendChild(labelRow(
+          labelCustomerTitle(customer),
+          labelCustomerMeta(customer),
+          orderCountLabel(customer.orderCount || 0),
+          function () { showLabelOrders(customer); }
+        ));
+      });
+    }
+
+    function renderLabelOrderRows(orders) {
+      var list = document.getElementById("labels-order-list");
+      list.textContent = "";
+      (orders || []).forEach(function (order) {
+        list.appendChild(labelRow(
+          order.reference || "Label",
+          labelOrderMeta(order),
+          "View",
+          function () { showLabelDetail(order); }
+        ));
+      });
+    }
+
+    function showLabelOrders(customer) {
+      labelCustomer = customer;
+      labelOrder = null;
+      document.getElementById("labels-directory").hidden = true;
+      document.getElementById("labels-orders").hidden = false;
+      document.getElementById("labels-detail").hidden = true;
+      document.getElementById("labels-orders-title").textContent = labelCustomerTitle(customer);
+      document.getElementById("labels-orders-copy").textContent = labelCustomerMeta(customer);
+      renderLabelOrderRows(customer.orders);
+    }
+
+    function fillMeta(dl, rows) {
+      dl.textContent = "";
+      rows.forEach(function (row) {
+        if (!row) return;
+        var text = row.node ? "" : row.value == null ? "" : String(row.value).trim();
+        if (!row.node && !text) return;
+        var wrap = document.createElement("div");
+        var dt = document.createElement("dt");
+        dt.textContent = row.label;
+        var dd = document.createElement("dd");
+        if (row.node) dd.appendChild(row.node);
+        else dd.textContent = text;
+        wrap.appendChild(dt);
+        wrap.appendChild(dd);
+        dl.appendChild(wrap);
+      });
+      return dl.childNodes.length > 0;
+    }
+
+    function partyRows(party, fallbackName) {
+      var source = party && typeof party === "object" ? party : {};
+      var city = [source.city, source.state, source.postalCode].filter(Boolean).join(", ");
+      return [
+        { label: "Name", value: source.name || fallbackName || "" },
+        { label: "Company", value: source.company },
+        { label: "Street", value: source.street },
+        { label: "Apt", value: source.apartment },
+        { label: "City", value: city },
+        { label: "Country", value: source.country },
+        { label: "Phone", value: source.phone },
+        { label: "Email", value: source.email }
+      ];
+    }
+
+    function parcelText(orderBody) {
+      var parcels = orderBody && orderBody.parcels;
+      if (!parcels || !Array.isArray(parcels.weights) || !parcels.weights.length) return "";
+      var unit = parcels.unit === "kg" ? "kg" : "lbs";
+      return parcels.weights.map(function (weight) { return String(weight) + " " + unit; }).join(", ");
+    }
+
+    function carrierTrackUrl(carrier, number) {
+      var value = encodeURIComponent(number);
+      if (String(carrier || "").toLowerCase() === "ups") return "https://www.ups.com/track?tracknum=" + value;
+      return "https://www.fedex.com/fedextrack/?trknbr=" + value;
+    }
+
+    function trackingNode(order) {
+      if (!order.trackingNumber) return null;
+      var link = document.createElement("a");
+      link.className = "label-track";
+      link.href = carrierTrackUrl(order.carrier, order.trackingNumber);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = order.trackingNumber;
+      return link;
+    }
+
+    function showLabelDetail(order) {
+      labelOrder = order;
+      var body = order.order && typeof order.order === "object" ? order.order : {};
+      document.getElementById("labels-directory").hidden = true;
+      document.getElementById("labels-orders").hidden = true;
+      document.getElementById("labels-detail").hidden = false;
+      document.getElementById("labels-detail-title").textContent = order.reference || "Order";
+      var status = order.status === "delivered" ? (order.edited ? "Delivered, edited" : "Delivered") : "Pending";
+      document.getElementById("labels-detail-status").textContent = status + " · " + formatTime(order.createdAt);
+      var labelBtn = document.getElementById("labels-detail-label");
+      var invoiceBtn = document.getElementById("labels-detail-invoice");
+      labelBtn.hidden = !order.hasLabel;
+      invoiceBtn.hidden = !order.hasInvoice;
+      var track = trackingNode(order);
+      fillMeta(document.getElementById("labels-detail-shipment"), [
+        { label: "Carrier", value: order.carrier },
+        { label: "Status", value: status },
+        { label: "Placed", value: formatTime(order.createdAt) },
+        track ? { label: "Tracking", node: track } : { label: "Tracking", value: "—" },
+        { label: "Parcels", value: parcelText(body) },
+        { label: "Package", value: body.packageDescription },
+        { label: "Signature", value: body.mode === "form" ? (body.signatureRequired ? "Required on delivery" : "Not required") : "" },
+        { label: "Note", value: body.note }
+      ]);
+      var receiverShown = fillMeta(
+        document.getElementById("labels-detail-receiver"),
+        partyRows(body.recipient, order.receiverName)
+      );
+      document.getElementById("labels-detail-receiver-block").hidden = !receiverShown;
+      var senderShown = fillMeta(document.getElementById("labels-detail-sender"), partyRows(body.sender));
+      document.getElementById("labels-detail-sender-block").hidden = !senderShown;
+      var paste = document.getElementById("labels-detail-paste-block");
+      var pasteText = body.mode === "paste" ? String(body.labelText || "").trim() : "";
+      paste.hidden = !pasteText;
+      document.getElementById("labels-detail-paste").textContent = pasteText;
+    }
+
+    function downloadLabelFile(reference, file, button) {
+      button.disabled = true;
+      fetch(ListingsApp.apiBase() + "/api/admin/label-orders/" + encodeURIComponent(reference) + "/" + file, {
+        headers: { Authorization: "Bearer " + accessToken }
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error("Could not download that file.");
+          return res.blob();
+        })
+        .then(function (blob) {
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement("a");
+          link.href = url;
+          link.download = reference + "-" + file + ".pdf";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+        })
+        .catch(function (err) {
+          note(err.message || "Could not download that file.", "error");
+        })
+        .then(function () { button.disabled = false; });
+    }
+
+    function refreshLabels() {
+      return ListingsApp.adminRequest(accessToken, "/api/admin/label-orders").then(function (rows) {
+        labelCustomers = Array.isArray(rows) ? rows : [];
+        renderLabelCustomers(labelCustomers);
+        if (labelCustomer) {
+          var current = labelCustomers.filter(function (row) { return row.ownerKey === labelCustomer.ownerKey; })[0];
+          if (!current) showLabelsDirectory();
+          else if (labelOrder) {
+            var order = (current.orders || []).filter(function (row) { return row.reference === labelOrder.reference; })[0];
+            labelCustomer = current;
+            if (order) showLabelDetail(order);
+            else showLabelOrders(current);
+          } else {
+            showLabelOrders(current);
+          }
+        }
+      });
+    }
+
+    function showLoggedOut() {
+      loginCard.hidden = false;
+      labelsBoard.hidden = true;
+      logoutBtn.hidden = true;
+      showLabelsDirectory();
+    }
+
+    function showLoggedIn() {
+      loginCard.hidden = true;
+      labelsBoard.hidden = false;
+      logoutBtn.hidden = false;
+      refreshLabels().catch(function (err) {
+        note(err.message || "Could not load label orders.", "error");
+      });
+    }
+
+    if (!ListingsApp.isAuthConfigured() || !ListingsApp.isApiConfigured()) {
+      showLoggedOut();
+      loginForm.querySelectorAll("input, button").forEach(function (el) { el.disabled = true; });
+      note("Set LABELDIRECT_API.baseUrl in config.js, add backend/.env, and run npm start in backend/.", "error");
+    } else {
+      client = ListingsApp.getClient();
+
+      client.auth.onAuthStateChange(function (_event, session) {
+        accessToken = session && session.access_token ? session.access_token : null;
+        if (session) showLoggedIn();
+        else showLoggedOut();
+      });
+
+      loginForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        loginSubmit.disabled = true;
+        note("Signing in…");
+        client.auth.signInWithPassword({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        }).then(function (res) {
+          loginSubmit.disabled = false;
+          if (res.error) throw res.error;
+          note("Signed in.", "ok");
+          loginForm.reset();
+        }).catch(function (err) {
+          loginSubmit.disabled = false;
+          note(err.message || "Sign in failed.", "error");
+        });
+      });
+
+      logoutBtn.addEventListener("click", function () {
+        client.auth.signOut().then(function () {
+          note("Signed out.", "ok");
+        });
+      });
+
+      document.getElementById("labels-orders-back").addEventListener("click", showLabelsDirectory);
+      document.getElementById("labels-detail-back").addEventListener("click", function () {
+        if (labelCustomer) showLabelOrders(labelCustomer);
+        else showLabelsDirectory();
+      });
+      document.getElementById("labels-detail-label").addEventListener("click", function () {
+        if (labelOrder) downloadLabelFile(labelOrder.reference, "label", this);
+      });
+      document.getElementById("labels-detail-invoice").addEventListener("click", function () {
+        if (labelOrder) downloadLabelFile(labelOrder.reference, "invoice", this);
+      });
+    }
+  </script>
+</body>
+</html>

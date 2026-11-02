@@ -27,6 +27,7 @@ import {
 } from "../lib/wallet.js";
 import { backfillDepositActivity } from "../lib/activityLog.js";
 import { refundReasonLabel } from "../lib/refunds.js";
+import { listAdminLabelOrders, readAdminLabelOrderFile } from "../lib/caliOrders.js";
 
 const LIST_INDEX_COLUMNS = "id,name,created_at,updated_at,process_status,process_error,process_stats";
 const LIST_DETAIL_COLUMNS = LIST_INDEX_COLUMNS + ",content";
@@ -404,6 +405,36 @@ async function attachPurchaseUsers(client, purchases) {
     };
   });
 }
+
+adminRouter.get("/label-orders", async (_req, res) => {
+  try {
+    res.json(await listAdminLabelOrders());
+  } catch (err) {
+    console.error("GET /api/admin/label-orders:", err.message || err);
+    res.status(500).json({ error: "Could not load label orders." });
+  }
+});
+
+adminRouter.get("/label-orders/:reference/:file", async (req, res) => {
+  if (req.params.file !== "label" && req.params.file !== "invoice") {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  try {
+    const file = await readAdminLabelOrderFile(req.params.reference, req.params.file);
+    if (!file) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="' + file.filename + '"');
+    res.setHeader("Cache-Control", "private, no-store");
+    res.send(file.buffer);
+  } catch (err) {
+    console.error("GET /api/admin/label-orders file:", err.message || err);
+    res.status(500).json({ error: "Could not download that file." });
+  }
+});
 
 adminRouter.get("/purchases", async (_req, res) => {
   try {

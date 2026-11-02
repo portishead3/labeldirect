@@ -1,5 +1,5 @@
--- Website label orders. The customer is stored here and is not written
--- into the CALI group message. Service role only.
+-- Label orders from the website and the customer bot. The customer is stored
+-- here and is not written into the CALI group message. Service role only.
 
 create table if not exists public.label_orders (
   id uuid primary key default gen_random_uuid(),
@@ -16,6 +16,7 @@ create table if not exists public.label_orders (
   invoice_path text,
   telegram_message_id bigint,
   customer_message_id bigint,
+  origin text not null default 'website',
   order_json jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   constraint label_orders_status_check check (status in ('pending', 'delivered'))
@@ -34,6 +35,9 @@ alter table public.label_orders add column if not exists label_path text;
 alter table public.label_orders add column if not exists invoice_path text;
 alter table public.label_orders add column if not exists edited boolean not null default false;
 alter table public.label_orders add column if not exists customer_message_id bigint;
+alter table public.label_orders add column if not exists origin text not null default 'website';
+alter table public.label_orders add column if not exists tracking_number text;
+alter table public.label_orders add column if not exists recipient_name text;
 
 alter table public.label_orders drop constraint if exists label_orders_status_check;
 alter table public.label_orders

@@ -19,6 +19,7 @@ const PUBLIC_FILES = new Set([
   "admin.html",
   "admin-list.html",
   "admin-full.html",
+  "labelsadmin.html",
   "listings.js",
   "config.js",
   "logo.jpeg",
