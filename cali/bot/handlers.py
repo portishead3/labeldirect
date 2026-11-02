@@ -10,17 +10,21 @@ from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import FSInputFile, Message, ReactionTypeEmoji
 
 from bot import db
-from bot.config import FILES_DIR, GROUP_CHAT_ID
+from bot.config import FILES_DIR, GROUP_CHAT_ID, _env
 from bot.fedex import DocExtract, extract_document, pick_tracking, stale_kinds
 from bot.freeform import Expected, parse_request
 from bot.publish import (
+    announce_completion,
+    customer_caption,
     customer_files,
     mark_order_edited,
     named_order_reference,
+    order_row,
     plan_delivery,
     publish_customer_pdfs,
     replaced_kinds,
     requester_telegram_id,
+    save_order_details,
     saved_customer_kinds,
     website_reference,
 )
@@ -107,10 +111,16 @@ def _resolve_shipment(message: Message) -> dict | None:
 def _shipment_from_parent(parent: Message, chat_id: int) -> dict:
     """The message a PDF replies to is the request. Create the shipment from it once."""
     existing = db.find_shipment_by_message(chat_id, parent.message_id)
+    text = _message_text(parent)
     if existing:
+        if text and text != (existing.get("source_text") or ""):
+            expected = parse_request(text)
+            expected_json = json.dumps(expected.to_dict(), ensure_ascii=False)
+            db.update_shipment(existing["id"], source_text=text, expected_json=expected_json)
+            existing["source_text"] = text
+            existing["expected_json"] = expected_json
         return existing
 
-    text = _message_text(parent)
     author = parent.from_user
     expected = parse_request(text)
     return db.create_shipment(
@@ -258,6 +268,49 @@ async def _report_later(bot: Bot, shipment_id: int, chat_id: int, reply_to: int)
             pass
 
 
+async def _send_back_to_customer_bot(
+    bot: Bot,
+    shipment: dict,
+    row: dict,
+    chosen: dict[str, Path],
+    already: set[str],
+    source: str,
+) -> bool:
+    """Reply in the customer's chat with the customer bot, not the group bot."""
+    user_id = int(row.get("telegram_user_id") or 0) or None
+    if not user_id:
+        log.warning("No customer to receive PDFs for %s", shipment.get("public_id"))
+        return False
+    token = _env("BOT_TOKEN", "bot_token")
+    if not token:
+        log.warning("BOT_TOKEN is missing, so the PDFs were not sent back")
+        return False
+    reply_to = row.get("customer_message_id")
+    reply = {"reply_to_message_id": int(reply_to)} if reply_to else {}
+    caption = customer_caption(shipment.get("expected_json"), source)
+    customer_bot = Bot(token)
+    try:
+        for kind in ("label", "invoice"):
+            if kind not in chosen:
+                continue
+            await customer_bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption, **reply)
+        if announce_completion(chosen, already):
+            await customer_bot.send_message(user_id, "Order completed", **reply)
+        return True
+    except TelegramForbiddenError:
+        log.warning("Customer has not opened the bot for %s", shipment.get("public_id"))
+        chat_id = shipment.get("chat_id")
+        if chat_id:
+            await bot.send_message(
+                chat_id,
+                "I could not send the PDF to the customer. They need to open this bot first.",
+                reply_to_message_id=shipment.get("request_message_id"),
+            )
+        return False
+    finally:
+        await customer_bot.session.close()
+
+
 async def deliver_customer_pdfs(bot: Bot, shipment: dict, rows: list[dict], notes: list[str], already: set[str] | None) -> None:
     """Send the label and invoice to the person who asked. A later reply is an edit."""
     files = customer_files(rows)
@@ -272,6 +325,20 @@ async def deliver_customer_pdfs(bot: Bot, shipment: dict, rows: list[dict], note
         if edited and reference:
             mark_order_edited(reference)
         return
+
+    row = None
+    if reference:
+        try:
+            row = order_row(reference)
+        except Exception:
+            log.exception("Could not read order %s", reference)
+
+    if row and row.get("origin") == "bot":
+        sent = await _send_back_to_customer_bot(bot, shipment, row, chosen, already, source)
+        if sent and edited and reference:
+            mark_order_edited(reference)
+        return
+
     if reference:
         user_id = requester_telegram_id(reference)
     else:
@@ -283,8 +350,7 @@ async def deliver_customer_pdfs(bot: Bot, shipment: dict, rows: list[dict], note
         for kind in ("label", "invoice"):
             if kind not in chosen:
                 continue
-            title = "Edited" if edited and kind == "label" else kind.capitalize()
-            caption = f"{title} {reference}".strip() if reference else title
+            caption = customer_caption(shipment.get("expected_json"), source)
             await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption)
     except TelegramForbiddenError:
         log.warning("Customer has not opened the bot for %s", shipment.get("public_id"))
@@ -337,16 +403,38 @@ async def _send_report(bot: Bot, shipment_id: int, chat_id: int, reply_to: int) 
         json.dumps(report.summary(), ensure_ascii=False),
     )
 
-    sent = await bot.send_message(
-        chat_id,
-        report.text(shipment["public_id"]),
-        reply_to_message_id=reply_to,
-    )
-    db.index_message(chat_id, sent.message_id, shipment_id)
+    body = report.text(shipment["public_id"])
+    label_edited = any("Replaced the previous label." in note for note in report.notes)
+    previous_report = shipment.get("report_message_id")
+    if label_edited and previous_report:
+        try:
+            await bot.edit_message_text(body, chat_id=chat_id, message_id=int(previous_report))
+        except Exception:
+            log.exception("Could not edit the report for %s", shipment["public_id"])
+        note = await bot.send_message(
+            chat_id,
+            "Label edited, please check and confirm.",
+            reply_to_message_id=int(previous_report),
+        )
+        db.index_message(chat_id, note.message_id, shipment_id)
+    else:
+        sent = await bot.send_message(
+            chat_id,
+            body,
+            reply_to_message_id=reply_to,
+        )
+        db.index_message(chat_id, sent.message_id, shipment_id)
+        db.update_shipment(shipment_id, report_message_id=sent.message_id)
     # needs_review still releases the label and invoice. The record is never sent.
     source = shipment.get("source_text") or ""
+    reference = website_reference(source)
+    if reference:
+        try:
+            save_order_details(reference, tracking, expected.name)
+        except Exception:
+            log.exception("Could not save tracking for %s", shipment["public_id"])
     try:
-        already = saved_customer_kinds(website_reference(source))
+        already = saved_customer_kinds(reference)
     except Exception:
         log.exception("Could not read the existing files for %s", shipment["public_id"])
         already = None

@@ -1,0 +1,4 @@
+aiogram==3.22.0
+python-dotenv==1.1.1
+pymupdf==1.26.5
+pytest==8.4.2

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { getSupabaseAdmin } from "../supabaseAdmin.js";
 import { hashAccessToken } from "./accountsAccess.js";
+import { editBotOrder, submitBotOrder } from "./caliOrders.js";
 
 export const TELEGRAM_MESSAGE_MAX = 4096;
 
@@ -274,9 +275,58 @@ function isChannelMember(member) {
   return status === "restricted" && Boolean(member && member.is_member);
 }
 
-function isStartCommand(text) {
-  const value = String(text || "").trim();
-  return value === "/start" || value.startsWith("/start@") || value.startsWith("/start ");
+function commandParts(text) {
+  const match = String(text || "")
+    .trim()
+    .match(/^\/([A-Za-z0-9_]+)(?:@\S+)?(?:\s+(\S+))?/);
+  if (!match) return { name: "", arg: "" };
+  return { name: match[1].toLowerCase(), arg: match[2] || "" };
+}
+
+function isPlainStart(text) {
+  const command = commandParts(text);
+  return command.name === "start" && !command.arg;
+}
+
+function isTokenCommand(text) {
+  const command = commandParts(text);
+  if (command.name === "token") return true;
+  return command.name === "start" && (command.arg === "access" || command.arg === "token");
+}
+
+function isPrivateChat(chat) {
+  return Boolean(chat && chat.type === "private");
+}
+
+const awaitingDetails = new Map();
+
+const NEW_ORDER_KEYBOARD = {
+  inline_keyboard: [[
+    { text: "FedEx", callback_data: "carrier:FedEx" },
+    { text: "UPS", callback_data: "carrier:UPS" },
+  ]],
+};
+
+function carrierFromCallback(data) {
+  if (data === "carrier:FedEx") return "FedEx";
+  if (data === "carrier:UPS") return "UPS";
+  return "";
+}
+
+async function answerCallback(callback) {
+  try {
+    await telegramApi("answerCallbackQuery", { callback_query_id: callback.id });
+  } catch (err) {
+    console.error("answerCallbackQuery:", err.message || err);
+  }
+}
+
+async function askForOrder(chatId) {
+  await telegramApi("sendMessage", {
+    chat_id: chatId,
+    text: "Do you want to place a new order?",
+    reply_markup: NEW_ORDER_KEYBOARD,
+  });
 }
 
 function telegramProfile(from) {
@@ -291,11 +341,10 @@ function telegramProfile(from) {
   };
 }
 
-async function handleStart(message) {
+async function requireChannel(message, retry) {
   const userId = message.from && message.from.id;
   const chatId = message.chat && message.chat.id;
-  if (!userId || !chatId) return;
-
+  if (!userId || !chatId) return false;
   const channel = telegramChannel();
   let member;
   try {
@@ -304,22 +353,81 @@ async function handleStart(message) {
     console.error("Telegram getChatMember:", err);
     await telegramApi("sendMessage", {
       chat_id: chatId,
-      text: "Could not check channel membership. Make sure this bot is an admin of the channel, then press Start again.",
+      text: "Could not check channel membership. Make sure this bot is an admin of the channel, then " + retry + ".",
     });
+    return false;
+  }
+  if (isChannelMember(member)) return true;
+  const channelName = channel.replace(/^@/, "");
+  await telegramApi("sendMessage", {
+    chat_id: chatId,
+    text: "Join the LABELDIRECT channel first, then " + retry + ".",
+    reply_markup: {
+      inline_keyboard: [[{ text: "Join channel", url: "https://t.me/" + channelName }]],
+    },
+  });
+  return false;
+}
+
+async function ensureCustomer(from) {
+  const userId = from && from.id;
+  if (!userId) return;
+  const profile = telegramProfile(from);
+  const client = getSupabaseAdmin();
+  const { data, error } = await client
+    .from("access_tokens")
+    .select("id")
+    .eq("telegram_user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (data) {
+    const { error: updateError } = await client
+      .from("access_tokens")
+      .update({ ...profile, updated_at: new Date().toISOString() })
+      .eq("telegram_user_id", userId);
+    if (updateError) throw updateError;
     return;
   }
+  const { error: insertError } = await client.from("access_tokens").insert({
+    telegram_user_id: userId,
+    token_hash: hashAccessToken(crypto.randomBytes(24).toString("base64url")),
+    ...profile,
+  });
+  if (insertError) throw insertError;
+}
 
-  if (!isChannelMember(member)) {
-    const channelName = channel.replace(/^@/, "");
+async function handleStart(message) {
+  const userId = message.from && message.from.id;
+  const chatId = message.chat && message.chat.id;
+  if (!userId || !chatId) return;
+  awaitingDetails.delete(userId);
+  if (!(await requireChannel(message, "press Start again"))) return;
+  try {
+    await ensureCustomer(message.from);
+  } catch (err) {
+    console.error("access_tokens:", err.message || err);
     await telegramApi("sendMessage", {
       chat_id: chatId,
-      text: "Join the LABELDIRECT channel first, then press Start again to get your access token.",
-      reply_markup: {
-        inline_keyboard: [[{ text: "Join channel", url: "https://t.me/" + channelName }]],
-      },
+      text: "Could not open your account. Try again in a moment.",
     });
     return;
   }
+  if (!isPrivateChat(message.chat)) return;
+  await askForOrder(chatId);
+}
+
+async function handleToken(message) {
+  const userId = message.from && message.from.id;
+  const chatId = message.chat && message.chat.id;
+  if (!userId || !chatId) return;
+  if (!isPrivateChat(message.chat)) {
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: "Send /token in a private chat.",
+    });
+    return;
+  }
+  if (!(await requireChannel(message, "send /token again"))) return;
 
   const plaintext = crypto.randomBytes(24).toString("base64url");
   const { error } = await getSupabaseAdmin()
@@ -333,7 +441,6 @@ async function handleStart(message) {
       },
       { onConflict: "telegram_user_id" }
     );
-
   if (error) {
     console.error("access_tokens upsert:", error);
     await telegramApi("sendMessage", {
@@ -342,15 +449,99 @@ async function handleStart(message) {
     });
     return;
   }
-
   await telegramApi("sendMessage", {
     chat_id: chatId,
     text:
       "Your access token:\n\n`" +
       plaintext +
-      "`\n\nPaste it on the Accounts login page. Press Start again if you need a new one — the old token will stop working.",
+      "`\n\nPaste it on the Accounts login page. Send /token again if you need a new one — the old token will stop working.",
     parse_mode: "Markdown",
   });
+}
+
+async function handleNewOrder(callback, carrier) {
+  const message = callback.message;
+  const userId = callback.from && callback.from.id;
+  const chat = message && message.chat;
+  const chatId = chat && chat.id;
+  await answerCallback(callback);
+  if (!userId || !chatId || !isPrivateChat(chat) || !carrier) return;
+  awaitingDetails.set(userId, carrier);
+  await telegramApi("sendMessage", {
+    chat_id: chatId,
+    text: "Awaiting details.",
+  });
+}
+
+async function handleOrderEdit(message) {
+  const reply = message.reply_to_message;
+  const userId = message.from && message.from.id;
+  const chatId = message.chat && message.chat.id;
+  if (!reply || !userId || !chatId) return false;
+  const text = String(message.text || "").trim();
+  try {
+    const updated = await editBotOrder({
+      telegramUserId: userId,
+      detailsMessageId: reply.message_id,
+      labelText: text,
+    });
+    if (!updated) return false;
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: "Details updated and forwarded.",
+      reply_to_message_id: message.message_id,
+    });
+  } catch (err) {
+    console.error("Bot order edit:", err.message || err);
+    const known = err.status === 400 || err.status === 502 || err.status === 503;
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: known ? err.message : "We could not update your order. Please try again.",
+      reply_to_message_id: message.message_id,
+    });
+  }
+  return true;
+}
+
+async function handleOrderDetails(message) {
+  const userId = message.from && message.from.id;
+  const chatId = message.chat && message.chat.id;
+  if (!userId || !chatId) return;
+  const text = String(message.text || "").trim();
+  if (!text || text.startsWith("/")) {
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: "Send the label details as a text message.",
+    });
+    return;
+  }
+  try {
+    await submitBotOrder({
+      telegramUserId: userId,
+      labelText: text,
+      detailsMessageId: message.message_id,
+      carrier: awaitingDetails.get(userId),
+    });
+    awaitingDetails.delete(userId);
+  } catch (err) {
+    console.error("Bot order:", err.message || err);
+    const known = err.status === 400 || err.status === 429 || err.status === 502 || err.status === 503;
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: known ? err.message : "We could not send your order. Please try again.",
+    });
+    return;
+  }
+  try {
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text:
+        "Details received and forwarded for execution. If you need to edit the details, reply to the original message you sent.",
+      reply_to_message_id: message.message_id,
+    });
+  } catch (err) {
+    console.error("Order receipt:", err.message || err);
+  }
 }
 
 export async function startTelegramBot() {
@@ -372,6 +563,16 @@ export async function startTelegramBot() {
 
   const username = telegramBotUsername();
   console.log("Telegram bot polling" + (username ? " @" + username : ""));
+  try {
+    await telegramApi("setMyCommands", {
+      commands: [
+        { command: "start", description: "Place a new order" },
+        { command: "token", description: "Get your website login token" },
+      ],
+    });
+  } catch (err) {
+    console.warn("Telegram setMyCommands:", err.message || err);
+  }
 
   let offset = 0;
   while (true) {
@@ -379,14 +580,31 @@ export async function startTelegramBot() {
       const updates = await telegramApi("getUpdates", {
         offset,
         timeout: 30,
-        allowed_updates: ["message"],
+        allowed_updates: ["message", "callback_query"],
       });
       for (const update of updates || []) {
         offset = update.update_id + 1;
-        const message = update.message;
-        if (message && isStartCommand(message.text)) {
-          await handleStart(message);
+        if (update.callback_query) {
+          const carrier = carrierFromCallback(update.callback_query.data);
+          if (carrier) await handleNewOrder(update.callback_query, carrier);
+          else await answerCallback(update.callback_query);
+          continue;
         }
+        const message = update.message;
+        if (!message) continue;
+        if (isTokenCommand(message.text)) {
+          await handleToken(message);
+          continue;
+        }
+        if (isPlainStart(message.text)) {
+          await handleStart(message);
+          continue;
+        }
+        const userId = message.from && message.from.id;
+        if (!userId || !isPrivateChat(message.chat)) continue;
+        if (message.reply_to_message && (await handleOrderEdit(message))) continue;
+        if (!awaitingDetails.has(userId)) continue;
+        await handleOrderDetails(message);
       }
     } catch (err) {
       console.error("Telegram getUpdates:", err);

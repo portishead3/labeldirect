@@ -21,6 +21,20 @@ CUSTOMER_KINDS = ("label", "invoice")
 BUCKET = "label-orders"
 
 
+def customer_caption(expected_json: str | None, source_text: str | None = "") -> str | None:
+    """The name shown with the PDF. The receiver's name, or the order number if it is missing."""
+    name = ""
+    try:
+        data = json.loads(expected_json or "{}")
+        name = str(data.get("name") or "").strip()
+    except json.JSONDecodeError:
+        name = ""
+    if not name:
+        name = website_reference(source_text or "") or ""
+    name = " ".join(name.split())
+    return name[:200] or None
+
+
 def website_reference(source_text: str) -> str | None:
     match = ORDER_RE.search(source_text or "")
     return match.group(1) if match else None
@@ -129,6 +143,11 @@ def plan_delivery(files: dict, notes, already: set[str]) -> tuple[dict, bool]:
     return chosen, "label" in replaced and "label" in already
 
 
+def announce_completion(chosen: dict, already: set[str]) -> bool:
+    """The first time the label goes back to the customer."""
+    return "label" in chosen and "label" not in already
+
+
 def _supabase() -> tuple[str, str]:
     url = _env("SUPABASE_URL").rstrip("/")
     key = _env("SUPABASE_SERVICE_ROLE_KEY")
@@ -140,7 +159,7 @@ def order_row(reference: str) -> dict | None:
     if not url or not key:
         return None
     request = urllib.request.Request(
-        f"{url}/rest/v1/label_orders?reference=eq.{reference}&select=telegram_user_id,label_path,invoice_path,customer_message_id",
+        f"{url}/rest/v1/label_orders?reference=eq.{reference}&select=telegram_user_id,label_path,invoice_path,customer_message_id,origin",
         headers={"Authorization": "Bearer " + key, "apikey": key},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
@@ -177,6 +196,43 @@ def requester_telegram_id(reference: str) -> int | None:
     if not row or not row.get("telegram_user_id"):
         return None
     return int(row["telegram_user_id"])
+
+
+def order_detail_patch(tracking: str | None, recipient_name: str | None) -> dict[str, str]:
+    """Fields worth keeping on the website order. Empty values are left alone."""
+    fields: dict[str, str] = {}
+    number = " ".join(str(tracking or "").split())[:80]
+    name = " ".join(str(recipient_name or "").split())[:200]
+    if number:
+        fields["tracking_number"] = number
+    if name:
+        fields["recipient_name"] = name
+    return fields
+
+
+def save_order_details(reference: str | None, tracking: str | None, recipient_name: str | None) -> None:
+    """Remember the tracking number and receiver for the admin Labels page."""
+    if not reference:
+        return
+    fields = order_detail_patch(tracking, recipient_name)
+    if not fields:
+        return
+    url, key = _supabase()
+    if not url or not key:
+        log.warning("Order details not saved: Supabase is not configured")
+        return
+    request = urllib.request.Request(
+        f"{url}/rest/v1/label_orders?reference=eq.{reference}",
+        data=json.dumps(fields).encode(),
+        method="PATCH",
+        headers={
+            "Authorization": "Bearer " + key,
+            "apikey": key,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+        },
+    )
+    _send(request)
 
 
 def mark_order_edited(reference: str) -> None:

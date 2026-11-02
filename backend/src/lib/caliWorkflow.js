@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 let caliProcess = null;
 
@@ -79,7 +79,44 @@ export function caliCredentials(caliRoot) {
   return { token, groupId };
 }
 
+function ensureCaliDeps(python, caliRoot) {
+  const deps = path.join(caliRoot, ".pydeps");
+  const env = { ...process.env, PYTHONPATH: deps };
+  const check = spawnSync(python, ["-c", "import aiogram, fitz, dotenv"], {
+    cwd: caliRoot,
+    env,
+    encoding: "utf8",
+  });
+  if (check.status === 0) return deps;
+  console.log("Installing CALI Python packages");
+  const install = spawnSync(
+    python,
+    ["-m", "pip", "install", "--disable-pip-version-check", "--target", deps, "-r", "requirements.txt"],
+    { cwd: caliRoot, env, encoding: "utf8", timeout: 180000 }
+  );
+  const detail = ((install.stderr || "") + (install.stdout || "")).trim().slice(-1500);
+  if (install.status !== 0) console.error("CALI package install failed:", detail || install.error || "unknown error");
+  return deps;
+}
+
+function pipeCali(stream) {
+  let pending = "";
+  stream.on("data", (chunk) => {
+    pending += chunk.toString();
+    let breakAt = pending.indexOf("\n");
+    while (breakAt >= 0) {
+      console.log("CALI: " + pending.slice(0, breakAt));
+      pending = pending.slice(breakAt + 1);
+      breakAt = pending.indexOf("\n");
+    }
+  });
+}
+
 export function startCaliWorkflow(caliRoot) {
+  if (String(process.env.CALI_POLLING || "true").toLowerCase() === "false") {
+    console.warn("CALI workflow skipped: CALI_POLLING=false.");
+    return null;
+  }
   const { token, groupId } = caliCredentials(caliRoot);
   if (!token || !groupId) {
     console.warn("CALI workflow skipped: CALI_BOT_TOKEN or CALI_GROUP_CHAT_ID is not set.");
@@ -94,15 +131,19 @@ export function startCaliWorkflow(caliRoot) {
 
   const venvPython = path.join(caliRoot, ".venv", "bin", "python");
   const python = fs.existsSync(venvPython) ? venvPython : process.env.CALI_PYTHON || "python3";
+  const deps = ensureCaliDeps(python, caliRoot);
   caliProcess = spawn(python, ["-m", "bot.main"], {
     cwd: caliRoot,
     env: {
       ...process.env,
+      PYTHONPATH: deps + path.delimiter + (process.env.PYTHONPATH || ""),
       CALI_BOT_TOKEN: token,
       CALI_GROUP_CHAT_ID: groupId,
     },
-    stdio: "inherit",
+    stdio: ["ignore", "pipe", "pipe"],
   });
+  pipeCali(caliProcess.stdout);
+  pipeCali(caliProcess.stderr);
   caliProcess.on("error", (err) => {
     console.error("CALI workflow failed to start:", err.message || err);
   });

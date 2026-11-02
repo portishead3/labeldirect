@@ -1,4 +1,14 @@
-from bot.publish import customer_files, named_order_reference, plan_delivery, website_reference
+import json
+
+from bot.publish import (
+    announce_completion,
+    customer_caption,
+    customer_files,
+    named_order_reference,
+    order_detail_patch,
+    plan_delivery,
+    website_reference,
+)
 
 
 def test_website_reference_reads_the_order_line():
@@ -6,6 +16,12 @@ def test_website_reference_reads_the_order_line():
     assert website_reference(text) == "LD-ATRWEQ"
     assert website_reference("Order: order-pen002\nCarrier: FedEx") == "order-pen002"
     assert website_reference("Adam yafid\n3 southwark street") is None
+
+
+def test_caption_uses_the_receiver_name():
+    expected = json.dumps({"name": "Philip Moré"})
+    assert customer_caption(expected, "Order: LD-8PDDWE") == "Philip Moré"
+    assert customer_caption("{}", "Order: order-pen004") == "order-pen004"
 
 
 def test_a_file_from_another_order_is_recognised():
@@ -51,6 +67,21 @@ def test_a_later_label_is_an_edit_and_only_that_label_is_sent():
     chosen, edited = plan_delivery(files, notes, {"label", "invoice"})
     assert set(chosen) == {"label"}
     assert edited is True
+
+
+def test_order_completed_is_sent_once_with_the_first_label():
+    assert announce_completion({"label": "a", "invoice": "b"}, set()) is True
+    assert announce_completion({"invoice": "b"}, set()) is False
+    assert announce_completion({"label": "a"}, {"label", "invoice"}) is False
+
+
+def test_order_details_keep_tracking_and_receiver_name():
+    assert order_detail_patch("8792 2783 5368", "Philip Moré") == {
+        "tracking_number": "8792 2783 5368",
+        "recipient_name": "Philip Moré",
+    }
+    assert order_detail_patch(None, "   ") == {}
+    assert order_detail_patch("", None) == {}
 
 
 def test_a_later_record_sends_nothing():
