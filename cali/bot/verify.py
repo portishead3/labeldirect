@@ -1,4 +1,5 @@
 """Compare what was asked for (the request message) with what the PDFs say."""
+from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field

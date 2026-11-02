@@ -1,4 +1,5 @@
 """Read FedEx PDFs: shipping label, commercial invoice, transaction record."""
+from __future__ import annotations
 
 import re
 import statistics

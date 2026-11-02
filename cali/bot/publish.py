@@ -3,6 +3,7 @@
 The transaction record is never uploaded. Website orders are recognised by the
 "Order: …" line the site puts at the top of the group message.
 """
+from __future__ import annotations
 
 import json
 import logging

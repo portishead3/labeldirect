@@ -12,6 +12,7 @@ Requests look like either of these, with no fixed format:
 or a long labelled block (INVOICE NUMBER: ..., TOTAL GROSS WEIGHT: ..., Sender: ...).
 Only fields that are actually present get checked later.
 """
+from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass, field
