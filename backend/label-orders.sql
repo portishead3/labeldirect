@@ -31,6 +31,7 @@ grant all on public.label_orders to service_role;
 alter table public.label_orders add column if not exists status text not null default 'pending';
 alter table public.label_orders add column if not exists label_path text;
 alter table public.label_orders add column if not exists invoice_path text;
+alter table public.label_orders add column if not exists edited boolean not null default false;
 
 alter table public.label_orders drop constraint if exists label_orders_status_check;
 alter table public.label_orders

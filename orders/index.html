@@ -1155,7 +1155,7 @@
           actions.className = "row__actions";
           var state = document.createElement("span");
           state.className = "row__action";
-          state.textContent = "Delivered";
+          state.textContent = order.edited ? "Edited" : "Delivered";
           actions.appendChild(state);
           if (order.hasLabel) actions.appendChild(fileButton(order.reference, "label", "Label"));
           if (order.hasInvoice) actions.appendChild(fileButton(order.reference, "invoice", "Invoice"));

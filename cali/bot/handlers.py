@@ -6,13 +6,23 @@ from pathlib import Path
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
-from aiogram.types import Message, ReactionTypeEmoji
+from aiogram.exceptions import TelegramForbiddenError
+from aiogram.types import FSInputFile, Message, ReactionTypeEmoji
 
 from bot import db
 from bot.config import FILES_DIR, GROUP_CHAT_ID
 from bot.fedex import DocExtract, extract_document, pick_tracking, stale_kinds
 from bot.freeform import Expected, parse_request
-from bot.publish import publish_customer_pdfs
+from bot.publish import (
+    customer_files,
+    mark_order_edited,
+    plan_delivery,
+    publish_customer_pdfs,
+    replaced_kinds,
+    requester_telegram_id,
+    saved_customer_kinds,
+    website_reference,
+)
 from bot.verify import build_report
 
 router = Router()
@@ -241,6 +251,47 @@ async def _report_later(bot: Bot, shipment_id: int, chat_id: int, reply_to: int)
             pass
 
 
+async def deliver_customer_pdfs(bot: Bot, shipment: dict, rows: list[dict], notes: list[str], already: set[str] | None) -> None:
+    """Send the label and invoice to the person who asked. A later reply is an edit."""
+    files = customer_files(rows)
+    if not files:
+        return
+    source = shipment.get("source_text") or ""
+    reference = website_reference(source)
+    if already is None:
+        already = set(files) if replaced_kinds(notes) else set()
+    chosen, edited = plan_delivery(files, notes, already)
+    if not chosen:
+        if edited and reference:
+            mark_order_edited(reference)
+        return
+    if reference:
+        user_id = requester_telegram_id(reference)
+    else:
+        user_id = int(shipment.get("created_by") or 0) or None
+    if not user_id:
+        log.warning("No customer to receive PDFs for %s", shipment.get("public_id"))
+        return
+    try:
+        for kind in ("label", "invoice"):
+            if kind not in chosen:
+                continue
+            caption = "Edited" if edited else kind.capitalize()
+            await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption)
+    except TelegramForbiddenError:
+        log.warning("Customer has not opened the bot for %s", shipment.get("public_id"))
+        chat_id = shipment.get("chat_id")
+        if chat_id:
+            await bot.send_message(
+                chat_id,
+                "I could not send the PDF to the customer. They need to open this bot first.",
+                reply_to_message_id=shipment.get("request_message_id"),
+            )
+        return
+    if edited and reference:
+        mark_order_edited(reference)
+
+
 async def _send_report(bot: Bot, shipment_id: int, chat_id: int, reply_to: int) -> None:
     shipment = db.get_shipment(shipment_id)
     if not shipment:
@@ -284,10 +335,21 @@ async def _send_report(bot: Bot, shipment_id: int, chat_id: int, reply_to: int) 
         reply_to_message_id=reply_to,
     )
     db.index_message(chat_id, sent.message_id, shipment_id)
+    # needs_review still releases the label and invoice. The record is never sent.
+    source = shipment.get("source_text") or ""
     try:
-        publish_customer_pdfs(shipment.get("source_text") or "", rows)
+        already = saved_customer_kinds(website_reference(source))
+    except Exception:
+        log.exception("Could not read the existing files for %s", shipment["public_id"])
+        already = None
+    try:
+        publish_customer_pdfs(source, rows)
     except Exception:
         log.exception("Could not publish customer PDFs for %s", shipment["public_id"])
+    try:
+        await deliver_customer_pdfs(bot, shipment, rows, report.notes, already)
+    except Exception:
+        log.exception("Could not send customer PDFs for %s", shipment["public_id"])
 
 
 @router.message(F.chat.id == GROUP_CHAT_ID)

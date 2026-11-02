@@ -96,6 +96,89 @@ def _update_order(url: str, key: str, reference: str, stored: dict[str, str]) ->
     _send(request)
 
 
+def replaced_kinds(notes) -> set[str]:
+    found = set()
+    for note in notes or []:
+        for kind in CUSTOMER_KINDS:
+            if f"Replaced the previous {kind}." in note:
+                found.add(kind)
+    return found
+
+
+def plan_delivery(files: dict, notes, already: set[str]) -> tuple[dict, bool]:
+    """Which label and invoice files to give the customer.
+
+    already is what they have already received. A replaced label is an edit.
+    The transaction record is never included.
+    """
+    files = {kind: path for kind, path in files.items() if kind in CUSTOMER_KINDS}
+    replaced = replaced_kinds(notes)
+    chosen = {}
+    for kind in CUSTOMER_KINDS:
+        if kind in files and (kind in replaced or kind not in already):
+            chosen[kind] = files[kind]
+    return chosen, "label" in replaced
+
+
+def _supabase() -> tuple[str, str]:
+    url = _env("SUPABASE_URL").rstrip("/")
+    key = _env("SUPABASE_SERVICE_ROLE_KEY")
+    return url, key
+
+
+def order_row(reference: str) -> dict | None:
+    url, key = _supabase()
+    if not url or not key:
+        return None
+    request = urllib.request.Request(
+        f"{url}/rest/v1/label_orders?reference=eq.{reference}&select=telegram_user_id,label_path,invoice_path",
+        headers={"Authorization": "Bearer " + key, "apikey": key},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        rows = json.loads(response.read().decode() or "[]")
+    return rows[0] if rows else None
+
+
+def saved_customer_kinds(reference: str | None) -> set[str] | None:
+    """Kinds already stored for a website order. None when this is not a website order."""
+    if not reference:
+        return None
+    row = order_row(reference)
+    if not row:
+        return set()
+    kinds = set()
+    if row.get("label_path"):
+        kinds.add("label")
+    if row.get("invoice_path"):
+        kinds.add("invoice")
+    return kinds
+
+
+def requester_telegram_id(reference: str) -> int | None:
+    row = order_row(reference)
+    if not row or not row.get("telegram_user_id"):
+        return None
+    return int(row["telegram_user_id"])
+
+
+def mark_order_edited(reference: str) -> None:
+    url, key = _supabase()
+    if not url or not key:
+        return
+    request = urllib.request.Request(
+        f"{url}/rest/v1/label_orders?reference=eq.{reference}",
+        data=json.dumps({"edited": True}).encode(),
+        method="PATCH",
+        headers={
+            "Authorization": "Bearer " + key,
+            "apikey": key,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+        },
+    )
+    _send(request)
+
+
 def _send(request: urllib.request.Request) -> None:
     try:
         with urllib.request.urlopen(request, timeout=30) as response:

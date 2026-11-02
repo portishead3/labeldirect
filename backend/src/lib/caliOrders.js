@@ -235,6 +235,7 @@ export function publicLabelOrder(row) {
     createdAt: row.created_at,
     hasLabel: Boolean(row.label_path),
     hasInvoice: Boolean(row.invoice_path),
+    edited: row.edited === true,
     description: orderDescription(row.order_json),
   };
 }
@@ -242,7 +243,7 @@ export function publicLabelOrder(row) {
 export async function listLabelOrders(ownerKey) {
   const { data, error } = await getSupabaseAdmin()
     .from("label_orders")
-    .select("reference, carrier, status, created_at, label_path, invoice_path, order_json")
+    .select("reference, carrier, status, created_at, label_path, invoice_path, edited, order_json")
     .eq("owner_key", ownerKey)
     .order("created_at", { ascending: false })
     .limit(100);
