@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -25,14 +26,45 @@ function readEnvFile(file) {
   return out;
 }
 
+function clean(value) {
+  let text = String(value || "").trim();
+  if (
+    (text.startsWith('"') && text.endsWith('"')) ||
+    (text.startsWith("'") && text.endsWith("'"))
+  ) {
+    text = text.slice(1, -1).trim();
+  }
+  return text;
+}
+
 function firstValue(sources, keys) {
   for (const source of sources) {
     for (const key of keys) {
-      const value = String((source && source[key]) || "").trim();
+      const value = clean(source && source[key]);
       if (value) return value;
     }
   }
   return "";
+}
+
+// Logged once per process so a bad token can be recognised without revealing it.
+let credentialsLogged = false;
+function logCredentials(token, groupId) {
+  if (credentialsLogged) return;
+  credentialsLogged = true;
+  const fingerprint = token
+    ? crypto.createHash("sha256").update(token).digest("hex").slice(0, 12)
+    : "";
+  console.log(
+    "CALI credentials: " +
+      JSON.stringify({
+        tokenLength: token.length,
+        tokenFingerprint: fingerprint,
+        tokenShape: /^\d+:[A-Za-z0-9_-]{30,}$/.test(token),
+        groupLength: groupId.length,
+        groupShape: /^-?\d+$/.test(groupId),
+      })
+  );
 }
 
 export function caliCredentials(caliRoot) {
@@ -41,10 +73,10 @@ export function caliCredentials(caliRoot) {
     ...readEnvFile(path.join(caliRoot, "..", "backend", ".env")),
   };
   const sources = [process.env, fileEnv];
-  return {
-    token: firstValue(sources, ["CALI_BOT_TOKEN", "TELEGRAM_TOKEN", "Telegram_Token"]),
-    groupId: firstValue(sources, ["CALI_GROUP_CHAT_ID", "TELEGRAM_GROUPCHAT_ID", "Telegram_groupchat_ID"]),
-  };
+  const token = firstValue(sources, ["CALI_BOT_TOKEN", "TELEGRAM_TOKEN", "Telegram_Token"]);
+  const groupId = firstValue(sources, ["CALI_GROUP_CHAT_ID", "TELEGRAM_GROUPCHAT_ID", "Telegram_groupchat_ID"]);
+  logCredentials(token, groupId);
+  return { token, groupId };
 }
 
 export function startCaliWorkflow(caliRoot) {
