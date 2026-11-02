@@ -621,7 +621,6 @@ export async function handleTelegramUpdate(update) {
   const userId = message.from && message.from.id;
   if (!userId || !isPrivateChat(message.chat)) return;
   if (message.reply_to_message && (await handleOrderEdit(message))) return;
-  if (!awaitingDetails.has(userId)) return;
   await handleOrderDetails(message);
 }
 
