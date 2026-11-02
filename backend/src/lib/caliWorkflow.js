@@ -42,8 +42,8 @@ export function caliCredentials(caliRoot) {
   };
   const sources = [process.env, fileEnv];
   return {
-    token: firstValue(sources, ["CALI_BOT_TOKEN", "Telegram_Token"]),
-    groupId: firstValue(sources, ["CALI_GROUP_CHAT_ID", "Telegram_groupchat_ID"]),
+    token: firstValue(sources, ["CALI_BOT_TOKEN", "TELEGRAM_TOKEN", "Telegram_Token"]),
+    groupId: firstValue(sources, ["CALI_GROUP_CHAT_ID", "TELEGRAM_GROUPCHAT_ID", "Telegram_groupchat_ID"]),
   };
 }
 
