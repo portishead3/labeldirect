@@ -38,10 +38,12 @@ import {
 import { parseLine } from "../lib/parsePaste.js";
 import {
   buildOrderMessage,
-  customerLabel,
+  customerRecord,
+  deleteLabelOrder,
   newOrderReference,
   orderRateLimited,
   parseLabelOrder,
+  saveLabelOrder,
   sendOrderToCali,
 } from "../lib/caliOrders.js";
 
@@ -160,8 +162,22 @@ publicRouter.post("/label-orders", requireWalletAccess, async (req, res) => {
   }
   try {
     const reference = newOrderReference();
-    const customer = await customerLabel(req.accountsSub);
-    const sent = await sendOrderToCali(buildOrderMessage(parsed.order, { reference, customer }));
+    const customer = await customerRecord(req.accountsSub);
+    await saveLabelOrder({ reference, customer, order: parsed.order, messageId: null });
+    let sent;
+    try {
+      sent = await sendOrderToCali(buildOrderMessage(parsed.order, { reference }));
+    } catch (err) {
+      await deleteLabelOrder(reference);
+      throw err;
+    }
+    if (sent && sent.message_id) {
+      const { error } = await getSupabaseAdmin()
+        .from("label_orders")
+        .update({ telegram_message_id: sent.message_id })
+        .eq("reference", reference);
+      if (error) console.error("label order message id:", error.message || error);
+    }
     res.json({ ok: true, reference, messageId: sent.message_id });
   } catch (err) {
     console.error("POST /api/label-orders:", err.message || err);

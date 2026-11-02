@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getSupabaseAdmin } from "../supabaseAdmin.js";
-import { telegramDisplayName } from "./telegramBot.js";
 import { caliCredentials } from "./caliWorkflow.js";
 
 // Website orders are posted into the CALI Telegram group. Staff reply to the
@@ -141,10 +140,8 @@ function partyLines(party) {
 // The CALI bot reads this message with its free-form parser, so details are
 // written as "Label: value" lines, and the sender block goes last because the
 // parser skips everything in it.
-export function buildOrderMessage(order, { reference, customer }) {
-  const lines = ["Order: " + reference, "Carrier: " + order.carrier];
-  if (customer) lines.push("Customer: " + customer);
-  lines.push("");
+export function buildOrderMessage(order, { reference }) {
+  const lines = ["Order: " + reference, "Carrier: " + order.carrier, ""];
 
   if (order.mode === "paste") {
     lines.push(order.labelText);
@@ -167,8 +164,16 @@ export function buildOrderMessage(order, { reference, customer }) {
   return lines.join("\n");
 }
 
-export async function customerLabel(ownerKey) {
-  if (!ownerKey || ownerKey === "shared") return "Shared access token";
+// Who placed the order. Kept in label_orders, never written into the group message.
+export async function customerRecord(ownerKey) {
+  const record = {
+    ownerKey: ownerKey || "",
+    telegramUserId: null,
+    telegramUsername: null,
+    telegramFirstName: null,
+    telegramLastName: null,
+  };
+  if (!ownerKey || ownerKey === "shared") return record;
   try {
     const { data, error } = await getSupabaseAdmin()
       .from("access_tokens")
@@ -176,15 +181,41 @@ export async function customerLabel(ownerKey) {
       .eq("id", ownerKey)
       .maybeSingle();
     if (error) throw error;
-    if (data) {
-      const name = oneLine(telegramDisplayName(data, data.telegram_user_id), 80);
-      const id = data.telegram_user_id ? " (ID " + data.telegram_user_id + ")" : "";
-      return name + id;
-    }
+    if (!data) return record;
+    record.telegramUserId = data.telegram_user_id ?? null;
+    record.telegramUsername = data.telegram_username || null;
+    record.telegramFirstName = data.telegram_first_name || null;
+    record.telegramLastName = data.telegram_last_name || null;
   } catch (err) {
-    console.error("customerLabel:", err.message || err);
+    console.error("customerRecord:", err.message || err);
   }
-  return "User " + oneLine(ownerKey, 40);
+  return record;
+}
+
+export async function saveLabelOrder({ reference, customer, order, messageId }) {
+  const { error } = await getSupabaseAdmin().from("label_orders").insert({
+    reference,
+    owner_key: customer.ownerKey,
+    telegram_user_id: customer.telegramUserId,
+    telegram_username: customer.telegramUsername,
+    telegram_first_name: customer.telegramFirstName,
+    telegram_last_name: customer.telegramLastName,
+    carrier: order.carrier,
+    mode: order.mode,
+    telegram_message_id: messageId ?? null,
+    order_json: order,
+  });
+  if (error) {
+    const err = new Error("We could not save your order. Please try again.");
+    err.status = 500;
+    err.cause = error;
+    throw err;
+  }
+}
+
+export async function deleteLabelOrder(reference) {
+  const { error } = await getSupabaseAdmin().from("label_orders").delete().eq("reference", reference);
+  if (error) console.error("deleteLabelOrder:", error.message || error);
 }
 
 export function orderRateLimited(ownerKey) {
