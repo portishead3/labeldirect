@@ -27,6 +27,8 @@ import {
   sendTelegramDocument,
   telegramBotConfigured,
   telegramDisplayName,
+  handleTelegramUpdate,
+  telegramWebhookSecret,
 } from "../lib/telegramBot.js";
 import {
   isRefundWindowOpen,
@@ -75,6 +77,19 @@ async function loginWithOwnerKey(res, ownerKey, activity) {
   }
   res.json({ accessToken: createAccountsSession({ sub: ownerKey }) });
 }
+
+publicRouter.post("/telegram/webhook", (req, res) => {
+  const secret = telegramWebhookSecret();
+  const given = String(req.get("X-Telegram-Bot-Api-Secret-Token") || "");
+  if (!secret || given !== secret) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  res.json({ ok: true });
+  handleTelegramUpdate(req.body).catch((err) => {
+    console.error("Telegram update:", err.message || err);
+  });
+});
 
 publicRouter.post("/auth/login", async (req, res) => {
   if (!isAccountsAccessConfigured()) {

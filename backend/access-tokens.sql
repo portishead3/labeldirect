@@ -9,7 +9,8 @@ create table if not exists public.access_tokens (
   telegram_last_name text,
   token_hash text not null unique,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  pending_carrier text
 );
 
 alter table public.access_tokens enable row level security;

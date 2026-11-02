@@ -542,6 +542,7 @@ export async function notifyCustomerPending(customer, reference) {
 export async function sendOrderToCali(text) {
   const { token, groupId } = caliCredentials(caliRoot);
   if (!token || !groupId) {
+    console.error("CALI order skipped: token " + Boolean(token) + ", group " + Boolean(groupId));
     const err = new Error("Ordering is not available right now.");
     err.status = 503;
     throw err;

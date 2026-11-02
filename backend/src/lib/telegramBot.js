@@ -298,7 +298,32 @@ function isPrivateChat(chat) {
   return Boolean(chat && chat.type === "private");
 }
 
-const awaitingDetails = new Map();
+async function rememberCarrier(userId, carrier) {
+  const { error } = await getSupabaseAdmin()
+    .from("access_tokens")
+    .update({ pending_carrier: carrier, updated_at: new Date().toISOString() })
+    .eq("telegram_user_id", userId);
+  if (error) throw error;
+}
+
+async function takeCarrier(userId) {
+  const client = getSupabaseAdmin();
+  const { data, error } = await client
+    .from("access_tokens")
+    .select("pending_carrier")
+    .eq("telegram_user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  const carrier = data && data.pending_carrier;
+  if (!carrier) return "";
+  const { error: clearError } = await client
+    .from("access_tokens")
+    .update({ pending_carrier: null })
+    .eq("telegram_user_id", userId)
+    .eq("pending_carrier", carrier);
+  if (clearError) throw clearError;
+  return carrier;
+}
 
 const NEW_ORDER_KEYBOARD = {
   inline_keyboard: [[
@@ -400,7 +425,7 @@ async function handleStart(message) {
   const userId = message.from && message.from.id;
   const chatId = message.chat && message.chat.id;
   if (!userId || !chatId) return;
-  awaitingDetails.delete(userId);
+  await rememberCarrier(userId, null).catch(() => {});
   if (!(await requireChannel(message, "press Start again"))) return;
   try {
     await ensureCustomer(message.from);
@@ -466,7 +491,17 @@ async function handleNewOrder(callback, carrier) {
   const chatId = chat && chat.id;
   await answerCallback(callback);
   if (!userId || !chatId || !isPrivateChat(chat) || !carrier) return;
-  awaitingDetails.set(userId, carrier);
+  try {
+    await ensureCustomer(callback.from);
+    await rememberCarrier(userId, carrier);
+  } catch (err) {
+    console.error("pending carrier:", err.message || err);
+    await telegramApi("sendMessage", {
+      chat_id: chatId,
+      text: "Could not start that order. Press Start and try again.",
+    });
+    return;
+  }
   await telegramApi("sendMessage", {
     chat_id: chatId,
     text: "Awaiting details.",
@@ -507,8 +542,11 @@ async function handleOrderDetails(message) {
   const userId = message.from && message.from.id;
   const chatId = message.chat && message.chat.id;
   if (!userId || !chatId) return;
+  const carrier = await takeCarrier(userId);
+  if (!carrier) return;
   const text = String(message.text || "").trim();
   if (!text || text.startsWith("/")) {
+    await rememberCarrier(userId, carrier);
     await telegramApi("sendMessage", {
       chat_id: chatId,
       text: "Send the label details as a text message.",
@@ -520,10 +558,10 @@ async function handleOrderDetails(message) {
       telegramUserId: userId,
       labelText: text,
       detailsMessageId: message.message_id,
-      carrier: awaitingDetails.get(userId),
+      carrier,
     });
-    awaitingDetails.delete(userId);
   } catch (err) {
+    await rememberCarrier(userId, carrier).catch(() => {});
     console.error("Bot order:", err.message || err);
     const known = err.status === 400 || err.status === 429 || err.status === 502 || err.status === 503;
     await telegramApi("sendMessage", {
@@ -544,27 +582,75 @@ async function handleOrderDetails(message) {
   }
 }
 
+const seenUpdates = new Set();
+
+export function telegramWebhookSecret() {
+  const token = botToken();
+  if (!token) return "";
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function webhookUrl() {
+  const configured = String(process.env.PUBLIC_SITE_URL || "").replace(/\/$/, "");
+  const origin = configured.startsWith("https://") ? configured : "https://ldirect.pro";
+  return origin + "/api/telegram/webhook";
+}
+
+export async function handleTelegramUpdate(update) {
+  if (!update || update.update_id == null) return;
+  if (seenUpdates.has(update.update_id)) return;
+  seenUpdates.add(update.update_id);
+  if (seenUpdates.size > 500) seenUpdates.delete(seenUpdates.values().next().value);
+
+  if (update.callback_query) {
+    const carrier = carrierFromCallback(update.callback_query.data);
+    if (carrier) await handleNewOrder(update.callback_query, carrier);
+    else await answerCallback(update.callback_query);
+    return;
+  }
+  const message = update.message;
+  if (!message) return;
+  if (isTokenCommand(message.text)) {
+    await handleToken(message);
+    return;
+  }
+  if (isPlainStart(message.text)) {
+    await handleStart(message);
+    return;
+  }
+  const userId = message.from && message.from.id;
+  if (!userId || !isPrivateChat(message.chat)) return;
+  if (message.reply_to_message && (await handleOrderEdit(message))) return;
+  if (!awaitingDetails.has(userId)) return;
+  await handleOrderDetails(message);
+}
+
 export async function startTelegramBot() {
   const token = botToken();
   if (!token) {
     console.warn("Telegram bot skipped: BOT_TOKEN is not set.");
     return;
   }
-  // Local checkouts set CALI_POLLING=false. The deployed site does not, so it
-  // is the only process that polls. TELEGRAM_POLLING on the host is left alone.
+  // Local checkouts set CALI_POLLING=false. The deployed site receives
+  // updates at one webhook, so a second poller cannot answer the same tap.
   if (String(process.env.CALI_POLLING || "true").toLowerCase() === "false") {
     console.warn("Telegram bot skipped: this machine is not the deployed bot.");
     return;
   }
 
+  const url = webhookUrl();
   try {
-    await telegramApi("deleteWebhook", { drop_pending_updates: true });
+    await telegramApi("setWebhook", {
+      url,
+      secret_token: telegramWebhookSecret(),
+      allowed_updates: ["message", "callback_query"],
+      drop_pending_updates: false,
+    });
+    console.log("Telegram bot webhook " + url);
   } catch (err) {
-    console.warn("Telegram deleteWebhook:", err.message || err);
+    console.error("Telegram setWebhook:", err.message || err);
   }
 
-  const username = telegramBotUsername();
-  console.log("Telegram bot polling" + (username ? " @" + username : ""));
   try {
     await telegramApi("setMyCommands", {
       commands: [
@@ -574,43 +660,5 @@ export async function startTelegramBot() {
     });
   } catch (err) {
     console.warn("Telegram setMyCommands:", err.message || err);
-  }
-
-  let offset = 0;
-  while (true) {
-    try {
-      const updates = await telegramApi("getUpdates", {
-        offset,
-        timeout: 30,
-        allowed_updates: ["message", "callback_query"],
-      });
-      for (const update of updates || []) {
-        offset = update.update_id + 1;
-        if (update.callback_query) {
-          const carrier = carrierFromCallback(update.callback_query.data);
-          if (carrier) await handleNewOrder(update.callback_query, carrier);
-          else await answerCallback(update.callback_query);
-          continue;
-        }
-        const message = update.message;
-        if (!message) continue;
-        if (isTokenCommand(message.text)) {
-          await handleToken(message);
-          continue;
-        }
-        if (isPlainStart(message.text)) {
-          await handleStart(message);
-          continue;
-        }
-        const userId = message.from && message.from.id;
-        if (!userId || !isPrivateChat(message.chat)) continue;
-        if (message.reply_to_message && (await handleOrderEdit(message))) continue;
-        if (!awaitingDetails.has(userId)) continue;
-        await handleOrderDetails(message);
-      }
-    } catch (err) {
-      console.error("Telegram getUpdates:", err);
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    }
   }
 }
