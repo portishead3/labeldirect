@@ -666,6 +666,17 @@
         background: rgba(155, 126, 200, 0.16);
       }
 
+      .admin-nav__btn--labels {
+        color: #7dcec4;
+        background: rgba(80, 190, 175, 0.1);
+        border: 1px solid rgba(80, 190, 175, 0.4);
+      }
+
+      .admin-nav__btn--labels:hover {
+        color: #e7faf7;
+        background: rgba(80, 190, 175, 0.22);
+      }
+
       .admin-nav__btn--refunds {
         margin-top: 4px;
         color: #f0a37a;
@@ -976,7 +987,7 @@
           <button type="button" class="admin-nav__btn is-active" data-admin-view="add">Add accounts</button>
           <button type="button" class="admin-nav__btn" data-admin-view="notify">Send notification</button>
           <button type="button" class="admin-nav__btn" data-admin-view="users">Users</button>
-          <a class="admin-nav__btn" href="/labelsadmin">Labels</a>
+          <a class="admin-nav__btn admin-nav__btn--labels" href="/labelsadmin">Labels</a>
           <button type="button" class="admin-nav__btn" data-admin-view="purchases">Purchases</button>
           <button type="button" class="admin-nav__btn" data-admin-view="sales">Sales</button>
           <button type="button" class="admin-nav__btn admin-nav__btn--refunds" data-admin-view="refunds" id="refunds-nav-btn">
