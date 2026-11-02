@@ -5,4 +5,5 @@ __pycache__/
 *.pyc
 .pytest_cache/
 data/
+.bot.lock
 .DS_Store

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import fs from "node:fs";
-import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -91,21 +91,45 @@ app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
-// Hostinger keeps more than one Node process. Only the process that binds
-// this port may poll Telegram, otherwise getUpdates is cancelled.
-function holdBotLock() {
-  const server = net.createServer();
+// Several Node processes share this disk and do not share 127.0.0.1.
+// Only the process that keeps this file fresh may poll Telegram.
+function holdBotLock(lockFile) {
+  const claim = () => {
+    let owner = "";
+    let age = Infinity;
+    try {
+      owner = fs.readFileSync(lockFile, "utf8").trim();
+      age = Date.now() - fs.statSync(lockFile).mtimeMs;
+    } catch {
+      owner = "";
+    }
+    if (owner && owner !== String(process.pid) && age < 12000) return false;
+    fs.writeFileSync(lockFile, String(process.pid));
+    return true;
+  };
   return new Promise((resolve) => {
-    const tryListen = () => server.listen(3011, "127.0.0.1");
-    server.on("error", (err) => {
-      if (err.code !== "EADDRINUSE") console.error("Bot lock:", err.message || err);
-      setTimeout(tryListen, 2000);
-    });
-    server.on("listening", () => {
-      console.log("Bot lock acquired");
-      resolve();
-    });
-    tryListen();
+    const attempt = () => {
+      if (!claim()) {
+        setTimeout(attempt, 2000);
+        return;
+      }
+      setTimeout(() => {
+        let owner = "";
+        try {
+          owner = fs.readFileSync(lockFile, "utf8").trim();
+        } catch {
+          owner = "";
+        }
+        if (owner !== String(process.pid)) {
+          setTimeout(attempt, 2000);
+          return;
+        }
+        setInterval(claim, 4000);
+        console.log("Bot lock acquired");
+        resolve();
+      }, 400);
+    };
+    attempt();
   });
 }
 
@@ -114,7 +138,7 @@ app.listen(port, () => {
   resumeIncompleteJobs().catch((err) => {
     console.error("Could not resume list jobs", err);
   });
-  holdBotLock().then(() => {
+  holdBotLock(path.join(os.tmpdir(), "labeldirect-bot.lock")).then(() => {
     startTelegramBot().catch((err) => {
       console.error("Telegram bot failed", err);
     });
