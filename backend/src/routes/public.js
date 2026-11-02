@@ -40,9 +40,11 @@ import {
   buildOrderMessage,
   customerRecord,
   deleteLabelOrder,
+  listLabelOrders,
   newOrderReference,
   orderRateLimited,
   parseLabelOrder,
+  readLabelOrderFile,
   saveLabelOrder,
   sendOrderToCali,
 } from "../lib/caliOrders.js";
@@ -150,6 +152,36 @@ publicRouter.get("/accounts", requireAccountsAccess, async (_req, res) => {
 
 // A label order from the website: post it to the CALI group so the carrier
 // PDFs can be sent back as replies to it.
+publicRouter.get("/label-orders", requireWalletAccess, async (req, res) => {
+  try {
+    res.json(await listLabelOrders(req.accountsSub));
+  } catch (err) {
+    console.error("GET /api/label-orders:", err.message || err);
+    res.status(500).json({ error: "Could not load your orders." });
+  }
+});
+
+publicRouter.get("/label-orders/:reference/:file", requireWalletAccess, async (req, res) => {
+  if (req.params.file !== "label" && req.params.file !== "invoice") {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  try {
+    const file = await readLabelOrderFile(req.accountsSub, req.params.reference, req.params.file);
+    if (!file) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="' + file.filename + '"');
+    res.setHeader("Cache-Control", "private, no-store");
+    res.send(file.buffer);
+  } catch (err) {
+    console.error("GET /api/label-orders file:", err.message || err);
+    res.status(500).json({ error: "Could not download that file." });
+  }
+});
+
 publicRouter.post("/label-orders", requireWalletAccess, async (req, res) => {
   const parsed = parseLabelOrder(req.body);
   if (parsed.error) {

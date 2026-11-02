@@ -333,6 +333,21 @@
         color: var(--accent-light);
       }
 
+      .row__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .orders__note {
+        padding: 0 20px 14px;
+        color: #ffb4d6;
+        font-size: 0.88rem;
+      }
+
       .track {
         display: grid;
         grid-template-columns: 120px minmax(0, 1fr) auto;
@@ -895,9 +910,10 @@
       <div class="card" id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
         <div class="empty" id="orders-empty">
           <p class="empty__title">No orders yet</p>
-          <p class="empty__text">Finished labels show up here with their PDF.</p>
+          <p class="empty__text">Orders you send show up here. The label and invoice appear when they are ready.</p>
           <a href="#new" class="btn btn--ghost">Start an order</a>
         </div>
+        <p class="orders__note" id="orders-note" role="alert" hidden></p>
         <ul class="rows" id="order-list" hidden></ul>
       </div>
 
@@ -1087,6 +1103,8 @@
       panelTrackings.hidden = !isTrackings;
       document.title = (isNew ? "New order" : "Label orders") + " — LABELDIRECT";
       window.scrollTo(0, 0);
+      if (isNew) ensureOrderPoll();
+      else loadLabelOrders();
     }
 
     tabOrders.addEventListener("click", function () { location.hash = "orders"; });
@@ -1120,20 +1138,123 @@
       list.hidden = labelOrders.length === 0;
       labelOrders.forEach(function (order) {
         var item = document.createElement("li");
-        var row = twoLineRow("button", order.title || "Label", order.meta || "", "Download PDF");
-        row.type = "button";
-        row.addEventListener("click", function () {
-          if (!order.pdfUrl) return;
-          var link = document.createElement("a");
-          link.href = order.pdfUrl;
-          link.download = order.filename || "label.pdf";
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-        });
+        var row = document.createElement("div");
+        row.className = "row";
+        var copy = document.createElement("span");
+        var strong = document.createElement("span");
+        strong.className = "row__title";
+        strong.textContent = order.reference || "Label";
+        var small = document.createElement("span");
+        small.className = "row__meta";
+        small.textContent = (order.carrier || "Label") + " · " + (order.description || "Label order");
+        copy.appendChild(strong);
+        copy.appendChild(small);
+        row.appendChild(copy);
+        if (order.status === "delivered") {
+          var actions = document.createElement("span");
+          actions.className = "row__actions";
+          var state = document.createElement("span");
+          state.className = "row__action";
+          state.textContent = "Delivered";
+          actions.appendChild(state);
+          if (order.hasLabel) actions.appendChild(fileButton(order.reference, "label", "Label"));
+          if (order.hasInvoice) actions.appendChild(fileButton(order.reference, "invoice", "Invoice"));
+          row.appendChild(actions);
+        } else {
+          var pending = document.createElement("span");
+          pending.className = "row__action";
+          pending.textContent = "Pending";
+          row.appendChild(pending);
+        }
         item.appendChild(row);
         list.appendChild(item);
       });
+    }
+
+    function fileButton(reference, file, label) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn--ghost btn--sm";
+      button.textContent = label;
+      button.addEventListener("click", function () { downloadOrderFile(reference, file, button); });
+      return button;
+    }
+
+    function downloadOrderFile(reference, file, button) {
+      var note = document.getElementById("orders-note");
+      note.hidden = true;
+      var session = ListingsApp.getAccountsSession();
+      button.disabled = true;
+      fetch(ListingsApp.apiBase() + "/api/label-orders/" + encodeURIComponent(reference) + "/" + file, {
+        headers: { Authorization: "Bearer " + session }
+      })
+        .then(function (res) {
+          if (res.status === 401) {
+            ListingsApp.clearAccountsSession();
+            window.location.replace("/login.html?next=" + encodeURIComponent("/orders/"));
+            return null;
+          }
+          if (!res.ok) throw new Error("Could not download that file.");
+          return res.blob();
+        })
+        .then(function (blob) {
+          if (!blob) return;
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement("a");
+          link.href = url;
+          link.download = reference + "-" + file + ".pdf";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+        })
+        .catch(function (err) {
+          note.textContent = err.message || "Could not download that file.";
+          note.hidden = false;
+        })
+        .then(function () { button.disabled = false; });
+    }
+
+    var orderPoll = null;
+
+    function ensureOrderPoll() {
+      var watching = !viewList.hidden && labelOrders.some(function (order) { return order.status !== "delivered"; });
+      if (watching && !orderPoll) orderPoll = setInterval(loadLabelOrders, 15000);
+      if (!watching && orderPoll) {
+        clearInterval(orderPoll);
+        orderPoll = null;
+      }
+    }
+
+    function loadLabelOrders() {
+      var session = ListingsApp.getAccountsSession();
+      if (!session || !ListingsApp.isApiConfigured()) return;
+      fetch(ListingsApp.apiBase() + "/api/label-orders", {
+        headers: { Authorization: "Bearer " + session }
+      })
+        .then(function (res) {
+          if (res.status === 401) {
+            ListingsApp.clearAccountsSession();
+            window.location.replace("/login.html?next=" + encodeURIComponent("/orders/"));
+            return null;
+          }
+          return res.json().catch(function () { return null; }).then(function (data) {
+            if (!res.ok) throw new Error((data && data.error) || "Could not load your orders.");
+            return data;
+          });
+        })
+        .then(function (rows) {
+          if (!rows) return;
+          labelOrders = rows;
+          document.getElementById("orders-note").hidden = true;
+          renderOrders();
+          ensureOrderPoll();
+        })
+        .catch(function (err) {
+          var note = document.getElementById("orders-note");
+          note.textContent = err.message || "Could not load your orders.";
+          note.hidden = false;
+        });
     }
 
     function renderTrackings() {
@@ -1632,6 +1753,7 @@
         .then(function (data) {
           resetOrderForm();
           showStatus("Order " + data.reference + " sent. We'll reply with your label PDFs.", false);
+          loadLabelOrders();
         })
         .catch(function (err) {
           if (err.status === 401) {

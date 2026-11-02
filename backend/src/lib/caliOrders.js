@@ -218,6 +218,58 @@ export async function deleteLabelOrder(reference) {
   if (error) console.error("deleteLabelOrder:", error.message || error);
 }
 
+const ORDER_FILES = { label: "label_path", invoice: "invoice_path" };
+
+export function orderDescription(order) {
+  if (!order || order.mode === "paste") return "Pasted details";
+  const recipient = order.recipient || {};
+  const text = [recipient.name, recipient.city].filter(Boolean).join(", ");
+  return text || "Label order";
+}
+
+export function publicLabelOrder(row) {
+  return {
+    reference: row.reference,
+    carrier: row.carrier,
+    status: row.status === "delivered" ? "delivered" : "pending",
+    createdAt: row.created_at,
+    hasLabel: Boolean(row.label_path),
+    hasInvoice: Boolean(row.invoice_path),
+    description: orderDescription(row.order_json),
+  };
+}
+
+export async function listLabelOrders(ownerKey) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("label_orders")
+    .select("reference, carrier, status, created_at, label_path, invoice_path, order_json")
+    .eq("owner_key", ownerKey)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return (data || []).map(publicLabelOrder);
+}
+
+// Only the label and invoice can be read, and only by the account that placed the order.
+export async function readLabelOrderFile(ownerKey, reference, file) {
+  const column = ORDER_FILES[file];
+  if (!column || !/^LD-[A-Z0-9]{6}$/.test(reference)) return null;
+  const { data, error } = await getSupabaseAdmin()
+    .from("label_orders")
+    .select("owner_key, label_path, invoice_path")
+    .eq("reference", reference)
+    .maybeSingle();
+  if (error) throw error;
+  const objectPath = reference + "/" + file + ".pdf";
+  if (!data || data.owner_key !== ownerKey || data[column] !== objectPath) return null;
+  const downloaded = await getSupabaseAdmin().storage.from("label-orders").download(objectPath);
+  if (downloaded.error || !downloaded.data) return null;
+  return {
+    buffer: Buffer.from(await downloaded.data.arrayBuffer()),
+    filename: reference + "-" + file + ".pdf",
+  };
+}
+
 export function orderRateLimited(ownerKey) {
   const now = Date.now();
   const recent = (recentOrders.get(ownerKey) || []).filter((time) => now - time < RATE_WINDOW_MS);
