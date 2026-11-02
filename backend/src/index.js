@@ -1,5 +1,6 @@
 import "dotenv/config";
 import fs from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -90,15 +91,35 @@ app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
+// Hostinger keeps more than one Node process. Only the process that binds
+// this port may poll Telegram, otherwise getUpdates is cancelled.
+function holdBotLock() {
+  const server = net.createServer();
+  return new Promise((resolve) => {
+    const tryListen = () => server.listen(3011, "127.0.0.1");
+    server.on("error", (err) => {
+      if (err.code !== "EADDRINUSE") console.error("Bot lock:", err.message || err);
+      setTimeout(tryListen, 2000);
+    });
+    server.on("listening", () => {
+      console.log("Bot lock acquired");
+      resolve();
+    });
+    tryListen();
+  });
+}
+
 app.listen(port, () => {
   console.log(`LABELDIRECT API listening on http://localhost:${port}`);
   resumeIncompleteJobs().catch((err) => {
     console.error("Could not resume list jobs", err);
   });
-  startTelegramBot().catch((err) => {
-    console.error("Telegram bot failed", err);
+  holdBotLock().then(() => {
+    startTelegramBot().catch((err) => {
+      console.error("Telegram bot failed", err);
+    });
+    startCaliWorkflow(path.join(publicRoot, "cali"));
   });
-  startCaliWorkflow(path.join(publicRoot, "cali"));
 });
 
 function shutdown() {
