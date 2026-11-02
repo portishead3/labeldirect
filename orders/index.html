@@ -342,6 +342,45 @@
         flex-shrink: 0;
       }
 
+      .track-head,
+      .track-row {
+        display: grid;
+        grid-template-columns: minmax(7.5rem, 0.8fr) minmax(0, 1.3fr) minmax(8rem, 1fr);
+        gap: 8px 20px;
+        align-items: center;
+      }
+
+      .track-head {
+        padding: 14px 20px 10px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .track-row {
+        width: 100%;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .rows li:last-child .track-row { border-bottom: none; }
+
+      .track-row__label {
+        display: none;
+      }
+
+      .track-row__link {
+        justify-self: start;
+        font-weight: 700;
+        color: var(--accent-light);
+        word-break: break-all;
+      }
+
+      .track-row__link:hover { text-decoration: underline; }
+
       .orders__note {
         padding: 0 20px 14px;
         color: #ffb4d6;
@@ -846,6 +885,17 @@
         .page__head .btn { width: 100%; }
         .track { grid-template-columns: 1fr; }
         .track .btn { width: 100%; }
+        .track-head { display: none; }
+        .track-row { grid-template-columns: 1fr; gap: 2px; }
+        .track-row__label {
+          display: block;
+          color: var(--muted);
+          font-size: 0.68rem;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+        .track-row__link { margin-top: 6px; }
         .form { padding: 18px; }
         .grid2 { grid-template-columns: 1fr; }
         .pick, .seg { width: 100%; }
@@ -930,6 +980,11 @@
         <div class="empty" id="trackings-empty">
           <p class="empty__title">No trackings yet</p>
           <p class="empty__text">Tracking numbers from your labels will be listed here.</p>
+        </div>
+        <div class="track-head" id="tracking-head" hidden>
+          <span>Order</span>
+          <span>Receiver</span>
+          <span>Tracking</span>
         </div>
         <ul class="rows" id="tracking-list" hidden></ul>
       </div>
@@ -1075,7 +1130,6 @@
   </script>
   <script>
     var labelOrders = [];
-    var trackings = [];
 
     var viewList = document.getElementById("view-list");
     var viewNew = document.getElementById("view-new");
@@ -1085,8 +1139,8 @@
     var panelTrackings = document.getElementById("panel-trackings");
 
     function carrierTrackUrl(carrier, number) {
-      var value = encodeURIComponent(number);
-      if (carrier === "ups") return "https://www.ups.com/track?tracknum=" + value;
+      var value = encodeURIComponent(String(number).replace(/\s+/g, ""));
+      if (String(carrier || "").toLowerCase() === "ups") return "https://www.ups.com/track?tracknum=" + value;
       return "https://www.fedex.com/fedextrack/?trknbr=" + value;
     }
 
@@ -1110,26 +1164,6 @@
     tabOrders.addEventListener("click", function () { location.hash = "orders"; });
     tabTrackings.addEventListener("click", function () { location.hash = "trackings"; });
     window.addEventListener("hashchange", showView);
-
-    function twoLineRow(tag, title, meta, action) {
-      var row = document.createElement(tag);
-      row.className = "row";
-      var copy = document.createElement("span");
-      var strong = document.createElement("span");
-      strong.className = "row__title";
-      strong.textContent = title;
-      var small = document.createElement("span");
-      small.className = "row__meta";
-      small.textContent = meta;
-      copy.appendChild(strong);
-      copy.appendChild(small);
-      var act = document.createElement("span");
-      act.className = "row__action";
-      act.textContent = action;
-      row.appendChild(copy);
-      row.appendChild(act);
-      return row;
-    }
 
     function renderOrders() {
       var list = document.getElementById("order-list");
@@ -1248,6 +1282,7 @@
           labelOrders = rows;
           document.getElementById("orders-note").hidden = true;
           renderOrders();
+          renderTrackings();
           ensureOrderPoll();
         })
         .catch(function (err) {
@@ -1259,18 +1294,49 @@
 
     function renderTrackings() {
       var list = document.getElementById("tracking-list");
+      var head = document.getElementById("tracking-head");
+      var rows = labelOrders.filter(function (order) { return order.trackingNumber; });
       list.textContent = "";
-      document.getElementById("trackings-empty").hidden = trackings.length > 0;
-      list.hidden = trackings.length === 0;
-      trackings.forEach(function (entry) {
+      document.getElementById("trackings-empty").hidden = rows.length > 0;
+      head.hidden = rows.length === 0;
+      list.hidden = rows.length === 0;
+      rows.forEach(function (order) {
         var item = document.createElement("li");
-        var row = twoLineRow("a", entry.number, entry.carrier === "ups" ? "UPS" : "FedEx", "Track");
-        row.href = carrierTrackUrl(entry.carrier, entry.number);
-        row.target = "_blank";
-        row.rel = "noopener noreferrer";
+        var row = document.createElement("div");
+        row.className = "track-row";
+        row.appendChild(trackField("Order", order.reference || "Label", "row__title"));
+        row.appendChild(trackField("Receiver", order.receiverName || "—", "row__meta"));
+        var link = document.createElement("a");
+        link.className = "track-row__link";
+        link.href = carrierTrackUrl(order.carrier, order.trackingNumber);
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = order.trackingNumber;
+        var carrierName = String(order.carrier || "").toLowerCase() === "ups" ? "UPS" : "FedEx";
+        link.setAttribute("aria-label", "Track order " + (order.reference || "") + " on " + carrierName);
+        var tracking = document.createElement("span");
+        var trackingLabel = document.createElement("span");
+        trackingLabel.className = "track-row__label";
+        trackingLabel.textContent = "Tracking";
+        tracking.appendChild(trackingLabel);
+        tracking.appendChild(link);
+        row.appendChild(tracking);
         item.appendChild(row);
         list.appendChild(item);
       });
+    }
+
+    function trackField(label, value, valueClass) {
+      var wrap = document.createElement("span");
+      var caption = document.createElement("span");
+      caption.className = "track-row__label";
+      caption.textContent = label;
+      var text = document.createElement("span");
+      text.className = valueClass;
+      text.textContent = value;
+      wrap.appendChild(caption);
+      wrap.appendChild(text);
+      return wrap;
     }
 
     document.getElementById("track-form").addEventListener("submit", function (event) {
