@@ -519,8 +519,15 @@
   <script src="config.js"></script>
   <script src="listings.js?v=token"></script>
   <script>
+    // Where to go after signing in. Only same-site paths are accepted (?next=/orders/).
+    function afterLoginPath() {
+      var next = new URLSearchParams(window.location.search).get("next") || "";
+      if (/^\/(?![\/\\])[A-Za-z0-9\-._~\/%]*$/.test(next)) return next;
+      return "/accounts";
+    }
+
     if (ListingsApp.getAccountsSession()) {
-      window.location.replace("/accounts");
+      window.location.replace(afterLoginPath());
     } else {
       var gen = document.getElementById("generate-token");
       var tg = window.LABELDIRECT_TELEGRAM || {};
@@ -549,7 +556,7 @@
       submit.disabled = true;
       ListingsApp.loginWithToken(input.value)
         .then(function () {
-          window.location.replace("/accounts");
+          window.location.replace(afterLoginPath());
         })
         .catch(function (err) {
           submit.disabled = false;

@@ -8,6 +8,7 @@ import { publicRouter } from "./routes/public.js";
 import { adminRouter } from "./routes/admin.js";
 import { resumeIncompleteJobs } from "./lib/listJobs.js";
 import { startTelegramBot } from "./lib/telegramBot.js";
+import { startCaliWorkflow, stopCaliWorkflow } from "./lib/caliWorkflow.js";
 
 const publicRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PUBLIC_FILES = new Set([
@@ -24,12 +25,16 @@ const PUBLIC_FILES = new Set([
 ]);
 
 function publicFile(urlPath) {
-  const name = urlPath === "/" ? "index.html" : decodeURIComponent(urlPath).replace(/^\/+/, "");
-  if (!name || name.includes("..") || name.includes("/") || name.includes("\\")) return null;
+  let name = urlPath === "/" ? "index.html" : decodeURIComponent(urlPath).replace(/^\/+/, "");
+  name = name.replace(/\/+$/, "");
+  if (!name) name = "index.html";
+  if (name.includes("..") || name.includes("/") || name.includes("\\")) return null;
   if (PUBLIC_FILES.has(name)) return path.join(publicRoot, name);
   const withHtml = name.endsWith(".html") ? name : `${name}.html`;
-  if (!PUBLIC_FILES.has(withHtml)) return null;
-  return path.join(publicRoot, withHtml);
+  if (PUBLIC_FILES.has(withHtml)) return path.join(publicRoot, withHtml);
+  const directoryIndex = path.join(publicRoot, name, "index.html");
+  if (fs.existsSync(directoryIndex)) return directoryIndex;
+  return null;
 }
 
 const app = express();
@@ -92,4 +97,13 @@ app.listen(port, () => {
   startTelegramBot().catch((err) => {
     console.error("Telegram bot failed", err);
   });
+  startCaliWorkflow(path.join(publicRoot, "cali"));
 });
+
+function shutdown() {
+  stopCaliWorkflow();
+  process.exit(0);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

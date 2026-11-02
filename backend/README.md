@@ -26,6 +26,8 @@ Node server between the static site and Supabase. **Service role key stays here 
 
    Add the bot as an **admin** of the channel so membership checks work.
 
+   The CALI shipment check is a second bot in `cali/`. It watches one Telegram group: a shipment message, then FedEx PDFs replied to that message. Set `CALI_BOT_TOKEN` and `CALI_GROUP_CHAT_ID` (or keep them in `cali/.env`) and `npm start` launches it next to this API. Use a dedicated bot token in `CALI_BOT_TOKEN`. From `cali/`, `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` installs it, and `.venv/bin/pytest` runs the checks.
+
    Apply **`wallet-deposits.sql`** in Supabase (or via migration) before using wallet routes, and **`refunds.sql`** before using the orders/refunds routes. Add the bot to the refund group so it can post there.
 
 2. Install and run:

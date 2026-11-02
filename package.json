@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node backend/src/index.js"
+    "start": "node backend/src/index.js",
+    "cali": "cd cali && .venv/bin/python -m bot.main"
   },
   "engines": {
     "node": ">=20"

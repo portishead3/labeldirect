@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label orders — LABELDIRECT</title>
+    <meta name="description" content="LABELDIRECT label orders — download past labels, track shipments, and start a new order.">
+    <meta name="theme-color" content="#050010">
+    <meta property="og:title" content="Label orders — LABELDIRECT">
+    <meta property="og:description" content="Download past labels, track shipments, and start a new order.">
+    <meta property="og:image" content="/logo.jpeg">
+    <link rel="icon" href="/logo.jpeg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="/logo.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&amp;display=swap" rel="stylesheet">
+    <script>
+      // This page is for signed-in users only. No session: go to the login page
+      // before anything is shown. The session is checked with the server further down.
+      (function () {
+        var signedIn = false;
+        try { signedIn = Boolean(sessionStorage.getItem("labeldirect_accounts_session")); } catch (_e) { /* storage blocked */ }
+        document.documentElement.classList.add("auth-pending");
+        if (!signedIn) window.location.replace("/login.html?next=" + encodeURIComponent("/orders/"));
+      })();
+    </script>
+    <style>
+      html.auth-pending body { visibility: hidden; }
+    </style>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        color-scheme: dark;
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: 'Jost', sans-serif;
+        line-height: 1.6;
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      img { max-width: 100%; display: block; }
+      a { text-decoration: none; color: inherit; }
+      button, input, select, textarea { font-family: inherit; }
+      button { cursor: pointer; border: none; background: none; color: inherit; }
+      [hidden] { display: none !important; }
+
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 12px;
+        top: -48px;
+        z-index: 10000;
+        background: var(--accent);
+        color: #050010;
+        font-weight: 700;
+        padding: 10px 16px;
+        border-radius: 6px;
+      }
+
+      .skip-link:focus { top: 12px; }
+
+      :root {
+        --bg-primary: #050010;
+        --bg-card: #0c0718;
+        --bg-surface: #161022;
+        --accent: #c56cff;
+        --accent-light: #eddcff;
+        --text-primary: #f7f4ff;
+        --text-secondary: #d8d0ee;
+        --muted: #a79bc2;
+        --border-accent: rgba(197, 108, 255, 0.28);
+        --line: rgba(184, 77, 255, 0.18);
+        --nav-h: 64px;
+      }
+
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        height: var(--nav-h);
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        background: rgba(5, 0, 16, 0.92);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border-accent);
+      }
+
+      .navbar__brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: 0.04em;
+      }
+
+      .navbar__logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid rgba(197, 108, 255, 0.45);
+        box-shadow: 0 0 12px rgba(197, 108, 255, 0.35);
+      }
+
+      .navbar__links {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .navbar__link {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+
+      .navbar__link:hover {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.1);
+      }
+
+      .navbar__link--active {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.2);
+        box-shadow: inset 0 0 0 1px rgba(237, 220, 255, 0.4);
+      }
+
+      .navbar__link--accounts {
+        color: #c8f4ff;
+        background: rgba(0, 190, 255, 0.12);
+        border: 1px solid rgba(130, 220, 255, 0.55);
+        padding: 7px 14px;
+        border-radius: 999px;
+        letter-spacing: 0.1em;
+        box-shadow: 0 0 14px rgba(70, 200, 255, 0.28);
+      }
+
+      .navbar__link--accounts:hover {
+        color: #fff;
+        background: rgba(0, 200, 255, 0.22);
+        border-color: #9ae8ff;
+      }
+
+      .page {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: calc(var(--nav-h) + 40px) 20px 64px;
+      }
+
+      .page__head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .page__eyebrow {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #ff3df5;
+        text-shadow: 0 0 14px rgba(255, 61, 245, 0.6);
+      }
+
+      .page__title {
+        font-size: clamp(1.9rem, 5vw, 2.6rem);
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: 0.02em;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #050010;
+        padding: 12px 22px;
+        border-radius: 10px;
+        border: 1px solid var(--accent);
+        background: linear-gradient(135deg, #e8d0ff, var(--accent));
+        box-shadow: 0 0 22px rgba(197, 108, 255, 0.35);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        white-space: nowrap;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(184, 77, 255, 0.5);
+      }
+
+      .btn--ghost {
+        color: var(--accent-light);
+        background: transparent;
+        box-shadow: none;
+        border-color: var(--border-accent);
+      }
+
+      .btn--ghost:hover {
+        background: rgba(197, 108, 255, 0.1);
+        box-shadow: none;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        margin-bottom: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+
+      .tab {
+        flex: 1;
+        padding: 10px 14px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-radius: 9px;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+
+      .tab:hover { color: var(--text-primary); }
+
+      .tab[aria-selected="true"] {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.2);
+        box-shadow: inset 0 0 0 1px rgba(237, 220, 255, 0.3);
+      }
+
+      .card {
+        background: linear-gradient(135deg, rgba(184, 77, 255, 0.07), rgba(184, 77, 255, 0.02));
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .empty {
+        padding: 56px 24px;
+        text-align: center;
+      }
+
+      .empty__title {
+        font-weight: 700;
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+      }
+
+      .empty__text {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin-bottom: 18px;
+      }
+
+      .rows {
+        list-style: none;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        width: 100%;
+        padding: 16px 20px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        transition: background 0.2s ease;
+      }
+
+      .rows li:last-child .row { border-bottom: none; }
+
+      .row:hover { background: rgba(197, 108, 255, 0.07); }
+
+      .row__title { font-weight: 700; }
+
+      .row__meta {
+        display: block;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .row__action {
+        flex-shrink: 0;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent-light);
+      }
+
+      .track {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .track__note {
+        grid-column: 1 / -1;
+        color: #ffb4d6;
+        font-size: 0.88rem;
+      }
+
+      .input,
+      .select,
+      .textarea {
+        width: 100%;
+        min-width: 0;
+        color: var(--text-primary);
+        background: rgba(5, 0, 16, 0.55);
+        border: 1px solid rgba(184, 77, 255, 0.28);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 1rem;
+      }
+
+      .textarea {
+        min-height: 92px;
+        resize: vertical;
+      }
+
+      .page--wide { max-width: 1060px; }
+
+      .form {
+        padding: 26px;
+        display: grid;
+        gap: 28px;
+      }
+
+      .form__top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .pick {
+        border: 0;
+        padding: 0;
+        margin: 0;
+        min-width: 0;
+      }
+
+      .pick legend {
+        padding: 0;
+        margin-bottom: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .seg {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+
+      .seg label { position: relative; cursor: pointer; }
+
+      .seg input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        margin: 0;
+        cursor: pointer;
+      }
+
+      .seg span {
+        display: block;
+        padding: 10px 22px;
+        font-size: 0.86rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-radius: 9px;
+        transition: color 0.2s ease, background 0.2s ease;
+      }
+
+      .seg label:hover span { color: var(--text-primary); }
+
+      .seg input:checked + span {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.2);
+        box-shadow: inset 0 0 0 1px rgba(237, 220, 255, 0.3);
+      }
+
+      .seg input:focus-visible + span {
+        outline: 2px solid var(--accent-light);
+        outline-offset: 2px;
+      }
+
+      .paste {
+        display: grid;
+        gap: 10px;
+      }
+
+      .paste .fld textarea {
+        min-height: 230px;
+        line-height: 1.5;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.92rem;
+      }
+
+      .form__cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 36px;
+        align-items: start;
+      }
+
+      .col {
+        display: grid;
+        gap: 30px;
+        align-content: start;
+        min-width: 0;
+      }
+
+      .party {
+        display: grid;
+        gap: 10px;
+      }
+
+      .party__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 2px;
+      }
+
+      .party__title {
+        font-size: 1.2rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .pill {
+        max-width: 210px;
+        color: var(--text-primary);
+        background: rgba(5, 0, 16, 0.55);
+        border: 1px solid rgba(184, 77, 255, 0.28);
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .grid3 {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr 1fr;
+        gap: 10px;
+      }
+
+      .cell {
+        display: grid;
+        align-content: start;
+        min-width: 0;
+      }
+
+      .fld {
+        display: block;
+        padding: 8px 12px 6px;
+        background: rgba(5, 0, 16, 0.55);
+        border: 1px solid rgba(184, 77, 255, 0.28);
+        border-radius: 10px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .fld:focus-within {
+        border-color: var(--accent-light);
+        box-shadow: 0 0 0 1px var(--accent-light);
+      }
+
+      .fld label {
+        display: block;
+        font-size: 0.72rem;
+        line-height: 1.2;
+        color: var(--muted);
+      }
+
+      .fld input,
+      .fld select,
+      .fld textarea {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        padding: 3px 0 2px;
+        color: var(--text-primary);
+        background: transparent;
+        border: 0;
+        outline: none;
+        font-size: 1rem;
+      }
+
+      .fld textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+
+      .fld.is-error {
+        border-color: #ff6b8a;
+        box-shadow: none;
+      }
+
+      .fld.is-error label { color: #ff9db3; }
+
+      .err {
+        margin-top: 4px;
+        color: #ff8fa8;
+        font-size: 0.85rem;
+      }
+
+      select option {
+        color: #f7f4ff;
+        background: #161022;
+      }
+
+      .block {
+        display: grid;
+        gap: 12px;
+      }
+
+      .block__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .block__title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.02rem;
+        font-weight: 700;
+      }
+
+      .block__tools {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .icon {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: var(--muted);
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .unit {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+
+      .unit .is-on { color: var(--text-primary); }
+
+      .switch {
+        position: relative;
+        flex-shrink: 0;
+        width: 40px;
+        height: 22px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(184, 77, 255, 0.4);
+        transition: background 0.2s ease;
+      }
+
+      .switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--text-primary);
+        transition: transform 0.2s ease, background 0.2s ease;
+      }
+
+      .switch[aria-checked="true"] { background: var(--accent); }
+
+      .switch[aria-checked="true"]::after {
+        transform: translateX(18px);
+        background: #050010;
+      }
+
+      .btn--sm {
+        padding: 9px 14px;
+        font-size: 0.74rem;
+        letter-spacing: 0.1em;
+      }
+
+      .parcel-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .parcel {
+        display: grid;
+        grid-template-columns: minmax(0, 340px) auto;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .icon-btn {
+        width: 46px;
+        height: 46px;
+        font-size: 1.4rem;
+        line-height: 1;
+        color: var(--muted);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      .icon-btn:hover {
+        color: var(--text-primary);
+        background: rgba(197, 108, 255, 0.1);
+      }
+
+      .hint {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 16px;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .check input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+      }
+
+      .or {
+        position: relative;
+        margin: 22px 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+
+      .or::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 1px;
+        background: var(--line);
+      }
+
+      .or span {
+        position: relative;
+        padding: 0 14px;
+        background: var(--bg-primary);
+      }
+
+      .tg {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 22px 26px;
+        color: #050010;
+        background: linear-gradient(135deg, #e8d0ff, var(--accent));
+        border: 1px solid var(--accent);
+        border-radius: 16px;
+        box-shadow: 0 0 34px rgba(197, 108, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+
+      .tg:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 48px rgba(184, 77, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
+
+      .tg__icon {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        fill: currentColor;
+      }
+
+      .tg__text {
+        display: grid;
+        flex: 1;
+        min-width: 0;
+        line-height: 1.3;
+      }
+
+      .tg__title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .tg__sub {
+        font-size: 0.95rem;
+        font-weight: 500;
+        opacity: 0.75;
+      }
+
+      .tg__go {
+        flex-shrink: 0;
+        font-size: 1.6rem;
+        font-weight: 800;
+      }
+
+      .form__foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 4px;
+      }
+
+      .form__status {
+        color: var(--accent-light);
+        font-size: 0.92rem;
+      }
+
+      .form__status.is-error { color: #ff8fa8; }
+
+      .form__foot .btn:disabled { opacity: 0.6; cursor: wait; }
+
+      .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 18px;
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .back:hover { color: var(--text-primary); }
+
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #050010; }
+      ::-webkit-scrollbar-thumb { background: rgba(184, 77, 255, 0.3); border-radius: 3px; }
+
+      @media (max-width: 599px) {
+        :root { --nav-h: 60px; }
+        .navbar { padding: 0 12px; }
+        .navbar__brand-text { display: none; }
+        .navbar__link { padding: 7px 8px; font-size: 0.72rem; }
+        .page { padding: calc(var(--nav-h) + 24px) 16px 48px; }
+        .page__head { flex-direction: column; align-items: stretch; }
+        .page__head .btn { width: 100%; }
+        .track { grid-template-columns: 1fr; }
+        .track .btn { width: 100%; }
+        .form { padding: 18px; }
+        .grid2 { grid-template-columns: 1fr; }
+        .pick, .seg { width: 100%; }
+        .seg label { flex: 1; }
+        .seg span { padding: 10px 8px; text-align: center; font-size: 0.78rem; }
+        .grid3 { grid-template-columns: 1fr 1fr; }
+        .grid3 > :first-child { grid-column: 1 / -1; }
+        .party__head { flex-wrap: wrap; }
+        .parcel { grid-template-columns: minmax(0, 1fr) auto; }
+        .form__foot { flex-direction: column-reverse; align-items: stretch; text-align: center; }
+        .form__foot .btn { width: 100%; }
+        .tg { padding: 18px; gap: 14px; }
+        .tg__icon { width: 34px; height: 34px; }
+        .tg__title { font-size: 1.1rem; }
+        .tg__sub { font-size: 0.85rem; }
+      }
+
+      @media (max-width: 899px) {
+        .form__cols { grid-template-columns: 1fr; gap: 30px; }
+      }
+
+      @media (min-width: 768px) {
+        :root { --nav-h: 72px; }
+        .navbar { padding: 0 40px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn, .row, .tab, .navbar__link, .tg { transition: none; }
+      }
+    </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <nav class="navbar">
+    <a href="/" class="navbar__brand">
+      <img src="/logo.jpeg" alt="" class="navbar__logo" width="36" height="36">
+      <span class="navbar__brand-text">LABELDIRECT</span>
+    </a>
+    <div class="navbar__links">
+      <a href="/" class="navbar__link">Labels</a>
+      <a href="/orders/" class="navbar__link navbar__link--active" aria-current="page">Orders</a>
+      <a href="/login.html" class="navbar__link navbar__link--accounts">Accounts</a>
+    </div>
+  </nav>
+
+  <main id="main" class="page">
+    <section id="view-list">
+      <header class="page__head">
+        <div>
+          <p class="page__eyebrow">LABELDIRECT</p>
+          <h1 class="page__title">Label orders</h1>
+        </div>
+        <a href="#new" class="btn">+ New order</a>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="Orders">
+        <button type="button" class="tab" role="tab" id="tab-orders" aria-controls="panel-orders" aria-selected="true">Orders</button>
+        <button type="button" class="tab" role="tab" id="tab-trackings" aria-controls="panel-trackings" aria-selected="false">Trackings</button>
+      </div>
+
+      <div class="card" id="panel-orders" role="tabpanel" aria-labelledby="tab-orders">
+        <div class="empty" id="orders-empty">
+          <p class="empty__title">No orders yet</p>
+          <p class="empty__text">Finished labels show up here with their PDF.</p>
+          <a href="#new" class="btn btn--ghost">Start an order</a>
+        </div>
+        <ul class="rows" id="order-list" hidden></ul>
+      </div>
+
+      <div class="card" id="panel-trackings" role="tabpanel" aria-labelledby="tab-trackings" hidden>
+        <form class="track" id="track-form" novalidate>
+          <select class="select" id="track-carrier" aria-label="Carrier">
+            <option value="fedex">FedEx</option>
+            <option value="ups">UPS</option>
+          </select>
+          <input class="input" id="track-number" type="text" autocomplete="off" maxlength="40" aria-label="Tracking number" placeholder="Tracking number">
+          <button class="btn" type="submit">Track</button>
+          <p class="track__note" id="track-note" role="alert" hidden></p>
+        </form>
+        <div class="empty" id="trackings-empty">
+          <p class="empty__title">No trackings yet</p>
+          <p class="empty__text">Tracking numbers from your labels will be listed here.</p>
+        </div>
+        <ul class="rows" id="tracking-list" hidden></ul>
+      </div>
+    </section>
+
+    <section id="view-new" hidden>
+      <a href="#orders" class="back">&larr; Back to orders</a>
+      <header class="page__head">
+        <div>
+          <p class="page__eyebrow">LABELDIRECT</p>
+          <h1 class="page__title">New order</h1>
+        </div>
+      </header>
+
+      <form class="card form" id="order-form" novalidate>
+        <div class="form__top">
+          <fieldset class="pick">
+            <legend>Carrier</legend>
+            <div class="seg">
+              <label><input type="radio" name="carrier" value="FedEx" checked><span>FedEx</span></label>
+              <label><input type="radio" name="carrier" value="UPS"><span>UPS</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="pick">
+            <legend>Enter details</legend>
+            <div class="seg">
+              <label><input type="radio" name="mode" value="form" checked><span>Fill in form</span></label>
+              <label><input type="radio" name="mode" value="paste"><span>Paste label details</span></label>
+            </div>
+          </fieldset>
+        </div>
+
+        <section class="paste" id="paste-panel" hidden aria-label="Paste label details">
+          <div class="fld" id="paste-text-box">
+            <label for="paste-text">Label details</label>
+            <textarea id="paste-text" rows="10" maxlength="3800" spellcheck="false" placeholder="Paste the sender, recipient, weight and any other label details here."></textarea>
+          </div>
+          <p class="err" id="paste-text-err" role="alert" hidden></p>
+          <p class="hint">Paste everything as plain text, in any format. We'll read the addresses and parcel weight from it.</p>
+        </section>
+
+        <div class="form__cols" id="form-cols">
+          <div class="col">
+            <section class="party" id="party-sender" aria-label="Sender"></section>
+
+            <section class="block" aria-labelledby="parcels-title">
+              <div class="block__head">
+                <h2 class="block__title">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>
+                  <span id="parcels-title">Parcels (1)</span>
+                </h2>
+                <div class="block__tools">
+                  <div class="unit">
+                    <span id="unit-imperial" class="is-on">lbs/in</span>
+                    <button type="button" class="switch" id="unit-switch" role="switch" aria-checked="false" aria-label="Use kg and cm"></button>
+                    <span id="unit-metric">kg/cm</span>
+                  </div>
+                  <button type="button" class="btn btn--ghost btn--sm" id="add-parcel">+ Add parcel</button>
+                </div>
+              </div>
+              <div class="parcel-list" id="parcel-list"></div>
+              <p class="hint"><span id="max-weight">Max weight per parcel: 150 lbs</span><span>Dimensions are not required for this service</span></p>
+              <div class="fld">
+                <label for="package-desc">Package description</label>
+                <input type="text" id="package-desc" maxlength="200" autocomplete="off" placeholder="What is in the package? e.g. clothing, documents">
+              </div>
+            </section>
+          </div>
+
+          <div class="col">
+            <section class="party" id="party-recipient" aria-label="Recipient"></section>
+
+            <section class="block" aria-labelledby="options-title">
+              <h2 class="block__title" id="options-title">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+                Options
+              </h2>
+              <label class="check">
+                <input type="checkbox" id="signature">
+                <span>Require signature on delivery</span>
+              </label>
+            </section>
+
+            <section class="block" aria-labelledby="notes-title">
+              <h2 class="block__title" id="notes-title">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6V3Z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>
+                Notes
+              </h2>
+              <div class="fld">
+                <label for="note">Internal note</label>
+                <textarea id="note" rows="3" maxlength="500" placeholder="Pickup request details, identification, etcetera."></textarea>
+              </div>
+              <p class="hint">Internal only; not printed on the label.</p>
+            </section>
+          </div>
+        </div>
+
+        <div class="form__foot">
+          <p class="form__status" id="order-status" role="status" hidden></p>
+          <button class="btn" type="submit">Continue</button>
+        </div>
+      </form>
+
+      <p class="or" aria-hidden="true"><span>or</span></p>
+
+      <a href="https://t.me/label4workbot" target="_blank" rel="noopener noreferrer" class="tg">
+        <svg class="tg__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.3 2.9 11.5c-.9.4-.9 1 0 1.3l4.7 1.5 1.8 5.6c.2.6.4.8.9.8.4 0 .6-.2.9-.4l2.6-2.5 4.9 3.6c.9.5 1.5.2 1.7-.8l3.2-15.2c.3-1.2-.5-1.8-1.6-1.3ZM9.3 13.6l9.9-6.2c.5-.3.9-.1.5.2l-8.1 7.3-.3 3.3-2-4.6Z"/></svg>
+        <span class="tg__text">
+          <span class="tg__title">Order on Telegram</span>
+          <span class="tg__sub">Send your order to @label4workbot instead</span>
+        </span>
+        <span class="tg__go" aria-hidden="true">&rarr;</span>
+      </a>
+    </section>
+  </main>
+
+  <script src="/config.js"></script>
+  <script src="/listings.js"></script>
+  <script>
+    // Confirm the session with the server. A missing, forged or expired session
+    // goes back to the login page; the page stays hidden until it is confirmed.
+    (function () {
+      var root = document.documentElement;
+      function toLogin() {
+        try { ListingsApp.clearAccountsSession(); } catch (_e) { /* ignore */ }
+        window.location.replace("/login.html?next=" + encodeURIComponent("/orders/"));
+      }
+      var token = ListingsApp.getAccountsSession();
+      if (!token || !ListingsApp.isApiConfigured()) {
+        toLogin();
+        return;
+      }
+      fetch(ListingsApp.apiBase() + "/api/wallet", { headers: { Authorization: "Bearer " + token } })
+        .then(function (res) {
+          if (res.status === 401) toLogin();
+          else root.classList.remove("auth-pending");
+        })
+        .catch(function () {
+          // Server unreachable: show the page; sending an order is still checked by the server.
+          root.classList.remove("auth-pending");
+        });
+    })();
+  </script>
+  <script>
+    var labelOrders = [];
+    var trackings = [];
+
+    var viewList = document.getElementById("view-list");
+    var viewNew = document.getElementById("view-new");
+    var tabOrders = document.getElementById("tab-orders");
+    var tabTrackings = document.getElementById("tab-trackings");
+    var panelOrders = document.getElementById("panel-orders");
+    var panelTrackings = document.getElementById("panel-trackings");
+
+    function carrierTrackUrl(carrier, number) {
+      var value = encodeURIComponent(number);
+      if (carrier === "ups") return "https://www.ups.com/track?tracknum=" + value;
+      return "https://www.fedex.com/fedextrack/?trknbr=" + value;
+    }
+
+    function showView() {
+      var hash = String(location.hash || "").replace(/^#/, "");
+      var isNew = hash === "new";
+      var isTrackings = hash === "trackings";
+      viewList.hidden = isNew;
+      viewNew.hidden = !isNew;
+      document.getElementById("main").classList.toggle("page--wide", isNew);
+      tabOrders.setAttribute("aria-selected", String(!isTrackings));
+      tabTrackings.setAttribute("aria-selected", String(isTrackings));
+      panelOrders.hidden = isTrackings;
+      panelTrackings.hidden = !isTrackings;
+      document.title = (isNew ? "New order" : "Label orders") + " — LABELDIRECT";
+      window.scrollTo(0, 0);
+    }
+
+    tabOrders.addEventListener("click", function () { location.hash = "orders"; });
+    tabTrackings.addEventListener("click", function () { location.hash = "trackings"; });
+    window.addEventListener("hashchange", showView);
+
+    function twoLineRow(tag, title, meta, action) {
+      var row = document.createElement(tag);
+      row.className = "row";
+      var copy = document.createElement("span");
+      var strong = document.createElement("span");
+      strong.className = "row__title";
+      strong.textContent = title;
+      var small = document.createElement("span");
+      small.className = "row__meta";
+      small.textContent = meta;
+      copy.appendChild(strong);
+      copy.appendChild(small);
+      var act = document.createElement("span");
+      act.className = "row__action";
+      act.textContent = action;
+      row.appendChild(copy);
+      row.appendChild(act);
+      return row;
+    }
+
+    function renderOrders() {
+      var list = document.getElementById("order-list");
+      list.textContent = "";
+      document.getElementById("orders-empty").hidden = labelOrders.length > 0;
+      list.hidden = labelOrders.length === 0;
+      labelOrders.forEach(function (order) {
+        var item = document.createElement("li");
+        var row = twoLineRow("button", order.title || "Label", order.meta || "", "Download PDF");
+        row.type = "button";
+        row.addEventListener("click", function () {
+          if (!order.pdfUrl) return;
+          var link = document.createElement("a");
+          link.href = order.pdfUrl;
+          link.download = order.filename || "label.pdf";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        });
+        item.appendChild(row);
+        list.appendChild(item);
+      });
+    }
+
+    function renderTrackings() {
+      var list = document.getElementById("tracking-list");
+      list.textContent = "";
+      document.getElementById("trackings-empty").hidden = trackings.length > 0;
+      list.hidden = trackings.length === 0;
+      trackings.forEach(function (entry) {
+        var item = document.createElement("li");
+        var row = twoLineRow("a", entry.number, entry.carrier === "ups" ? "UPS" : "FedEx", "Track");
+        row.href = carrierTrackUrl(entry.carrier, entry.number);
+        row.target = "_blank";
+        row.rel = "noopener noreferrer";
+        item.appendChild(row);
+        list.appendChild(item);
+      });
+    }
+
+    document.getElementById("track-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+      var note = document.getElementById("track-note");
+      var number = document.getElementById("track-number").value.trim();
+      var carrier = document.getElementById("track-carrier").value;
+      if (!/^[A-Za-z0-9][A-Za-z0-9 -]{4,}$/.test(number)) {
+        note.textContent = "Enter the tracking number from your label.";
+        note.hidden = false;
+        return;
+      }
+      note.hidden = true;
+      window.open(carrierTrackUrl(carrier, number), "_blank", "noopener,noreferrer");
+    });
+
+    var orderDraft = null;
+    var orderForm = document.getElementById("order-form");
+    var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var MAX_LBS = 150;
+    var MAX_KG = 68;
+    var LB_PER_KG = 2.20462262;
+
+    var COUNTRIES = ["United States", "Canada", "United Kingdom", "Australia", "Germany", "France", "Italy", "Spain", "Netherlands", "Mexico", "China", "Hong Kong", "Japan", "United Arab Emirates"];
+    var US_STATES = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"];
+    var CA_PROVINCES = ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"];
+
+    var parcels = [""];
+    var unit = "lbs";
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function cell(id, label, attrs) {
+      return '<div class="cell"><div class="fld" id="' + id + '-box"><label for="' + id + '">' + label + '</label><input type="text" id="' + id + '" ' + (attrs || "") + '></div><p class="err" id="' + id + '-err" role="alert" hidden></p></div>';
+    }
+
+    function stateCell(p, country) {
+      var list = country === "United States" ? US_STATES : country === "Canada" ? CA_PROVINCES : null;
+      var id = p + "-state";
+      var control;
+      if (list) {
+        control = '<select id="' + id + '" autocomplete="address-level1"><option value="">Select</option>' +
+          list.map(function (name) { return '<option value="' + name + '">' + name + "</option>"; }).join("") + "</select>";
+      } else {
+        control = '<input type="text" id="' + id + '" maxlength="60" autocomplete="address-level1">';
+      }
+      return '<div class="fld" id="' + id + '-box"><label for="' + id + '">State / province</label>' + control + '</div><p class="err" id="' + id + '-err" role="alert" hidden></p>';
+    }
+
+    function buildParty(p, who) {
+      var countries = COUNTRIES.map(function (name) { return "<option>" + name + "</option>"; }).join("");
+      return '<div class="party__head"><h2 class="party__title">' + who + "</h2>" +
+        '<select class="pill" id="' + p + '-country" aria-label="' + who + ' country" autocomplete="country-name">' + countries + "</select></div>" +
+        '<div class="grid2">' +
+          cell(p + "-name", "Name", 'maxlength="80" autocomplete="name"') +
+          cell(p + "-company", "Company", 'maxlength="80" autocomplete="organization"') +
+        "</div>" +
+        cell(p + "-street", "Street address", 'maxlength="120" autocomplete="address-line1"') +
+        cell(p + "-apt", "Apartment, suite, etc.", 'maxlength="80" autocomplete="address-line2"') +
+        '<div class="grid3">' +
+          cell(p + "-city", "City", 'maxlength="60" autocomplete="address-level2"') +
+          '<div class="cell" id="' + p + '-state-cell">' + stateCell(p, "United States") + "</div>" +
+          cell(p + "-zip", "Postal code", 'maxlength="12" autocomplete="postal-code"') +
+        "</div>" +
+        '<div class="grid2">' +
+          cell(p + "-email", "Email", 'maxlength="120" inputmode="email" autocomplete="email"') +
+          cell(p + "-phone", "Phone", 'maxlength="30" inputmode="tel" autocomplete="tel"') +
+        "</div>";
+    }
+
+    function maxWeight() {
+      return unit === "kg" ? MAX_KG : MAX_LBS;
+    }
+
+    function renderParcels() {
+      var list = byId("parcel-list");
+      list.innerHTML = parcels.map(function (_value, i) {
+        var id = "parcel-" + i;
+        var label = (parcels.length > 1 ? "Parcel " + (i + 1) + " weight" : "Weight") + " (" + unit + ")";
+        var remove = parcels.length > 1
+          ? '<button type="button" class="icon-btn" data-remove="' + i + '" aria-label="Remove parcel ' + (i + 1) + '">&times;</button>'
+          : "";
+        return '<div class="parcel"><div class="cell"><div class="fld" id="' + id + '-box"><label for="' + id + '">' + label + '</label>' +
+          '<input type="text" id="' + id + '" inputmode="decimal" maxlength="7"></div><p class="err" id="' + id + '-err" role="alert" hidden></p></div>' + remove + "</div>";
+      }).join("");
+      parcels.forEach(function (value, i) {
+        byId("parcel-" + i).value = value;
+      });
+      byId("parcels-title").textContent = "Parcels (" + parcels.length + ")";
+      byId("max-weight").textContent = "Max weight per parcel: " + maxWeight() + " " + unit;
+      byId("unit-imperial").classList.toggle("is-on", unit === "lbs");
+      byId("unit-metric").classList.toggle("is-on", unit === "kg");
+    }
+
+    function convertWeight(value, toKg) {
+      var text = String(value).trim().replace(",", ".");
+      var n = Number(text);
+      if (!text || !isFinite(n)) return value;
+      return String(Math.round((toKg ? n / LB_PER_KG : n * LB_PER_KG) * 100) / 100);
+    }
+
+    function clearError(id) {
+      if (!id) return;
+      var box = byId(id + "-box");
+      var err = byId(id + "-err");
+      var control = byId(id);
+      if (box) box.classList.remove("is-error");
+      if (err) err.hidden = true;
+      if (control) control.removeAttribute("aria-invalid");
+    }
+
+    function setError(id, message) {
+      var box = byId(id + "-box");
+      var err = byId(id + "-err");
+      var control = byId(id);
+      if (box) box.classList.add("is-error");
+      if (err) {
+        err.textContent = message;
+        err.hidden = false;
+      }
+      if (control) {
+        control.setAttribute("aria-invalid", "true");
+        control.setAttribute("aria-describedby", id + "-err");
+      }
+    }
+
+    function resetErrors() {
+      orderForm.querySelectorAll(".fld.is-error").forEach(function (box) { box.classList.remove("is-error"); });
+      orderForm.querySelectorAll(".err").forEach(function (err) { err.hidden = true; });
+      orderForm.querySelectorAll("[aria-invalid]").forEach(function (control) { control.removeAttribute("aria-invalid"); });
+    }
+
+    // ---- Instant address checks (format only; they can't prove an address exists) ----
+    var FIVE = /^\d{5}$/;
+    var POSTAL = {
+      "United States": { re: /^\d{5}(-\d{4})?$/, eg: "12345 or 12345-6789" },
+      "Canada": { re: /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] \d[ABCEGHJ-NPRSTV-Z]\d$/, eg: "A1A 1A1" },
+      "United Kingdom": { re: /^(GIR 0AA|[A-Z]{1,2}\d[A-Z\d]? \d[A-Z]{2})$/, eg: "SW1A 1AA" },
+      "Australia": { re: /^\d{4}$/, eg: "2000" },
+      "Germany": { re: FIVE, eg: "10115" },
+      "France": { re: FIVE, eg: "75001" },
+      "Italy": { re: FIVE, eg: "00184" },
+      "Spain": { re: /^(0[1-9]|[1-4]\d|5[0-2])\d{3}$/, eg: "28001" },
+      "Netherlands": { re: /^[1-9]\d{3} [A-Z]{2}$/, eg: "1012 AB" },
+      "Mexico": { re: FIVE, eg: "06600" },
+      "China": { re: /^\d{6}$/, eg: "100000" },
+      "Japan": { re: /^\d{3}-\d{4}$/, eg: "100-0001" },
+      "Hong Kong": { none: true },
+      "United Arab Emirates": { none: true }
+    };
+
+    // First three ZIP digits that belong to each US state: [low, high] pairs.
+    var US_ZIP3 = {
+      "Alabama": [[350, 369]], "Alaska": [[995, 999]], "Arizona": [[850, 865]], "Arkansas": [[716, 729], [755, 755]],
+      "California": [[900, 961]], "Colorado": [[800, 816]], "Connecticut": [[60, 69]], "Delaware": [[197, 199]],
+      "District of Columbia": [[200, 205], [569, 569]], "Florida": [[320, 349]], "Georgia": [[300, 319], [398, 399]],
+      "Hawaii": [[967, 968]], "Idaho": [[832, 838]], "Illinois": [[600, 629]], "Indiana": [[460, 479]], "Iowa": [[500, 528]],
+      "Kansas": [[660, 679]], "Kentucky": [[400, 427]], "Louisiana": [[700, 714]], "Maine": [[39, 49]],
+      "Maryland": [[206, 219]], "Massachusetts": [[10, 27], [55, 55]], "Michigan": [[480, 499]], "Minnesota": [[550, 567]],
+      "Mississippi": [[386, 397]], "Missouri": [[630, 658]], "Montana": [[590, 599]], "Nebraska": [[680, 693]],
+      "Nevada": [[889, 898]], "New Hampshire": [[30, 38]], "New Jersey": [[70, 89]], "New Mexico": [[870, 884]],
+      "New York": [[5, 5], [100, 149]], "North Carolina": [[270, 289]], "North Dakota": [[580, 588]], "Ohio": [[430, 459]],
+      "Oklahoma": [[730, 732], [734, 749]], "Oregon": [[970, 979]], "Pennsylvania": [[150, 196]], "Rhode Island": [[28, 29]],
+      "South Carolina": [[290, 299]], "South Dakota": [[570, 577]], "Tennessee": [[370, 385]],
+      "Texas": [[733, 733], [750, 799], [885, 885]], "Utah": [[840, 847]], "Vermont": [[50, 59]],
+      "Virginia": [[201, 201], [220, 246]], "Washington": [[980, 994]], "West Virginia": [[247, 268]],
+      "Wisconsin": [[530, 549]], "Wyoming": [[820, 831]]
+    };
+    var US_ZIP_EXCEPTIONS = { "83414": "Wyoming" };
+
+    // First letter of a Canadian postal code for each province or territory.
+    var CA_FIRST = {
+      "Newfoundland and Labrador": "A", "Nova Scotia": "B", "Prince Edward Island": "C", "New Brunswick": "E",
+      "Quebec": "GHJ", "Ontario": "KLMP", "Manitoba": "R", "Saskatchewan": "S", "Alberta": "T",
+      "British Columbia": "V", "Northwest Territories": "X", "Nunavut": "X", "Yukon": "Y"
+    };
+
+    function postalRule(country) {
+      return POSTAL[country] || { re: /^[A-Za-z0-9][A-Za-z0-9 -]{2,10}$/, eg: "" };
+    }
+
+    function normalizePostal(country, value) {
+      var v = value.trim();
+      if (!v) return v;
+      if (country === "Canada") {
+        var c = v.toUpperCase().replace(/[\s-]/g, "");
+        return c.length === 6 ? c.slice(0, 3) + " " + c.slice(3) : v.toUpperCase();
+      }
+      if (country === "United Kingdom") {
+        var u = v.toUpperCase().replace(/\s+/g, "");
+        return u.length > 3 ? u.slice(0, -3) + " " + u.slice(-3) : u;
+      }
+      if (country === "Netherlands") {
+        var n = v.toUpperCase().replace(/\s+/g, "");
+        return /^\d{4}[A-Z]{2}$/.test(n) ? n.slice(0, 4) + " " + n.slice(4) : v.toUpperCase();
+      }
+      if (country === "Japan") {
+        var j = v.replace(/[\s-]/g, "");
+        return /^\d{7}$/.test(j) ? j.slice(0, 3) + "-" + j.slice(3) : v;
+      }
+      return v;
+    }
+
+    function zipMatchesState(zip, state) {
+      var five = zip.slice(0, 5);
+      if (US_ZIP_EXCEPTIONS[five]) return US_ZIP_EXCEPTIONS[five] === state;
+      var ranges = US_ZIP3[state];
+      if (!ranges) return true;
+      var prefix = Number(five.slice(0, 3));
+      return ranges.some(function (r) { return prefix >= r[0] && prefix <= r[1]; });
+    }
+
+    function phoneProblem(value, country) {
+      var digits = value.replace(/\D/g, "");
+      if (!/^\+?[\d\s().-]+$/.test(value)) return "Phone can only contain numbers, spaces, + ( ) - and .";
+      if (value.charAt(0) !== "+" && (country === "United States" || country === "Canada")) {
+        var national = digits.length === 11 && digits.charAt(0) === "1" ? digits.slice(1) : digits;
+        if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(national)) return "Enter a 10-digit phone number, for example (512) 555-0100";
+        return "";
+      }
+      if (digits.length < 7 || digits.length > 15) return "Enter a phone number with 7 to 15 digits" + (value.charAt(0) === "+" ? "" : " (add the country code with +)");
+      return "";
+    }
+
+    // Returns an error message for one filled-in field, or "" when it looks fine.
+    function partyProblem(p, field) {
+      var who = p === "s" ? "Sender" : "Recipient";
+      var country = byId(p + "-country").value;
+      var value = byId(p + "-" + field).value.trim();
+      if (!value) return "";
+      if (field === "name") {
+        if (!/\p{L}/u.test(value) || value.length < 2) return "Enter the full " + who.toLowerCase() + " name";
+      } else if (field === "street") {
+        if (!/\p{L}/u.test(value)) return "Enter a street name";
+        if ((country === "United States" || country === "Canada") && !/\d/.test(value)) return "Street address should include a number";
+      } else if (field === "city") {
+        if (!/\p{L}/u.test(value) || /\d/.test(value)) return "City should only contain letters";
+      } else if (field === "zip") {
+        var rule = postalRule(country);
+        if (rule.none) return "";
+        var zip = normalizePostal(country, value);
+        if (!rule.re.test(zip)) return "Postal code doesn't look right" + (rule.eg ? " (e.g. " + rule.eg + ")" : "");
+        var state = byId(p + "-state").value;
+        if (state && country === "United States" && !zipMatchesState(zip, state)) return "ZIP " + zip + " doesn't match " + state;
+        if (state && country === "Canada" && CA_FIRST[state] && CA_FIRST[state].indexOf(zip.charAt(0)) === -1) return "Postal code " + zip + " doesn't match " + state;
+      } else if (field === "phone") {
+        return phoneProblem(value, country);
+      } else if (field === "email") {
+        if (!EMAIL.test(value)) return "Enter a valid " + who.toLowerCase() + " email address";
+      }
+      return "";
+    }
+
+    // Live check when a field loses focus (or its country/state changes).
+    function checkNow(p, field) {
+      var el = byId(p + "-" + field);
+      if (!el) return;
+      if (field === "zip") el.value = normalizePostal(byId(p + "-country").value, el.value);
+      var problem = partyProblem(p, field);
+      clearError(p + "-" + field);
+      if (problem) setError(p + "-" + field, problem);
+    }
+
+    function currentMode() {
+      return orderForm.querySelector('input[name="mode"]:checked').value;
+    }
+
+    function currentCarrier() {
+      return orderForm.querySelector('input[name="carrier"]:checked').value;
+    }
+
+    function applyMode() {
+      var paste = currentMode() === "paste";
+      byId("paste-panel").hidden = !paste;
+      byId("form-cols").hidden = paste;
+      resetErrors();
+      var status = byId("order-status");
+      status.hidden = true;
+      status.classList.remove("is-error");
+    }
+
+    function validateOrder() {
+      var first = null;
+      function fail(id, message) {
+        setError(id, message);
+        if (!first) first = id;
+      }
+      if (currentMode() === "paste") {
+        if (byId("paste-text").value.trim().length < 10) fail("paste-text", "Paste the label details to continue");
+        return first;
+      }
+      [["s", "Sender"], ["r", "Recipient"]].forEach(function (pair) {
+        var p = pair[0];
+        var who = pair[1];
+        var rules = postalRule(byId(p + "-country").value);
+        var labels = { name: "name", street: "street address", city: "city", state: "state", zip: "postal code", phone: "phone", email: "email" };
+        var required = ["name", "street", "city", "state"];
+        if (!rules.none) required.push("zip");
+        if (p === "r") required.push("phone");
+        Object.keys(labels).forEach(function (field) {
+          var el = byId(p + "-" + field);
+          if (field === "zip") el.value = normalizePostal(byId(p + "-country").value, el.value);
+          if (!el.value.trim()) {
+            if (required.indexOf(field) !== -1) fail(p + "-" + field, who + " " + labels[field] + " is required");
+            return;
+          }
+          var problem = partyProblem(p, field);
+          if (problem) fail(p + "-" + (field === "state" ? "zip" : field), problem);
+        });
+      });
+      parcels.forEach(function (value, i) {
+        var id = "parcel-" + i;
+        var label = parcels.length > 1 ? "Parcel " + (i + 1) : "Parcel";
+        var text = value.trim().replace(",", ".");
+        if (!text) {
+          fail(id, label + " weight is required");
+          return;
+        }
+        var n = Number(text);
+        if (!isFinite(n) || n <= 0) {
+          fail(id, "Enter a valid weight");
+          return;
+        }
+        if (n > maxWeight()) fail(id, "Max weight per parcel is " + maxWeight() + " " + unit);
+      });
+      return first;
+    }
+
+    function readParty(p) {
+      function value(name) { return byId(p + "-" + name).value.trim(); }
+      return {
+        country: byId(p + "-country").value,
+        name: value("name"),
+        company: value("company"),
+        street: value("street"),
+        apartment: value("apt"),
+        city: value("city"),
+        state: value("state"),
+        postalCode: value("zip"),
+        email: value("email"),
+        phone: value("phone")
+      };
+    }
+
+    byId("party-sender").innerHTML = buildParty("s", "Sender");
+    byId("party-recipient").innerHTML = buildParty("r", "Recipient");
+    renderParcels();
+
+    orderForm.addEventListener("input", function (event) {
+      var id = event.target.id || "";
+      if (id.indexOf("parcel-") === 0) parcels[Number(id.slice(7))] = event.target.value;
+      clearError(id);
+    });
+
+    orderForm.addEventListener("change", function (event) {
+      var id = event.target.id || "";
+      if (event.target.name === "mode") applyMode();
+      if (/^[sr]-country$/.test(id)) {
+        byId(id.charAt(0) + "-state-cell").innerHTML = stateCell(id.charAt(0), event.target.value);
+      }
+      clearError(id);
+      var m = /^([sr])-(country|state|street|city|zip|phone|email|name)$/.exec(id);
+      if (m) {
+        var p = m[1];
+        var field = m[2];
+        if (field === "country") {
+          ["zip", "street", "phone"].forEach(function (f) { checkNow(p, f); });
+        } else if (field === "state") {
+          checkNow(p, "zip");
+        } else {
+          checkNow(p, field);
+        }
+      }
+    });
+
+    orderForm.addEventListener("click", function (event) {
+      var remove = event.target.closest("[data-remove]");
+      if (!remove) return;
+      parcels.splice(Number(remove.getAttribute("data-remove")), 1);
+      renderParcels();
+    });
+
+    byId("add-parcel").addEventListener("click", function () {
+      if (parcels.length >= 20) return;
+      parcels.push("");
+      renderParcels();
+      byId("parcel-" + (parcels.length - 1)).focus();
+    });
+
+    byId("unit-switch").addEventListener("click", function () {
+      var toKg = unit === "lbs";
+      parcels = parcels.map(function (value) { return convertWeight(value, toKg); });
+      unit = toKg ? "kg" : "lbs";
+      this.setAttribute("aria-checked", String(toKg));
+      renderParcels();
+    });
+
+    orderForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var status = byId("order-status");
+      resetErrors();
+      var first = validateOrder();
+      if (first) {
+        status.textContent = "Check the highlighted fields.";
+        status.classList.add("is-error");
+        status.hidden = false;
+        byId(first).focus();
+        return;
+      }
+      if (currentMode() === "paste") {
+        orderDraft = { carrier: currentCarrier(), mode: "paste", labelText: byId("paste-text").value.trim() };
+      } else {
+        orderDraft = {
+          carrier: currentCarrier(),
+          mode: "form",
+          sender: readParty("s"),
+          recipient: readParty("r"),
+          parcels: { unit: unit, weights: parcels.slice() },
+          packageDescription: byId("package-desc").value.trim(),
+          signatureRequired: byId("signature").checked,
+          note: byId("note").value.trim()
+        };
+      }
+      sendOrder(orderDraft);
+    });
+
+    function showStatus(message, isError, linkHref, linkText) {
+      var status = byId("order-status");
+      status.textContent = message;
+      status.classList.toggle("is-error", Boolean(isError));
+      if (linkHref) {
+        status.appendChild(document.createTextNode(" "));
+        var link = document.createElement("a");
+        link.href = linkHref;
+        link.textContent = linkText;
+        link.style.textDecoration = "underline";
+        status.appendChild(link);
+      }
+      status.hidden = false;
+    }
+
+    function resetOrderForm() {
+      orderForm.reset();
+      byId("party-sender").innerHTML = buildParty("s", "Sender");
+      byId("party-recipient").innerHTML = buildParty("r", "Recipient");
+      parcels = [""];
+      unit = "lbs";
+      byId("unit-switch").setAttribute("aria-checked", "false");
+      renderParcels();
+      applyMode();
+    }
+
+    // Posts the order to the backend, which forwards it to the CALI Telegram group.
+    function sendOrder(draft) {
+      var session = ListingsApp.getAccountsSession();
+      if (!session || !ListingsApp.isApiConfigured()) {
+        showStatus("Sign in to send your order.", true, "/login.html?next=%2Forders%2F", "Sign in");
+        return;
+      }
+      var submit = orderForm.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      showStatus("Sending your order…", false);
+      fetch(ListingsApp.apiBase() + "/api/label-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + session },
+        body: JSON.stringify(draft)
+      })
+        .then(function (res) {
+          return res.json().catch(function () { return null; }).then(function (data) {
+            if (!res.ok) {
+              var err = new Error((data && data.error) || "We could not send your order. Please try again.");
+              err.status = res.status;
+              throw err;
+            }
+            return data;
+          });
+        })
+        .then(function (data) {
+          resetOrderForm();
+          showStatus("Order " + data.reference + " sent. We'll reply with your label PDFs.", false);
+        })
+        .catch(function (err) {
+          if (err.status === 401) {
+            ListingsApp.clearAccountsSession();
+            showStatus("Your session expired. Sign in again to send your order.", true, "/login.html?next=%2Forders%2F", "Sign in");
+          } else {
+            showStatus(err.message || "We could not send your order. Please try again.", true);
+          }
+        })
+        .then(function () {
+          submit.disabled = false;
+        });
+    }
+
+    renderOrders();
+    renderTrackings();
+    showView();
+  </script>
+</body>
+</html>

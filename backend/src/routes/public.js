@@ -36,6 +36,14 @@ import {
   REFUND_WINDOW_MINUTES,
 } from "../lib/refunds.js";
 import { parseLine } from "../lib/parsePaste.js";
+import {
+  buildOrderMessage,
+  customerLabel,
+  newOrderReference,
+  orderRateLimited,
+  parseLabelOrder,
+  sendOrderToCali,
+} from "../lib/caliOrders.js";
 
 export const publicRouter = Router();
 
@@ -135,6 +143,29 @@ publicRouter.get("/accounts", requireAccountsAccess, async (_req, res) => {
   } catch (err) {
     console.error("GET /api/accounts:", err);
     res.status(500).json({ error: err.message || "Could not load accounts." });
+  }
+});
+
+// A label order from the website: post it to the CALI group so the carrier
+// PDFs can be sent back as replies to it.
+publicRouter.post("/label-orders", requireWalletAccess, async (req, res) => {
+  const parsed = parseLabelOrder(req.body);
+  if (parsed.error) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  if (orderRateLimited(req.accountsSub)) {
+    res.status(429).json({ error: "Too many orders in a short time. Wait a few minutes and try again." });
+    return;
+  }
+  try {
+    const reference = newOrderReference();
+    const customer = await customerLabel(req.accountsSub);
+    const sent = await sendOrderToCali(buildOrderMessage(parsed.order, { reference, customer }));
+    res.json({ ok: true, reference, messageId: sent.message_id });
+  } catch (err) {
+    console.error("POST /api/label-orders:", err.message || err);
+    res.status(err.status || 500).json({ error: err.status ? err.message : "We could not send your order. Please try again." });
   }
 });
 
