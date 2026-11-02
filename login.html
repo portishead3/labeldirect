@@ -305,6 +305,46 @@
         margin-bottom: 18px;
       }
 
+      .token-field {
+        position: relative;
+        margin-bottom: 18px;
+      }
+
+      .login-form .token-field input {
+        margin-bottom: 0;
+        padding-right: 96px;
+      }
+
+      .token-paste {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        bottom: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 76px;
+        padding: 0 12px;
+        border-radius: 7px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #050010;
+        background: linear-gradient(135deg, var(--accent-light), var(--accent));
+        border: 1px solid var(--accent);
+      }
+
+      .token-paste:hover {
+        box-shadow: var(--glow);
+      }
+
+      .token-paste--done {
+        color: #041018;
+        background: linear-gradient(135deg, #d4f6ff, #4ec8f0);
+        border-color: #9ae8ff;
+      }
+
       .login-form input:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(197, 108, 255, 0.18);
@@ -504,11 +544,14 @@
     <section class="login-card">
       
       
-      <p class="login-card__copy">Enter your client token to continue.</p>
+      <p class="login-card__copy">Copy the token from Telegram, then paste it here.</p>
       <p id="login-status" class="login-status" hidden></p>
       <form class="login-form" id="login-form">
         <label for="access-token">Access token</label>
-        <input id="access-token" name="token" type="password" autocomplete="current-password" required>
+        <div class="token-field">
+          <input id="access-token" name="token" type="password" autocomplete="current-password" required>
+          <button class="token-paste" type="button" id="paste-token">Paste</button>
+        </div>
         <button class="btn--glass" type="submit" id="login-submit">Continue</button>
       </form>
       <a class="btn--glass btn--glass-ghost" id="generate-token" href="https://t.me/LABELDIRECT_bot?start=access" target="_blank" rel="noopener noreferrer">Generate token</a>
@@ -537,12 +580,74 @@
     var form = document.getElementById("login-form");
     var input = document.getElementById("access-token");
     var submit = document.getElementById("login-submit");
+    var pasteBtn = document.getElementById("paste-token");
     var statusEl = document.getElementById("login-status");
+    var pasteReset;
 
     function showError(message) {
       statusEl.textContent = message || "";
       statusEl.hidden = !message;
     }
+
+    // The bot sends the token on its own line. A copied message may include the surrounding text.
+    function tokenFromClipboard(text) {
+      var raw = String(text || "").replace(/\u200b/g, "").trim();
+      if (!raw) return "";
+      var unwrapped = raw.replace(/^`+|`+$/g, "").trim();
+      if (/^[A-Za-z0-9_-]+$/.test(unwrapped)) return unwrapped;
+      var lines = raw.split(/\r?\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim().replace(/^`+|`+$/g, "");
+        if (/^[A-Za-z0-9_-]{16,}$/.test(line)) return line;
+      }
+      var match = raw.match(/[A-Za-z0-9_-]{24,}/);
+      return match ? match[0] : unwrapped;
+    }
+
+    function markPasted() {
+      pasteBtn.textContent = "Pasted";
+      pasteBtn.classList.add("token-paste--done");
+      clearTimeout(pasteReset);
+      pasteReset = setTimeout(function () {
+        pasteBtn.textContent = "Paste";
+        pasteBtn.classList.remove("token-paste--done");
+      }, 1600);
+    }
+
+    function fillToken(text) {
+      var token = tokenFromClipboard(text);
+      if (!token) {
+        showError("Clipboard is empty. Copy your token in Telegram, then tap Paste.");
+        input.focus();
+        return;
+      }
+      input.value = token;
+      showError("");
+      markPasted();
+    }
+
+    input.addEventListener("paste", function (event) {
+      var clip = event.clipboardData && event.clipboardData.getData("text");
+      if (!clip) return;
+      var token = tokenFromClipboard(clip);
+      if (!token || token === clip) return;
+      event.preventDefault();
+      input.value = token;
+      showError("");
+      markPasted();
+    });
+
+    pasteBtn.addEventListener("click", function () {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        input.focus();
+        showError("Tap the field and paste your token.");
+        return;
+      }
+      navigator.clipboard.readText().then(fillToken).catch(function () {
+        input.focus();
+        showError("Couldn’t read the clipboard. Tap the field and paste your token.");
+      });
+    });
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
