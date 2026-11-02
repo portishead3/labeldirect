@@ -79,9 +79,35 @@ export function caliCredentials(caliRoot) {
   return { token, groupId };
 }
 
+function commandOutput(result) {
+  return ((result.stderr || "") + (result.stdout || "")).trim().slice(-1500);
+}
+
+function ensurePip(python, deps) {
+  const env = { ...process.env, PYTHONPATH: deps };
+  const probe = spawnSync(python, ["-m", "pip", "--version"], { env, encoding: "utf8" });
+  if (probe.status === 0) return env;
+  fs.mkdirSync(deps, { recursive: true });
+  const script = path.join(deps, "get-pip.py");
+  const download = spawnSync(
+    "curl",
+    ["-fsSL", "-o", script, "https://bootstrap.pypa.io/pip/3.9/get-pip.py"],
+    { encoding: "utf8", timeout: 60000 }
+  );
+  if (download.status !== 0) {
+    console.error("CALI could not download pip:", commandOutput(download) || download.error || "curl failed");
+    return env;
+  }
+  const bootstrap = spawnSync(python, [script, "--target", deps], { env, encoding: "utf8", timeout: 120000 });
+  if (bootstrap.status !== 0) {
+    console.error("CALI pip bootstrap failed:", commandOutput(bootstrap) || bootstrap.error || "unknown error");
+  }
+  return env;
+}
+
 function ensureCaliDeps(python, caliRoot) {
   const deps = path.join(caliRoot, ".pydeps");
-  const env = { ...process.env, PYTHONPATH: deps };
+  const env = ensurePip(python, deps);
   const check = spawnSync(python, ["-c", "import aiogram, fitz, dotenv"], {
     cwd: caliRoot,
     env,
@@ -94,8 +120,9 @@ function ensureCaliDeps(python, caliRoot) {
     ["-m", "pip", "install", "--disable-pip-version-check", "--target", deps, "-r", "requirements.txt"],
     { cwd: caliRoot, env, encoding: "utf8", timeout: 180000 }
   );
-  const detail = ((install.stderr || "") + (install.stdout || "")).trim().slice(-1500);
-  if (install.status !== 0) console.error("CALI package install failed:", detail || install.error || "unknown error");
+  if (install.status !== 0) {
+    console.error("CALI package install failed:", commandOutput(install) || install.error || "unknown error");
+  }
   return deps;
 }
 
