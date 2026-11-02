@@ -550,8 +550,10 @@ export async function startTelegramBot() {
     console.warn("Telegram bot skipped: BOT_TOKEN is not set.");
     return;
   }
-  if (String(process.env.TELEGRAM_POLLING || "true").toLowerCase() === "false") {
-    console.warn("Telegram bot skipped: TELEGRAM_POLLING=false.");
+  // Local checkouts set CALI_POLLING=false. The deployed site does not, so it
+  // is the only process that polls. TELEGRAM_POLLING on the host is left alone.
+  if (String(process.env.CALI_POLLING || "true").toLowerCase() === "false") {
+    console.warn("Telegram bot skipped: this machine is not the deployed bot.");
     return;
   }
 
