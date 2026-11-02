@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getSupabaseAdmin } from "../supabaseAdmin.js";
@@ -115,12 +114,41 @@ export function parseLabelOrder(body) {
   };
 }
 
-export function newOrderReference() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = crypto.randomBytes(6);
-  let out = "";
-  for (const byte of bytes) out += alphabet[byte % alphabet.length];
-  return "LD-" + out;
+// order-pen001: first three letters of the Telegram username, or the first three
+// digits of the id when there is no username, then this person's order count.
+export function orderPrefix(customer) {
+  const letters = String((customer && customer.telegramUsername) || "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+  if (letters.length >= 3) return letters.slice(0, 3);
+  const digits = String((customer && customer.telegramUserId) || "").replace(/\D/g, "");
+  if (digits.length >= 3) return digits.slice(0, 3);
+  return (letters + digits + "web").slice(0, 3).padEnd(3, "x");
+}
+
+export async function newOrderReference(customer) {
+  const prefix = orderPrefix(customer);
+  const ownerKey = (customer && customer.ownerKey) || "";
+  const { count, error } = await getSupabaseAdmin()
+    .from("label_orders")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_key", ownerKey);
+  if (error) throw error;
+  let n = (count || 0) + 1;
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const reference = "order-" + prefix + String(n).padStart(3, "0");
+    const { data, error: existsError } = await getSupabaseAdmin()
+      .from("label_orders")
+      .select("reference")
+      .eq("reference", reference)
+      .maybeSingle();
+    if (existsError) throw existsError;
+    if (!data) return reference;
+    n += 1;
+  }
+  const err = new Error("We could not save your order. Please try again.");
+  err.status = 500;
+  throw err;
 }
 
 function partyLines(party) {
@@ -254,7 +282,7 @@ export async function listLabelOrders(ownerKey) {
 // Only the label and invoice can be read, and only by the account that placed the order.
 export async function readLabelOrderFile(ownerKey, reference, file) {
   const column = ORDER_FILES[file];
-  if (!column || !/^LD-[A-Z0-9]{6}$/.test(reference)) return null;
+  if (!column || !/^(?:LD-[A-Z0-9]{6}|order-[a-z0-9]{6,})$/.test(reference)) return null;
   const { data, error } = await getSupabaseAdmin()
     .from("label_orders")
     .select("owner_key, label_path, invoice_path")
@@ -299,7 +327,7 @@ export async function notifyCustomerPending(customer, reference) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chat_id: userId,
-      text: "Order " + reference + " received. Pending.",
+      text: reference + " received. Pending.",
       disable_web_page_preview: true,
     }),
   });

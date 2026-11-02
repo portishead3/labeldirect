@@ -1,7 +1,7 @@
 """Give the website the label and invoice for an order that came from it.
 
 The transaction record is never uploaded. Website orders are recognised by the
-"Order: LD-…" line the site puts at the top of the group message.
+"Order: …" line the site puts at the top of the group message.
 """
 
 import json
@@ -15,13 +15,20 @@ from bot.config import _env
 
 log = logging.getLogger("cali")
 
-ORDER_RE = re.compile(r"Order:\s*(LD-[A-Z0-9]{6})\b")
+ORDER_RE = re.compile(r"Order:\s*(LD-[A-Z0-9]{6}|order-[a-z0-9]{6,})\b")
+NAMED_RE = re.compile(r"(LD-[A-Z0-9]{6}|order-[a-z0-9]{6,})")
 CUSTOMER_KINDS = ("label", "invoice")
 BUCKET = "label-orders"
 
 
 def website_reference(source_text: str) -> str | None:
     match = ORDER_RE.search(source_text or "")
+    return match.group(1) if match else None
+
+
+def named_order_reference(filename: str) -> str | None:
+    """An order number written into a file name, such as a download of another order."""
+    match = NAMED_RE.search(filename or "")
     return match.group(1) if match else None
 
 
@@ -117,7 +124,9 @@ def plan_delivery(files: dict, notes, already: set[str]) -> tuple[dict, bool]:
     for kind in CUSTOMER_KINDS:
         if kind in files and (kind in replaced or kind not in already):
             chosen[kind] = files[kind]
-    return chosen, "label" in replaced
+    # A second file in the first batch is not an edit of an earlier order.
+    # Edited means this same order was already delivered and its label changed.
+    return chosen, "label" in replaced and "label" in already
 
 
 def _supabase() -> tuple[str, str]:

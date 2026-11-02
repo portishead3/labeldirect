@@ -194,8 +194,8 @@ publicRouter.post("/label-orders", requireWalletAccess, async (req, res) => {
     return;
   }
   try {
-    const reference = newOrderReference();
     const customer = await customerRecord(req.accountsSub);
+    const reference = await newOrderReference(customer);
     await saveLabelOrder({ reference, customer, order: parsed.order, messageId: null });
     let sent;
     try {

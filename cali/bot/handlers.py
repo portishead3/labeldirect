@@ -6,7 +6,7 @@ from pathlib import Path
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
-from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import FSInputFile, Message, ReactionTypeEmoji
 
 from bot import db
@@ -16,8 +16,8 @@ from bot.freeform import Expected, parse_request
 from bot.publish import (
     customer_files,
     mark_order_edited,
+    named_order_reference,
     plan_delivery,
-    pending_message_id,
     publish_customer_pdfs,
     replaced_kinds,
     requester_telegram_id,
@@ -185,6 +185,12 @@ async def document_reply(message: Message, bot: Bot) -> None:
         return
 
     kind = extract.kind if extract.kind != "unknown" else f"other_{message.message_id}"
+    named = named_order_reference(message.document.file_name or "")
+    shipment_ref = website_reference(_message_text(parent))
+    if named and shipment_ref and named != shipment_ref:
+        temp_path.unlink(missing_ok=True)
+        await message.reply(f"That file is {named}. It was left off this order.")
+        return
     final_path = dest_dir / f"{kind}.pdf"
 
     stored = {
@@ -273,19 +279,13 @@ async def deliver_customer_pdfs(bot: Bot, shipment: dict, rows: list[dict], note
     if not user_id:
         log.warning("No customer to receive PDFs for %s", shipment.get("public_id"))
         return
-    reply_to = pending_message_id(reference)
     try:
         for kind in ("label", "invoice"):
             if kind not in chosen:
                 continue
-            caption = "Edited" if edited else kind.capitalize()
-            reply = {"reply_to_message_id": reply_to} if reply_to else {}
-            try:
-                await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption, **reply)
-            except TelegramBadRequest:
-                if not reply_to:
-                    raise
-                await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption)
+            title = "Edited" if edited and kind == "label" else kind.capitalize()
+            caption = f"{title} {reference}".strip() if reference else title
+            await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption)
     except TelegramForbiddenError:
         log.warning("Customer has not opened the bot for %s", shipment.get("public_id"))
         chat_id = shipment.get("chat_id")
