@@ -288,6 +288,29 @@ export function caliOrdersConfigured() {
   return Boolean(token && groupId);
 }
 
+// Tells the customer in their chat with the bot. A missing chat does not fail the order.
+export async function notifyCustomerPending(customer, reference) {
+  const userId = customer && customer.telegramUserId;
+  if (!userId) return null;
+  const { token } = caliCredentials(caliRoot);
+  if (!token) return null;
+  const res = await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: userId,
+      text: "Order " + reference + " received. Pending.",
+      disable_web_page_preview: true,
+    }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!data || !data.ok) {
+    console.error("Customer pending notice:", (data && data.description) || res.status);
+    return null;
+  }
+  return data.result.message_id;
+}
+
 export async function sendOrderToCali(text) {
   const { token, groupId } = caliCredentials(caliRoot);
   if (!token || !groupId) {

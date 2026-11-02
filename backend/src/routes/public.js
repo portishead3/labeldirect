@@ -41,6 +41,7 @@ import {
   customerRecord,
   deleteLabelOrder,
   listLabelOrders,
+  notifyCustomerPending,
   newOrderReference,
   orderRateLimited,
   parseLabelOrder,
@@ -203,11 +204,17 @@ publicRouter.post("/label-orders", requireWalletAccess, async (req, res) => {
       await deleteLabelOrder(reference);
       throw err;
     }
-    if (sent && sent.message_id) {
-      const { error } = await getSupabaseAdmin()
-        .from("label_orders")
-        .update({ telegram_message_id: sent.message_id })
-        .eq("reference", reference);
+    let customerMessageId = null;
+    try {
+      customerMessageId = await notifyCustomerPending(customer, reference);
+    } catch (err) {
+      console.error("Customer pending notice:", err.message || err);
+    }
+    const saved = {};
+    if (sent && sent.message_id) saved.telegram_message_id = sent.message_id;
+    if (customerMessageId) saved.customer_message_id = customerMessageId;
+    if (Object.keys(saved).length) {
+      const { error } = await getSupabaseAdmin().from("label_orders").update(saved).eq("reference", reference);
       if (error) console.error("label order message id:", error.message || error);
     }
     res.json({ ok: true, reference, messageId: sent.message_id });

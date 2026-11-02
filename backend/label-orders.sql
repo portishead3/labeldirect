@@ -15,6 +15,7 @@ create table if not exists public.label_orders (
   label_path text,
   invoice_path text,
   telegram_message_id bigint,
+  customer_message_id bigint,
   order_json jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   constraint label_orders_status_check check (status in ('pending', 'delivered'))
@@ -32,6 +33,7 @@ alter table public.label_orders add column if not exists status text not null de
 alter table public.label_orders add column if not exists label_path text;
 alter table public.label_orders add column if not exists invoice_path text;
 alter table public.label_orders add column if not exists edited boolean not null default false;
+alter table public.label_orders add column if not exists customer_message_id bigint;
 
 alter table public.label_orders drop constraint if exists label_orders_status_check;
 alter table public.label_orders

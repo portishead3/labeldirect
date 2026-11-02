@@ -131,7 +131,7 @@ def order_row(reference: str) -> dict | None:
     if not url or not key:
         return None
     request = urllib.request.Request(
-        f"{url}/rest/v1/label_orders?reference=eq.{reference}&select=telegram_user_id,label_path,invoice_path",
+        f"{url}/rest/v1/label_orders?reference=eq.{reference}&select=telegram_user_id,label_path,invoice_path,customer_message_id",
         headers={"Authorization": "Bearer " + key, "apikey": key},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
@@ -152,6 +152,15 @@ def saved_customer_kinds(reference: str | None) -> set[str] | None:
     if row.get("invoice_path"):
         kinds.add("invoice")
     return kinds
+
+
+def pending_message_id(reference: str | None) -> int | None:
+    """The customer's 'received, pending' message, so the PDFs can reply to it."""
+    if not reference:
+        return None
+    row = order_row(reference)
+    message_id = row.get("customer_message_id") if row else None
+    return int(message_id) if message_id else None
 
 
 def requester_telegram_id(reference: str) -> int | None:

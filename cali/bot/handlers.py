@@ -6,7 +6,7 @@ from pathlib import Path
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
-from aiogram.exceptions import TelegramForbiddenError
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import FSInputFile, Message, ReactionTypeEmoji
 
 from bot import db
@@ -17,6 +17,7 @@ from bot.publish import (
     customer_files,
     mark_order_edited,
     plan_delivery,
+    pending_message_id,
     publish_customer_pdfs,
     replaced_kinds,
     requester_telegram_id,
@@ -272,12 +273,19 @@ async def deliver_customer_pdfs(bot: Bot, shipment: dict, rows: list[dict], note
     if not user_id:
         log.warning("No customer to receive PDFs for %s", shipment.get("public_id"))
         return
+    reply_to = pending_message_id(reference)
     try:
         for kind in ("label", "invoice"):
             if kind not in chosen:
                 continue
             caption = "Edited" if edited else kind.capitalize()
-            await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption)
+            reply = {"reply_to_message_id": reply_to} if reply_to else {}
+            try:
+                await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption, **reply)
+            except TelegramBadRequest:
+                if not reply_to:
+                    raise
+                await bot.send_document(user_id, FSInputFile(chosen[kind]), caption=caption)
     except TelegramForbiddenError:
         log.warning("Customer has not opened the bot for %s", shipment.get("public_id"))
         chat_id = shipment.get("chat_id")
