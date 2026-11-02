@@ -1,4 +1,4 @@
-"""Read FedEx PDFs: shipping label, commercial invoice, transaction record."""
+"""Read carrier PDFs: shipping label, commercial invoice, transaction record."""
 from __future__ import annotations
 
 import re
@@ -9,10 +9,11 @@ from pathlib import Path
 
 import fitz
 
-from bot.textnorm import to_kg
+from bot.textnorm import norm_alnum, to_kg
 
 GROUPED_TRK_RE = re.compile(r"(?<!\d)(\d{4}) (\d{4}) (\d{4})(?!\d)")
 DIGIT_RUN_RE = re.compile(r"(?<!\d)(\d{12}|\d{15}|\d{20}|\d{22})(?!\d)")
+UPS_RE = re.compile(r"1Z(?:\s*[0-9A-Z]){16}", re.I)
 LABEL_WEIGHT_RE = re.compile(r"ACT(?:UAL)?\s*WGT\s*[:#]?\s*(\d+(?:[.,]\d+)?)\s*(LBS?|KGS?)", re.I)
 LABEL_DATE_RE = re.compile(r"SHIP\s*DATE\s*:\s*(\d{1,2}[A-Z]{3}\d{2})", re.I)
 RECORD_DATE_RE = re.compile(r"\b([A-Z][a-z]{2} \d{1,2}, \d{4})\b")
@@ -33,6 +34,7 @@ class DocExtract:
     sender_lines: list[str] = field(default_factory=list)
     service: str | None = None
     packaging: str | None = None
+    rejected_numbers: list[str] = field(default_factory=list)
 
     @property
     def recipient_text(self) -> str:
@@ -54,6 +56,37 @@ def fedex12_valid(number: str) -> bool:
     return (total % 11) % 10 == int(number[11])
 
 
+def ups_valid(number: str) -> bool:
+    """UPS 1Z check digit. Odd characters count once, even characters count twice."""
+    compact = re.sub(r"\s+", "", number).upper()
+    if not re.fullmatch(r"1Z[0-9A-Z]{16}", compact):
+        return False
+    total = 0
+    for index, char in enumerate(compact[2:17]):
+        value = int(char) if char.isdigit() else (ord(char) - ord("A") + 2) % 10
+        total += value if index % 2 == 0 else value * 2
+    return (10 - (total % 10)) % 10 == int(compact[17])
+
+
+def read_tracking(text: str) -> tuple[list[str], list[str]]:
+    """Accepted tracking numbers, and 12-digit runs rejected by the FedEx check."""
+    accepted: list[str] = ["".join(match.groups()) for match in GROUPED_TRK_RE.finditer(text)]
+    rejected: list[str] = []
+    for match in DIGIT_RUN_RE.finditer(text):
+        number = match.group(1)
+        if len(number) != 12:
+            continue
+        if fedex12_valid(number):
+            accepted.append(number)
+        else:
+            rejected.append(number)
+    for match in UPS_RE.finditer(text):
+        number = re.sub(r"\s+", "", match.group(0)).upper()
+        if ups_valid(number):
+            accepted.append(number)
+    return list(dict.fromkeys(accepted)), list(dict.fromkeys(rejected))
+
+
 def classify(text: str, filename: str | None) -> str:
     low = text.lower()
     if "transaction record" in low:
@@ -61,6 +94,8 @@ def classify(text: str, filename: str | None) -> str:
     if "commercial invoice" in low or ("invoice" in low and "description of goods" in low):
         return "invoice"
     if "trk#" in low or "actwgt" in low or "origin id" in low:
+        return "label"
+    if UPS_RE.search(text) or ("ups" in low and "tracking" in low):
         return "label"
     name = (filename or "").lower()
     for hint, kind in (("transaction", "record"), ("invoice", "invoice"), ("label", "label")):
@@ -197,13 +232,9 @@ def extract_document(path: Path, filename: str | None = None) -> DocExtract:
             extract.sender_lines = layout.get("sender", [])
             extract.recipient_country = layout.get("country")
 
-            candidates = ["".join(m.groups()) for m in GROUPED_TRK_RE.finditer(text)]
-            candidates += [
-                m.group(1)
-                for m in DIGIT_RUN_RE.finditer(text)
-                if len(m.group(1)) == 12 and fedex12_valid(m.group(1))
-            ]
-            extract.tracking_candidates = list(dict.fromkeys(candidates))
+            accepted, rejected = read_tracking(text)
+            extract.tracking_candidates = accepted
+            extract.rejected_numbers = rejected
 
             weight = LABEL_WEIGHT_RE.search(text)
             if weight:
@@ -219,8 +250,11 @@ def extract_document(path: Path, filename: str | None = None) -> DocExtract:
             extract.recipient_country = parsed.get("country")
             extract.service = parsed.get("service")
             extract.packaging = parsed.get("packaging")
+            accepted, rejected = read_tracking(text)
             if parsed.get("tracking"):
-                extract.tracking_candidates = [parsed["tracking"]]
+                accepted.insert(0, parsed["tracking"])
+            extract.tracking_candidates = list(dict.fromkeys(accepted))
+            extract.rejected_numbers = rejected
             weight = RECORD_WEIGHT_RE.search(text)
             if weight:
                 extract.weight_kg = to_kg(weight.group(1), weight.group(2))
@@ -229,16 +263,32 @@ def extract_document(path: Path, filename: str | None = None) -> DocExtract:
             extract.ship_date = date.group(1) if date else None
 
         elif kind == "invoice":
-            extract.tracking_candidates = list(
-                dict.fromkeys(
-                    m.group(1)
-                    for m in DIGIT_RUN_RE.finditer(text)
-                    if len(m.group(1)) == 12 and fedex12_valid(m.group(1))
-                )
-            )
+            accepted, rejected = read_tracking(text)
+            extract.tracking_candidates = accepted
+            extract.rejected_numbers = rejected
+        else:
+            _accepted, rejected = read_tracking(text)
+            extract.rejected_numbers = rejected
         return extract
     finally:
         doc.close()
+
+
+def same_label_details(left: DocExtract, right: DocExtract) -> bool:
+    """Two labels for the same receiver are not an edit of each other.
+
+    A second order can repeat the name, address and weight. That file stays off
+    the order it was replied to. A label whose details changed is the edit.
+    """
+    left_who = norm_alnum(" ".join(left.recipient_lines))
+    right_who = norm_alnum(" ".join(right.recipient_lines))
+    if not left_who or not right_who or left_who != right_who:
+        return False
+    if left.recipient_country and right.recipient_country and left.recipient_country != right.recipient_country:
+        return False
+    if left.weight_kg is not None and right.weight_kg is not None and abs(left.weight_kg - right.weight_kg) > 0.05:
+        return False
+    return True
 
 
 def stale_kinds(new_kind: str, new_doc: DocExtract, stored: dict[str, DocExtract]) -> list[str]:

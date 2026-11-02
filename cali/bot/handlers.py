@@ -13,7 +13,7 @@ from aiogram.types import FSInputFile, Message, ReactionTypeEmoji
 
 from bot import db
 from bot.config import FILES_DIR, GROUP_CHAT_ID, _env
-from bot.fedex import DocExtract, extract_document, pick_tracking, stale_kinds
+from bot.fedex import DocExtract, extract_document, pick_tracking, same_label_details, stale_kinds
 from bot.freeform import Expected, parse_request
 from bot.publish import (
     announce_completion,
@@ -115,6 +115,9 @@ def _shipment_from_parent(parent: Message, chat_id: int) -> dict:
     existing = db.find_shipment_by_message(chat_id, parent.message_id)
     text = _message_text(parent)
     if existing:
+        # Replying to a PDF stays on that order. Its caption is not a new set of details.
+        if parent.document:
+            return existing
         if text and text != (existing.get("source_text") or ""):
             expected = parse_request(text)
             expected_json = json.dumps(expected.to_dict(), ensure_ascii=False)
@@ -196,9 +199,13 @@ async def document_reply(message: Message, bot: Bot) -> None:
         await message.reply(f"I could not read {message.document.file_name or 'that PDF'}.")
         return
 
+    problems = _document_problems(message.document.file_name, extract)
+    if problems:
+        await message.reply(problems)
+
     kind = extract.kind if extract.kind != "unknown" else f"other_{message.message_id}"
     named = named_order_reference(message.document.file_name or "")
-    shipment_ref = website_reference(_message_text(parent))
+    shipment_ref = website_reference(shipment.get("source_text") or _message_text(parent))
     if named and shipment_ref and named != shipment_ref:
         temp_path.unlink(missing_ok=True)
         await message.reply(f"That file is {named}. It was left off this order.")
@@ -211,6 +218,12 @@ async def document_reply(message: Message, bot: Bot) -> None:
         if not row["kind"].startswith("other_")
     }
     notes = _replacement_notes.setdefault(shipment["id"], [])
+    if kind == "label" and kind in stored and same_label_details(stored[kind], extract):
+        temp_path.unlink(missing_ok=True)
+        await message.reply(
+            "This label has the same details as the one already on this order, so it was not saved as an edit."
+        )
+        return
     if kind in stored:
         _archive(final_path, dest_dir)
         notes.append(f"Replaced the previous {kind}.")
@@ -232,6 +245,24 @@ async def document_reply(message: Message, bot: Bot) -> None:
     log.info("%s: stored %s (%s)", shipment["public_id"], kind, message.document.file_name)
     await _react(bot, message, "📄")
     _schedule_report(bot, shipment["id"], message.chat.id, message.message_id)
+
+
+def _document_problems(filename: str | None, extract: DocExtract) -> str:
+    """Why a PDF was not used, so the group can see it instead of a silent skip."""
+    name = filename or "that PDF"
+    lines = []
+    if extract.kind == "unknown":
+        lines.append(
+            f"I could not tell what {name} is. "
+            "It was not recognized as a label, invoice, or record, so it was not checked."
+        )
+    if extract.rejected_numbers:
+        listed = ", ".join(extract.rejected_numbers)
+        lines.append(
+            f"Ignored {listed} in {name}. "
+            "A 12-digit number failed the FedEx check, so it was not saved as tracking."
+        )
+    return "\n".join(lines)
 
 
 def _archive(path: Path, dest_dir: Path) -> None:
