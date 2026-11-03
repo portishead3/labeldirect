@@ -4,6 +4,7 @@ import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 
 let caliProcess = null;
+let caliStopping = false;
 
 function readEnvFile(file) {
   if (!fs.existsSync(file)) return {};
@@ -159,29 +160,51 @@ export function startCaliWorkflow(caliRoot) {
   const venvPython = path.join(caliRoot, ".venv", "bin", "python");
   const python = fs.existsSync(venvPython) ? venvPython : process.env.CALI_PYTHON || "python3";
   const deps = ensureCaliDeps(python, caliRoot);
-  caliProcess = spawn(python, ["-m", "bot.main"], {
-    cwd: caliRoot,
-    env: {
-      ...process.env,
-      PYTHONPATH: deps + path.delimiter + (process.env.PYTHONPATH || ""),
-      CALI_BOT_TOKEN: token,
-      CALI_GROUP_CHAT_ID: groupId,
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  pipeCali(caliProcess.stdout);
-  pipeCali(caliProcess.stderr);
-  caliProcess.on("error", (err) => {
-    console.error("CALI workflow failed to start:", err.message || err);
-  });
-  caliProcess.on("exit", (code, signal) => {
-    if (signal) return;
-    console.error("CALI workflow exited with code " + code);
-  });
-  console.log("CALI workflow started");
-  return caliProcess;
+  caliStopping = false;
+  let restartDelay = 3000;
+  let launchTimer = null;
+  const launch = () => {
+    if (caliStopping) return null;
+    if (caliProcess && caliProcess.exitCode == null && caliProcess.signalCode == null) return caliProcess;
+    const startedAt = Date.now();
+    caliProcess = spawn(python, ["-m", "bot.main"], {
+      cwd: caliRoot,
+      env: {
+        ...process.env,
+        PYTHONUNBUFFERED: "1",
+        PYTHONPATH: deps + path.delimiter + (process.env.PYTHONPATH || ""),
+        CALI_BOT_TOKEN: token,
+        CALI_GROUP_CHAT_ID: groupId,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    pipeCali(caliProcess.stdout);
+    pipeCali(caliProcess.stderr);
+    caliProcess.on("error", (err) => {
+      console.error("CALI workflow failed to start:", err.message || err);
+    });
+    caliProcess.on("exit", (code, signal) => {
+      if (caliStopping) return;
+      if (Date.now() - startedAt > 60000) restartDelay = 3000;
+      const wait = restartDelay;
+      restartDelay = Math.min(restartDelay * 2, 60000);
+      console.error(
+        "CALI workflow exited" +
+          (signal ? " from " + signal : " with code " + code) +
+          ". Starting it again in " +
+          Math.round(wait / 1000) +
+          "s."
+      );
+      clearTimeout(launchTimer);
+      launchTimer = setTimeout(launch, wait);
+    });
+    console.log("CALI workflow started");
+    return caliProcess;
+  };
+  return launch();
 }
 
 export function stopCaliWorkflow() {
+  caliStopping = true;
   if (caliProcess && !caliProcess.killed) caliProcess.kill("SIGTERM");
 }

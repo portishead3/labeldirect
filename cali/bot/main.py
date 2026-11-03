@@ -46,7 +46,8 @@ async def main() -> None:
             exc,
         )
 
-    await bot.delete_webhook(drop_pending_updates=True)
+    # Keep updates that arrived while the process was down, including PDF replies.
+    await bot.delete_webhook(drop_pending_updates=False)
     await dp.start_polling(bot)
 
 
